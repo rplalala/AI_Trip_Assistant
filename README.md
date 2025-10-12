@@ -40,7 +40,7 @@ The goal is to make travel **smart**, **resilient**, and **low-effort**.
 https://uni-elec5620.atlassian.net/jira/software/projects/ELEC5620/summary?atlOrigin=eyJpIjoiMTM2NGM1YTY4ZTg2NDRkN2JjZjVhY2VjODdmNWI2NzciLCJwIjoiaiJ9
 
 ## Stage 1 Report
-https://cn.overleaf.com/read/wrwbsmtwqhdx#35bd34
+https://www.overleaf.com/read/wrwbsmtwqhdx#35bd34
 
 ## Development Guide
 ### Install required dependencies:
