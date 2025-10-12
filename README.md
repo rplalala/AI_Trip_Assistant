@@ -60,7 +60,7 @@ node --version
 
 ### Setup Git
 ```
-git clone https://github.com/rplalala/ELEC5620_AI_Trip_Assistant.git
+git clone https://github.sydney.edu.au/25S2-ELEC5620-Wed9-11-Group61/ELEC5620_AI_Trip_Assistant.git
 ```
 Or you can use any other git gui client, like Github Desktop, TortoiseGit.
 
