@@ -97,7 +97,13 @@ cd api
 .\mvnw spring-boot:run # Windows
 ./mvnw spring-boot:run # Linux/Mac
 ```
-Still recommend you use any other IDE to run this project, like IntelliJ IDEA.
+Or you can use any other IDE to run this project, like IntelliJ IDEA. (recommend)
+
+
+
+
+
+
 
 
 Go to a web browser and access `http://localhost:5173/` 
