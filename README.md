@@ -42,7 +42,7 @@ https://cn.overleaf.com/read/wrwbsmtwqhdx#35bd34
 ### Install required dependencies:
 - java 21
 - git
-- nvm (not necessary, but recommended) + node 20.19.4
+- nvm (not necessary, but recommended) + Node 20
 
 Nvm is a Node manager that lets you install and switch between different Node versions locally. After you install it, you can use it to install and switch between different Node versions.
 ```
@@ -61,9 +61,8 @@ node --version
 ### Setup Git
 ```
 git clone https://github.com/rplalala/ELEC5620_AI_Trip_Assistant.git
-git checkout <your development branch> 
 ```
-Or you can use any other git gui client, like Github Desktop, TortoiseGit, etc..
+Or you can use any other git gui client, like Github Desktop, TortoiseGit.
 
 ### Setup PostgresSQL
 This project uses Neon to host PostgreSQL.
@@ -94,6 +93,7 @@ cd api
 .\mvnw spring-boot:run # Windows
 ./mvnw spring-boot:run # Linux/Mac
 ```
-Or you can use any other IDE to run the project, like IntelliJ IDEA.
+Still recommend you use any other IDE to run this project, like IntelliJ IDEA.
+
 
 Go to a web browser and access `http://localhost:5173/` 
