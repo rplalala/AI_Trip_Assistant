@@ -25,6 +25,10 @@ The goal is to make travel **smart**, **resilient**, and **low-effort**.
 - Database: PostgreSQL 16 (Neon Serverless)
 - Ai Agent Model: Gemini-2.5-flash
 
+ New Tech:
+- Spring AI https://spring.io/projects/spring-ai
+- LangGraph4j https://github.com/langgraph4j/langgraph4j
+
 ## Team
 - Pin-Hsuan Lai - xxx
 - Ting-Yi Lee - xxx
