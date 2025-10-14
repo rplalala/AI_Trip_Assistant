@@ -1,0 +1,20 @@
+server:
+  port: 8092
+
+spring:
+  datasource:
+    url: "jdbc:postgresql://ep-snowy-sea-a7ovq2o7-pooler.ap-southeast-2.aws.neon.tech:5432/external_db?sslmode=require&channel_binding=require"
+    username: ***REMOVED***
+    password: ***REMOVED***
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
+logging:
+  level:
+    org.springframework.jdbc.support.JdbcTransactionManager: debug
+
+

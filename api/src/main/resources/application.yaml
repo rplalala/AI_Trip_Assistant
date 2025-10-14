@@ -24,4 +24,14 @@ logging:
   level:
     org.springframework.jdbc.support.JdbcTransactionManager: debug
 
-
+feign:
+  httpclient:
+    enabled: true
+  okhttp:
+    enabled: false
+  client:
+    config:
+      default:
+        connectTimeout: 2000
+        readTimeout: 2000
+        loggerLevel: BASIC
