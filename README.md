@@ -92,8 +92,16 @@ npm run dev
 
 ### Launch Backend
 Make sure you're inside of `ELEC5620_AI_Trip_Assistant`
+#### Main API Service
 ```bash
 cd api
+.\mvnw spring-boot:run # Windows
+./mvnw spring-boot:run # Linux/Mac
+```
+
+#### Mocked External Service
+```bash
+cd external-service
 .\mvnw spring-boot:run # Windows
 ./mvnw spring-boot:run # Linux/Mac
 ```
