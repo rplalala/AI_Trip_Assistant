@@ -14,11 +14,11 @@ import java.time.OffsetDateTime;
 @Setter
 public class BaseModel {
 
-    @CreationTimestamp
+    @CreationTimestamp // JPA在数据表创建时自动赋值
     @Column(name = "created_time", nullable = false, updatable = false, columnDefinition = "timestamptz")
     private OffsetDateTime createdTime;
 
-    @UpdateTimestamp
+    @UpdateTimestamp // JPA在数据表更新时自动赋值
     @Column(name = "updated_time", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime updatedTime;
 }

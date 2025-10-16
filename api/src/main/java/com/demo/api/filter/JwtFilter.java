@@ -1,5 +1,6 @@
 package com.demo.api.filter;
 
+import com.demo.api.model.User;
 import com.demo.api.repository.UserRepository;
 import com.demo.api.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
@@ -49,13 +50,20 @@ public class JwtFilter extends OncePerRequestFilter {
                 Claims claims = jwtUtil.parse(token);
                 String subject = claims.getSubject();
                 if (subject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    // 确认用户仍存在（避免已删除用户仍可用旧 token）
                     Long userId = Long.valueOf(subject);
-                    if (userRepository.existsById(userId)) {
+                    Integer tokenVersion = claims.get("version", Integer.class);
+
+                    User user = userRepository.findById(userId).orElse(null);
+                    // 判断token版本是否匹配（如果改密码后版本不匹配）
+                    if (user != null && tokenVersion.equals(user.getTokenVersion())) {
+                        // 把subject的内容（String userId）设为 jwt 的 principal
+                        // 在Controller里可以通过@AuthenticationPrincipal得到当前认证用户token中principal的内容（String userId）
                         UsernamePasswordAuthenticationToken auth =
                                 new UsernamePasswordAuthenticationToken(
                                         subject, null, Collections.emptyList());
                         SecurityContextHolder.getContext().setAuthentication(auth); // 认证成功
+                    } else {
+                        SecurityContextHolder.clearContext();
                     }
                 }
             } catch (RuntimeException e) {
