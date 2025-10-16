@@ -24,6 +24,11 @@ logging:
   level:
     org.springframework.jdbc.support.JdbcTransactionManager: debug
 
+jwt:
+  token:
+    secret: "@#^&*(*&$%@!~~!ELEC5620_AI_Trip_Assistant_@#$%^&*()_+"
+    expireTime: 1800000
+
 feign:
   httpclient:
     enabled: true
