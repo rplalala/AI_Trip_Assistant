@@ -21,6 +21,7 @@ public class JwtUtils {
     private final Key key;
     private final long expireTime;
 
+    // 60分钟后认证过期
     public JwtUtils(@Value("${jwt.token.secret}") String secret,
                     @Value("${jwt.token.expireTime}") long expireTime) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -36,8 +37,8 @@ public class JwtUtils {
     public String generateJwt(String subject, Map<String, Object> claims) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
-                .setSubject(subject)
-                .addClaims(claims == null ? Map.of() : claims)
+                .setSubject(subject) // subject 是用户id (String)
+                .addClaims(claims == null ? Map.of() : claims) // claims 包括 username 和 email
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + expireTime))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -67,7 +68,7 @@ public class JwtUtils {
 
         } catch (ExpiredJwtException e) {
             throw new BusinessException("Token has expired");
-        } catch (UnsupportedJwtException | MalformedJwtException | SecurityException e) {
+        } catch (JwtException e) {
             throw new BusinessException("Invalid token");
         } catch (IllegalArgumentException e) {
             throw new BusinessException("Token is null or wrong format");
