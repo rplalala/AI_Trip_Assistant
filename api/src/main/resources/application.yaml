@@ -42,11 +42,8 @@ aws:
     bucket-name: buckets-zihang
     dir-name: elec5620-stage2
     cdn: awscdn.dingzh.cc
-<<<<<<< HEAD
     accesskeyId: ***REMOVED***
     secretAccessKey: ***REMOVED***
-=======
->>>>>>> f012760f68524d0e5a4c4c41fd50e0ce2595029d
 
 default:
   avatar-url: "https://awscdn.dingzh.cc/elec5620-stage2/avatars/default_avatar.png"
