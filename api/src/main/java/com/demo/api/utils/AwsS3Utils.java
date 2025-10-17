@@ -4,7 +4,9 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
+
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -46,13 +48,20 @@ public class AwsS3Utils {
     @Value("${aws.s3.cdn}")
     private String cdn;
 
+    @Value("${aws.s3.accesskeyId}")
+    private String accesskeyId;
+
+    @Value("${aws.s3.secretAccessKey}")
+    private String secretAccessKey;
+
     /**
      * 0. 创建 S3Client 实例
      */
     private S3Client newS3Client() {
+        AwsBasicCredentials creds = AwsBasicCredentials.create(accesskeyId, secretAccessKey);
         return S3Client.builder()
                 .region(Region.of(region))
-                .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
+                .credentialsProvider(StaticCredentialsProvider.create(creds))
                 .build();
     }
 
