@@ -14,7 +14,9 @@ spring:
       hibernate.jdbc.time_zone: UTC
   ai:
     openai:
-      api-key: ***REMOVED***
+      api-key: "***REMOVED***"
+      base-url: https://api.openai.com/v1/
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -45,7 +47,7 @@ default:
 
 openweather:
   api:
-    key: "***REMOVED***"
+    key: "${OPENWEATHER_API_KEY:change-me}"
 
 feign:
   httpclient:

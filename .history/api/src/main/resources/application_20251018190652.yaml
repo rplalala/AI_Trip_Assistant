@@ -14,7 +14,9 @@ spring:
       hibernate.jdbc.time_zone: UTC
   ai:
     openai:
-      api-key: ***REMOVED***
+      api-key: "***REMOVED***"
+      base-url: https://api.openai.com/v1/
+
   servlet:
     multipart:
       max-file-size: 10MB

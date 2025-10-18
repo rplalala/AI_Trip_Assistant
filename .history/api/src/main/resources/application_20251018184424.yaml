@@ -13,8 +13,13 @@ spring:
     properties:
       hibernate.jdbc.time_zone: UTC
   ai:
-    openai:
-      api-key: ***REMOVED***
+    google:
+      genai:
+#        api-key: "${GEMINI_API_KEY}"
+        api-key: "AIzaSyB9Bc9oN_5l7sIPgMFDFTjxWYzAN0q0hvM"
+        chat:
+          options:
+            model: "gemini-2.5-flash"
   servlet:
     multipart:
       max-file-size: 10MB
@@ -45,7 +50,7 @@ default:
 
 openweather:
   api:
-    key: "***REMOVED***"
+    key: "${OPENWEATHER_API_KEY:change-me}"
 
 feign:
   httpclient:
