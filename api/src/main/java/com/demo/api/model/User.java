@@ -4,14 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "users", schema = "public",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_user_username", columnNames = "username"),
-                @UniqueConstraint(name = "uk_user_email", columnNames = "email")
-        },
-        indexes = {
-                @Index(name = "idx_user_email", columnList = "email")
-        })
+@Table(name = "users", schema = "public", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_username", columnNames = "username"),
+        @UniqueConstraint(name = "uk_user_email", columnNames = "email")
+})
 @Getter
 @Setter
 @Builder
@@ -23,16 +19,25 @@ public class User extends BaseModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String username;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100)
     private String email;
+
+    @Column
+    private Integer age;
+
+    @Column
+    private Integer gender; //性别, 1: Male, 2: Female
 
     @Column(columnDefinition = "TEXT")
     private String avatar;
+
+    @Column(name = "token_version", nullable = false)
+    private Integer tokenVersion = 1; // 默认 1
 
 }

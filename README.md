@@ -25,7 +25,7 @@ The goal is to make travel **smart**, **resilient**, and **low-effort**.
 - Database: PostgreSQL 16 (Neon Serverless)
 - Ai Agent Model: Gemini-2.5-flash
 
- New Tech:
+ **New Tech:**
 - Spring AI https://spring.io/projects/spring-ai
 - LangGraph4j https://github.com/langgraph4j/langgraph4j
 
@@ -65,6 +65,7 @@ node --version
 ### Setup Git
 ```
 git clone https://github.sydney.edu.au/25S2-ELEC5620-Wed9-11-Group61/ELEC5620_AI_Trip_Assistant.git
+git checkout <your development branch> 
 ```
 Or you can use any other git gui client, like Github Desktop, TortoiseGit.
 
@@ -81,6 +82,18 @@ and then fill in the corresponding values for `spring.datasource.url`, `spring.d
 4. Add the API key to your environment variables with the key name `GEMINI_API_KEY`.
 
 Gemini API docs: https://ai.google.dev/gemini-api/docs/api-key#linuxmacos---bash
+
+### Setup AWS S3 Bucket
+1. Create a new S3 bucket in AWS Console.
+2. Add your bucket region to `application.yaml` aws.s3.region.
+3. Add your bucket name to `application.yaml` aws.s3.bucket-name.
+4. Add your dir name in bucket to `application.yaml` aws.s3.dir-name.
+5. Add your cdn domain to `application.yaml` aws.s3.cdn.
+6. Create a new IAM user and generate an Access Key ID and Secret Access Key.
+7. Add the Access Key ID to your environment variables with the key name `AWS_ACCESS_KEY_ID`.
+8. Add the Secret Access Key to your environment variables with the key name `AWS_SECRET_ACCESS_KEY`.
+
+AWS S3 docs: https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-configure.html
 
 ### Launch Frontend
 Make sure you're inside of `ELEC5620_AI_Trip_Assistant`
