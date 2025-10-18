@@ -1,0 +1,62 @@
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: "jdbc:postgresql://ep-snowy-sea-a7ovq2o7-pooler.ap-southeast-2.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require"
+    username: ***REMOVED***
+    password: ***REMOVED***
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  ai:
+    openai:
+      api-key: "***REMOVED***"
+      base-url: https://api.openai.com/v1/
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+logging:
+  level:
+    org.springframework.jdbc.support.JdbcTransactionManager: debug
+
+jwt:
+  token:
+    secret: "@#^&*(*&$%@!~~!ELEC5620_AI_Trip_Assistant_@#$%^&*()_+"
+    expireTime: 3600000
+
+aws:
+  s3:
+    region: ap-southeast-2
+    bucket-name: buckets-zihang
+    dir-name: elec5620-stage2
+    cdn: awscdn.dingzh.cc
+    accesskeyId: ***REMOVED***
+    secretAccessKey: ***REMOVED***
+
+default:
+  avatar-url: "https://awscdn.dingzh.cc/elec5620-stage2/avatars/default_avatar.png"
+
+openweather:
+  api:
+    key: "${OPENWEATHER_API_KEY:change-me}"
+
+feign:
+  httpclient:
+    enabled: true
+  okhttp:
+    enabled: false
+  client:
+    config:
+      default:
+        connectTimeout: 2000
+        readTimeout: 2000
+        loggerLevel: BASIC
