@@ -14,7 +14,9 @@ spring:
       hibernate.jdbc.time_zone: UTC
   ai:
     openai:
-      api-key: ***REMOVED***
+      api-key: "***REMOVED***"
+      base-url: https://api.openai.com/v1/
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -58,5 +60,3 @@ feign:
         connectTimeout: 2000
         readTimeout: 2000
         loggerLevel: BASIC
-booking:
-  base-url: http://localhost:8092/api/booking

@@ -12,9 +12,7 @@ spring:
     open-in-view: false
     properties:
       hibernate.jdbc.time_zone: UTC
-  ai:
-    openai:
-      api-key: ***REMOVED***
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -47,6 +45,10 @@ openweather:
   api:
     key: "***REMOVED***"
 
+openai:
+  api-key: sk-xxxx
+  base-url: https://api.openai.com/v1/
+
 feign:
   httpclient:
     enabled: true
@@ -58,5 +60,3 @@ feign:
         connectTimeout: 2000
         readTimeout: 2000
         loggerLevel: BASIC
-booking:
-  base-url: http://localhost:8092/api/booking

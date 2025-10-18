@@ -35,8 +35,7 @@ public class AuthConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers("/api/register", "/api/login", "/api/trip/test-generate").permitAll()
+                        .requestMatchers("/api/register", "/api/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
