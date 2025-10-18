@@ -31,9 +31,10 @@ public class AITestController {
                 .content();
     }
 
-    @GetMapping("/testexternal")
-    public String testExternal() {
-        // test connecting External service
-        return bookingClient.ping();
-    }
+    // TODO: Need to modify this test after BookingClient is ready
+    // @GetMapping("/testexternal")
+    // public String testExternal() {
+    //     // test connecting External service
+    //     return bookingClient.ping();
+    // }
 }
