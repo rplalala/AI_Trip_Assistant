@@ -59,3 +59,6 @@ feign:
         connectTimeout: 2000
         readTimeout: 2000
         loggerLevel: BASIC
+
+booking:
+  base-url: http://localhost:8092/api/booking
