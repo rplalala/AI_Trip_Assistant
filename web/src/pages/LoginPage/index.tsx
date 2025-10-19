@@ -1,4 +1,4 @@
-import { Button, Form, Input, message, Tabs } from 'antd';
+import { Button, Form, Input, Tabs, App as AntdApp } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { login, register, type LoginPayload, type RegisterPayload } from '../../api/user';
@@ -18,11 +18,21 @@ type RegisterFormFieldType = {
 export default function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { setStatus } = useAuth();
-    const from = (location.state as any)?.from?.pathname || '/trips';
+    const { setStatus, refreshProfile } = useAuth();
+    const from = (location.state)?.from?.pathname || '/';
+    const { message } = AntdApp.useApp();
 
     const [loadingLogin, setLoadingLogin] = useState(false);
     const [loadingReg, setLoadingReg] = useState(false);
+
+    function afterLogin(token: string) {
+        setStatus('authenticated');
+        localStorage.setItem('token', token);
+        refreshProfile()
+            .then(() => {
+                navigate(from, { replace: true });
+            })
+    }
 
     function onLogin(values: FieldType) {
         setLoadingLogin(true);
@@ -31,15 +41,10 @@ export default function LoginPage() {
             password: values.password,
         }
         login(loginPayload)
-            .then((token) => {
-                setStatus('authenticated');
-                localStorage.setItem('token', token);
-                navigate(from, { replace: true });
-            })
+            .then(afterLogin)
             .catch((err: Error) => {
                 console.log(err)
-                alert(err.message) // temp
-                message.error(err.message || 'Login failed.'); //todo
+                message.error(err.message || 'Login failed.');
             })
             .finally(() => {
                 setLoadingLogin(false);
@@ -58,15 +63,10 @@ export default function LoginPage() {
         register(registerPayload)
             .then(() => {
                 login(registerPayload)
-                    .then((token) => {
-                        setStatus('authenticated');
-                        localStorage.setItem('token', token);
-                        navigate(from, { replace: true });
-                    })
+                    .then(afterLogin)
             })
             .catch((err: any) => {
-                alert(err.message) // temp
-                message.error(err.message || 'Register failed.');//todo
+                message.error(err.message || 'Register failed.');
             })
             .finally(() => {
                 setLoadingReg(false);
@@ -126,13 +126,6 @@ export default function LoginPage() {
                             autoComplete="off"
                         >
                             <Form.Item<RegisterFormFieldType>
-                                label="Name"
-                                name="username"
-                                rules={[{ required: true, message: 'Please enter your name' }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                            <Form.Item<RegisterFormFieldType>
                                 label="Email"
                                 name="email"
                                 rules={[{ type: 'email', required: true, message: 'Please input your email!' }]}
@@ -141,9 +134,40 @@ export default function LoginPage() {
                             </Form.Item>
 
                             <Form.Item<RegisterFormFieldType>
+                                label="Name"
+                                name="username"
+                                rules={[{ required: true, message: 'Please enter your name' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+
+                            <Form.Item<RegisterFormFieldType>
                                 label="Password"
                                 name="password"
                                 rules={[{ required: true, message: 'Please input your password!' }]}
+                            >
+                                <Input.Password />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="confirm"
+                                label="Confirm Password"
+                                dependencies={['password']}
+                                hasFeedback
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Please confirm your password!',
+                                    },
+                                    ({ getFieldValue }) => ({
+                                        validator(_, value) {
+                                            if (!value || getFieldValue('password') === value) {
+                                                return Promise.resolve();
+                                            }
+                                            return Promise.reject(new Error('The new password that you entered do not match!'));
+                                        },
+                                    }),
+                                ]}
                             >
                                 <Input.Password />
                             </Form.Item>

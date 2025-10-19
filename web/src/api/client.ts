@@ -31,8 +31,8 @@ export async function apiRequest<T>(url: string, options: RequestOptions = {}): 
     if (!response.ok) {
         let errorMessage = response.statusText;
         try {
-            const data = await response.json();
-            errorMessage = data.message || JSON.stringify(data);
+            const data: ApiResp<T> = await response.json();
+            errorMessage = data.msg || JSON.stringify(data);
         } catch {
             // ignore
         }
