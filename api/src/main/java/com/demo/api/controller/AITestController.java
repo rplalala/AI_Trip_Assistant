@@ -20,7 +20,7 @@ public class AITestController {
 
     @GetMapping("/test")
     public String ping() {
-        // 测试让模型说一句话
+        // Test: let the model say a sentence
         return chat
                 .prompt()
                 .user(

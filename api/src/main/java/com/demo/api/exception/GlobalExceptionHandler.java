@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 /**
- * 全局异常处理器
+ * Global exception handler
  */
 @Slf4j
 @RestControllerAdvice
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     private record ExternalError(String code, String message) {}
 
     /**
-     * 处理所有未捕获的异常
+     * Handle all uncaught exceptions
      */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理业务异常
+     * Handle business exceptions
      */
     @ExceptionHandler(BusinessException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理参数校验异常
+     * Handle parameter validation exceptions
      */
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理 @Valid 校验失败异常
+     * Handle @Valid validation failures
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理认证异常
+     * Handle authentication exceptions
      */
     @ExceptionHandler(AuthException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理权限异常
+     * Handle authorization exceptions
      */
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)

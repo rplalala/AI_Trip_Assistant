@@ -13,9 +13,9 @@ public class UpdatePasswordDTO {
 
     @NotBlank
     @Size(min=6,max=64)
-    private String oldPassword; // 旧密码 6-64位
+    private String oldPassword; // Old password, 6-64 chars
 
     @NotBlank
     @Size(min=6,max=64)
-    private String newPassword; // 新密码 6-64位
+    private String newPassword; // New password, 6-64 chars
 }

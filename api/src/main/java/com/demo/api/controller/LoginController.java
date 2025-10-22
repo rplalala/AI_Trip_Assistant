@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 1. 登录/注册
- * 实现用户注册，登录，认证功能
+ * 1. Login/Register
+ * Implement user registration, login, and authentication.
  */
 @RestController
 @RequestMapping("/api")
@@ -23,11 +23,11 @@ public class LoginController {
     private final UserService userService;
 
     /**
-     * 登录
-     * 验证账号与密码，登录成功后返回 JWT令牌
+     * Login
+     * Verify account and password, return JWT token upon success.
      *
-     * @param loginDTO 登录信息
-     * @return JWT令牌
+     * @param loginDTO Login information
+     * @return JWT token
      */
     @PostMapping("/login")
     public ApiRespond<String> login(@Valid @RequestBody LoginDTO loginDTO) {
@@ -35,10 +35,10 @@ public class LoginController {
     }
 
     /**
-     * 注册
-     * 创建新用户
+     * Register
+     * Create a new user.
      *
-     * @param registerDTO 注册信息
+     * @param registerDTO Registration information
      * @return ——
      */
     @PostMapping("/register")

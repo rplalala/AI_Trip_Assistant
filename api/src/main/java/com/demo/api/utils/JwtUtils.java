@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * JWT 工具类
+ * JWT utility class
  */
 @Component
 @Slf4j
@@ -21,7 +21,7 @@ public class JwtUtils {
     private final Key key;
     private final long expireTime;
 
-    // 60分钟后认证过期
+    // Authentication expires after 60 minutes
     public JwtUtils(@Value("${jwt.token.secret}") String secret,
                     @Value("${jwt.token.expireTime}") long expireTime) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -29,7 +29,7 @@ public class JwtUtils {
     }
 
     /**
-     * 生成 JWT
+     * Generate JWT
      * @param subject
      * @param claims
      * @return
@@ -37,8 +37,8 @@ public class JwtUtils {
     public String generateJwt(String subject, Map<String, Object> claims) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
-                .setSubject(subject) // subject 是用户id (String)
-                .addClaims(claims == null ? Map.of() : claims) // claims 包括 username 和 email
+                .setSubject(subject) // subject is the user id (String)
+                .addClaims(claims == null ? Map.of() : claims) // claims include username and email
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + expireTime))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -46,7 +46,7 @@ public class JwtUtils {
     }
 
     /**
-     * 解析 JWT
+     * Parse JWT
      * @param token
      * @return
      */
