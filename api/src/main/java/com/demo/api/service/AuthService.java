@@ -1,0 +1,13 @@
+package com.demo.api.service;
+
+import com.demo.api.dto.LoginDTO;
+import com.demo.api.dto.RegisterDTO;
+
+public interface AuthService {
+    String login(LoginDTO loginDTO);
+    void register(RegisterDTO registerDTO);
+    void sendVerifyEmail(Long userId, String email);
+    void verifyEmailByToken(String token);
+    void sendForgotPasswordEmail(String email);
+    void resetPassword(String token, String newPassword);
+}
