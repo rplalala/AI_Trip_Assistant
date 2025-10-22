@@ -5,7 +5,9 @@ import RequireAuth from './routes/RequireAuth';
 import HomePage from './pages/HomePage';
 import CreateTripPage from './pages/CreateTripPage';
 import TripsPage from './pages/TripsPage';
+import TripOverviewPage from './pages/TripOverviewPage';
 import LoginPage from './pages/LoginPage';
+import UserProfilePage from './pages/UserProfilePage';
 
 
 export default function App() {
@@ -16,6 +18,11 @@ export default function App() {
                     <Routes>
                         <Route path='/' element={<HomePage />} />
                         <Route path='/login' element={<LoginPage />} />
+                        <Route path='/profile' element={
+                            <RequireAuth>
+                                <UserProfilePage />
+                            </RequireAuth>
+                        } />
                         <Route path='/trips/new' element={
                             <RequireAuth>
                                 <CreateTripPage />
@@ -24,6 +31,11 @@ export default function App() {
                         <Route path='/trips' element={
                             <RequireAuth>
                                 <TripsPage />
+                            </RequireAuth>
+                        } />
+                        <Route path='/trips/:tripId' element={
+                            <RequireAuth>
+                                <TripOverviewPage />
                             </RequireAuth>
                         } />
                     </Routes>
