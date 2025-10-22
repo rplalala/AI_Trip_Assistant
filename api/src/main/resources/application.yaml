@@ -47,6 +47,9 @@ openweather:
   api:
     key: "***REMOVED***"
 
+unsplash:
+  access-key: ***REMOVED***
+
 feign:
   httpclient:
     enabled: true

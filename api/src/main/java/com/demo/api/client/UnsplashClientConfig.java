@@ -1,0 +1,21 @@
+package com.demo.api.client;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Configuration
+public class UnsplashClientConfig {
+
+    @Value("${unsplash.access-key}")
+    String accessKey;
+
+    @Bean
+    public WebClient unsplashWebClient() {
+        return WebClient.builder()
+                .baseUrl("https://api.unsplash.com")
+                .defaultHeader("Authorization", "Client-ID " + accessKey)
+                .build();
+    }
+}

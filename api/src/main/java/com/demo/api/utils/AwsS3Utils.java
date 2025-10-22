@@ -177,7 +177,9 @@ public class AwsS3Utils {
                 }
                 bos.write(buf, 0, n);
             }
-            return upload(new ByteArrayInputStream(bos.toByteArray()), "temp" + suffix, false);
+            String s3Url = upload(new ByteArrayInputStream(bos.toByteArray()), "temp" + suffix, false);
+            log.info("Upload from {} to {}", imageUrl, s3Url);
+            return s3Url;
         }
     }
 
