@@ -40,3 +40,19 @@ export async function logout() {
 export async function getUserProfile() {
     return apiRequest<UserProfileResponse>('/api/users/profile');
 }
+
+export async function forgotPassword(email: string) {
+    return apiRequest<void>(`/api/forgot-password?email=${encodeURIComponent(email)}` , { method: 'POST' });
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+    return apiRequest<void>(`/api/reset-password?token=${encodeURIComponent(token)}&newPassword=${encodeURIComponent(newPassword)}`, { method: 'POST' });
+}
+
+export async function verifyEmail(token: string) {
+    return apiRequest<string>(`/api/verify-email?token=${encodeURIComponent(token)}`);
+}
+
+export async function resendVerifyEmail(email: string) {
+    return apiRequest<void>(`/api/resend-verify-email?email=${encodeURIComponent(email)}`, { method: 'POST' });
+}

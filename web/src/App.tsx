@@ -8,6 +8,10 @@ import TripsPage from './pages/TripsPage';
 import TripOverviewPage from './pages/TripOverviewPage';
 import LoginPage from './pages/LoginPage';
 import UserProfilePage from './pages/UserProfilePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import VerifyEmailPendingPage from './pages/VerifyEmailPendingPage';
 
 
 export default function App() {
@@ -18,6 +22,10 @@ export default function App() {
                     <Routes>
                         <Route path='/' element={<HomePage />} />
                         <Route path='/login' element={<LoginPage />} />
+                        <Route path='/forgot-password' element={<ForgotPasswordPage />} />
+                        <Route path='/reset-password' element={<ResetPasswordPage />} />
+                        <Route path='/verify-email' element={<VerifyEmailPage />} />
+                        <Route path='/verify-email-pending' element={<VerifyEmailPendingPage />} />
                         <Route path='/profile' element={
                             <RequireAuth>
                                 <UserProfilePage />

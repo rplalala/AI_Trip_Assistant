@@ -7,7 +7,8 @@ public interface AuthService {
     String login(LoginDTO loginDTO);
     void register(RegisterDTO registerDTO);
     void sendVerifyEmail(Long userId, String email);
-    void verifyEmailByToken(String token);
+    String verifyEmailByToken(String token);
     void sendForgotPasswordEmail(String email);
     void resetPassword(String token, String newPassword);
+    void resendVerifyEmail(String email);
 }

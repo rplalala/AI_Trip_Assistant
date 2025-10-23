@@ -106,7 +106,7 @@ export default function TripsPage(): JSX.Element {
         <Button
           type="default"
           icon={<PlusOutlined />}
-          onClick={() => navigate("/trips/create")}
+          onClick={() => navigate("/trips/new")}
         >
           Create Trip
         </Button>

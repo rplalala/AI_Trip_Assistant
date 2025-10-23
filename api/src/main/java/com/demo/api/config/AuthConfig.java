@@ -36,7 +36,8 @@ public class AuthConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers("/api/register", "/api/login", "/api/verify-email","/api/forgot-password", "/api/reset-password","/api/trip/test-generate").permitAll()
+                        .requestMatchers("/api/register", "/api/login", "/api/verify-email","/api/forgot-password",
+                                "/api/reset-password", "/api/resend-verify-email", "/api/trip/test-generate").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

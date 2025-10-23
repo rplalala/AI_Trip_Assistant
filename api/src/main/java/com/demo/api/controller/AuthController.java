@@ -51,9 +51,9 @@ public class AuthController {
      * @return
      */
     @GetMapping("/verify-email")
-    public ApiRespond<Void> verifyEmail(@RequestParam String token) {
-        authService.verifyEmailByToken(token);
-        return ApiRespond.success();
+    public ApiRespond<String> verifyEmail(@RequestParam String token) {
+        String jwt = authService.verifyEmailByToken(token);
+        return ApiRespond.success(jwt);
     }
 
     /**
@@ -79,6 +79,18 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ApiRespond<Void> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
         authService.resetPassword(token, newPassword);
+        return ApiRespond.success();
+    }
+
+    /**
+     * Resend verification email
+     * user login but email exists and not verified
+     * @param email
+     * @return
+     */
+    @PostMapping("/resend-verify-email")
+    public ApiRespond<Void> resendVerifyEmail(@RequestParam String email) {
+        authService.resendVerifyEmail(email);
         return ApiRespond.success();
     }
 

@@ -59,10 +59,9 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())){
             throw new AuthException("Incorrect email or password");
         }
-
-        // un-verified email cannot login
+        // if not verified, frontend will resend verify email
         if (Boolean.FALSE.equals(user.getEmailVerified())) {
-            throw new AuthException("Email not verified, please register again");
+            throw new AuthException("Email not verified");
         }
 
         // Put userId into the token subject; put username and email into token claims
@@ -76,37 +75,28 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * Register
-     * email exists but not verified: resend verify email
-     * email exists and verified: throw exception
-     * email not exists: create new user and send verify email
+     * only allow creating new users. If email exists, reject.
      * @param registerDTO
      */
     @Override
     @Transactional
     public void register(RegisterDTO registerDTO) {
-        userRepository.findByEmail(registerDTO.getEmail()).ifPresentOrElse(existingUser -> {
-            if (Boolean.FALSE.equals(existingUser.getEmailVerified())) {
-                // exist but not verified: don't register again just send verify email
-                sendVerifyEmail(existingUser.getId(), existingUser.getEmail());
-            } else {
-                throw new BusinessException("email exists");
-            }
-        }, () -> {
-            if (userRepository.existsByUsername(registerDTO.getUsername())){
-                throw new BusinessException("username exists");
-            }
-            // first register
-            User user = User.builder()
-                    .username(registerDTO.getUsername())
-                    .email(registerDTO.getEmail())
-                    .password(passwordEncoder.encode(registerDTO.getPassword()))
-                    .avatar(DEFAULT_AVATAR)
-                    .tokenVersion(1)
-                    .emailVerified(false)
-                    .build();
-            userRepository.save(user);
-            sendVerifyEmail(user.getId(), user.getEmail());
-        });
+        if (userRepository.existsByEmail(registerDTO.getEmail())) {
+            throw new BusinessException("email exists");
+        }
+        if (userRepository.existsByUsername(registerDTO.getUsername())){
+            throw new BusinessException("username exists");
+        }
+        User user = User.builder()
+                .username(registerDTO.getUsername())
+                .email(registerDTO.getEmail())
+                .password(passwordEncoder.encode(registerDTO.getPassword()))
+                .avatar(DEFAULT_AVATAR)
+                .tokenVersion(1)
+                .emailVerified(false)
+                .build();
+        userRepository.save(user);
+        sendVerifyEmail(user.getId(), user.getEmail());
     }
 
     // ---------------- Email Verification ---------------- //
@@ -145,18 +135,34 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * Verify email by token and set emailVerified to true
-     * trigger: user click verify email link in email
-     * @param token
+     * Resend verify email if user exists and is not verified
+     * @param email
      */
     @Override
     @Transactional
-    public void verifyEmailByToken(String token) {
+    public void resendVerifyEmail(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (Boolean.FALSE.equals(user.getEmailVerified())) {
+                sendVerifyEmail(user.getId(), user.getEmail());
+            }
+        });
+    }
+
+    /**
+     * Verify email by token, set emailVerified to true and return a jwt token
+     * trigger: user click verify email link in email
+     * @param token email verify token
+     * @return jwt token
+     */
+    @Override
+    @Transactional
+    public String verifyEmailByToken(String token) {
         EmailToken emailToken = emailTokenRepository
                 .findByVerificationTokenAndUsedIsFalseAndExpireTimeAfter(token, Instant.now())
                 .orElseThrow(() -> new BusinessException("Invalid or expired token"));
 
-        User user = userRepository.findById(emailToken.getUserId()).orElseThrow(() -> new BusinessException("User not found"));
+        User user = userRepository.findById(emailToken.getUserId())
+                .orElseThrow(() -> new BusinessException("User not found"));
         user.setEmailVerified(true);
         userRepository.save(user);
         log.info("User {} email verified", user.getUsername());
@@ -164,6 +170,13 @@ public class AuthServiceImpl implements AuthService {
         emailToken.setUsed(true);
         emailTokenRepository.save(emailToken);
         log.info("Token {} used", token);
+
+        return jwtUtils.generateJwt(
+                user.getId().toString(),
+                Map.of("username", user.getUsername(),
+                        "email", user.getEmail(),
+                        "version", user.getTokenVersion())
+        );
     }
 
     /**
@@ -215,6 +228,12 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BusinessException("User not found"));
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setTokenVersion(user.getTokenVersion() + 1);
+
+        if (Boolean.FALSE.equals(user.getEmailVerified())) {
+            user.setEmailVerified(true);
+            emailTokenRepository.deleteByUserIdAndVerificationTokenIsNotNullAndUsedIsFalse(user.getId());
+        }
+
         userRepository.save(user);
         log.info("User {} password reset", user.getUsername());
 
