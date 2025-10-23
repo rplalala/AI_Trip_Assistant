@@ -1,7 +1,7 @@
-import { Button, Form, Input, Tabs, App as AntdApp, Flex, Card, Typography } from 'antd'
+import { Button, Form, Input, Tabs, App as AntdApp, Flex, Card, Typography, Modal } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { login, register, type LoginPayload, type RegisterPayload } from '../../api/user';
+import { login, register, resendVerifyEmail, type LoginPayload, type RegisterPayload } from '../../api/user';
 import { useState } from 'react'
 import './index.css'
 
@@ -20,7 +20,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { setStatus, refreshProfile } = useAuth();
-    const from = (location.state)?.from?.pathname || '/';
+    const from = (location.state)?.from?.pathname || '/trips';
     const { message } = AntdApp.useApp();
 
     const [loadingLogin, setLoadingLogin] = useState(false);
@@ -45,7 +45,28 @@ export default function LoginPage() {
             .then(afterLogin)
             .catch((err: Error) => {
                 console.log(err)
-                message.error(err.message || 'Login failed.');
+                if (err.message.includes('Email not verified')) {
+                    Modal.confirm({
+                        title: 'Email not verified',
+                        content: 'Your email has not been verified. Please click "Resend" to resend the verification email.',
+                        okText: 'Resend',
+                        cancelText: 'Cancel',
+                        centered: true,
+                        maskClosable: false,
+                        keyboard: false,
+                        onOk: async () => {
+                            try{
+                                await resendVerifyEmail(values.email);
+                                message.success('Verification email resent successfully! Please check your email.');
+                                navigate('/verify-email-pending?email=' + encodeURIComponent(values.email));
+                            } catch (e: any) {
+                                message.error(e.message || 'Failed to resend verification email.');
+                            }
+                        },
+                    });
+                } else {
+                    message.error(err.message || 'Login failed.');
+                }
             })
             .finally(() => {
                 setLoadingLogin(false);
@@ -63,8 +84,7 @@ export default function LoginPage() {
 
         register(registerPayload)
             .then(() => {
-                login(registerPayload)
-                    .then(afterLogin)
+                navigate('/verify-email-pending?email=' + encodeURIComponent(values.email));
             })
             .catch((err: any) => {
                 message.error(err.message || 'Register failed.');
@@ -104,6 +124,12 @@ export default function LoginPage() {
                     Sign in
                 </Button>
             </Form.Item>
+
+            <div style={{ textAlign: 'center' }}>
+                <Button type="link" onClick={() => navigate('/forgot-password')}>
+                    Forgot password?
+                </Button>
+            </div>
         </Form>
     );
 

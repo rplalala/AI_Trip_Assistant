@@ -1,6 +1,7 @@
 package com.demo.api.controller;
 
 import com.demo.api.ApiRespond;
+import com.demo.api.dto.DeleteAccountDTO;
 import com.demo.api.dto.ProfileDTO;
 import com.demo.api.dto.UpdatePasswordDTO;
 import com.demo.api.service.UserService;
@@ -61,6 +62,19 @@ public class ProfileController {
             return ApiRespond.error("New password cannot be the same as old password");
         }
         userService.updatePassword(Long.valueOf(userId), passwordDTO);
+        return ApiRespond.success();
+    }
+
+    /**
+     * Delete user account
+     * @param userId
+     * @param deleteAccountDTO
+     * @return
+     */
+    @DeleteMapping
+    public ApiRespond<Void> deleteUser(@AuthenticationPrincipal String userId,
+                                       @RequestBody DeleteAccountDTO deleteAccountDTO){
+        userService.deleteUser(Long.valueOf(userId), deleteAccountDTO);
         return ApiRespond.success();
     }
 

@@ -1,7 +1,11 @@
-import React, { useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useMemo, useRef } from "react";
+import {useParams, Link, useNavigate} from "react-router-dom";
+import {deleteUserAccount } from "../../api/user.ts";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import {
   Breadcrumb,
+  Modal,
+  Alert,
   Card,
   Menu,
   Tabs,
@@ -47,7 +51,10 @@ type LeftMenuKey = "plan" | "itinerary" | "collaborate" | "budget" | "documents"
 
 // ---------- 组件 ----------
 export default function UserProfile(): JSX.Element {
+  const navigate = useNavigate();
+  const formRef = useRef<any>(null);
   const { tripId } = useParams<RouteParams>();
+  const { setStatus, setUser } = useAuth();
 
   // 仅用于演示：把 tripId 变成可读名字（真实项目从接口拿）
   const tripName = useMemo<string>(() => {
@@ -94,6 +101,51 @@ export default function UserProfile(): JSX.Element {
     } catch {
       // 校验失败忽略
     }
+  };
+
+  const deleteAccount = async () => {
+      Modal.confirm({
+          title: 'Delete account',
+          content: (
+              <Form ref={formRef} layout="vertical">
+                  <Alert
+                      type="warning"
+                      showIcon
+                      style={{ marginBottom: 12 }}
+                      message="This action is irreversible. All your data will be permanently deleted."
+                  />
+                  <Form.Item
+                      name="password"
+                      label="Confirm your password"
+                      rules={[{ required: true, message: 'Please enter your password' }]}
+                  >
+                      <Input.Password placeholder="Password" autoFocus />
+                  </Form.Item>
+              </Form>
+          ),
+          okText: 'Delete',
+          cancelText: 'Cancel',
+          okButtonProps: { danger: true },
+          centered: true,
+          maskClosable: false,
+          onOk: async () => {
+              try {
+                  await formRef.current?.validateFields();
+                  const pwd = formRef.current?.getFieldValue('password');
+
+                  await deleteUserAccount({ verifyPassword: pwd });
+                  localStorage.removeItem('token');
+                  setUser(null);
+                  setStatus('unauthenticated');
+                  message.success('Account deleted');
+                  navigate('/login', { replace: true });
+
+              } catch (e) {
+                  if (e instanceof Error) message.error(e.message);
+                  throw e;
+              }
+          },
+      });
   };
 
   const leftMenuItems: MenuProps["items"] = [
@@ -216,6 +268,12 @@ export default function UserProfile(): JSX.Element {
               Change Password
             </Button>
           </Form>
+
+            <Divider />
+
+            <Button type="primary" onClick={deleteAccount}>
+                Delete Account
+            </Button>
         </>
       ),
     },

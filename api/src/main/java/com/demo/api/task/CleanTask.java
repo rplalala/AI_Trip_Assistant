@@ -1,6 +1,7 @@
 package com.demo.api.task;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.demo.api.repository.EmailTokenRepository;
 import com.demo.api.repository.UserRepository;
 import com.demo.api.utils.AwsS3Utils;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -19,9 +21,10 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class FileCleanTask {
+public class CleanTask {
     private final AwsS3Utils awsS3Utils;
     private final UserRepository userRepository;
+    private final EmailTokenRepository emailTokenRepository;
 
     @Value("${aws.s3.dir-name}")
     private String dirName;
@@ -33,8 +36,8 @@ public class FileCleanTask {
      */
     // @Scheduled(cron = "10/10 * * * * *") // test every 10 seconds
     @Scheduled(cron = "0 0 2 * * *")
-    public void clean() throws Exception {
-        log.warn("File clean task started...");
+    public void fileClean() throws Exception {
+        log.info("File clean task started...");
         // Get all user avatar URLs from the database
         List<String> dbFileUrls =  userRepository.findAllAvatar();
         List<String> dbFormatUrls = dbFileUrls.stream().map(url -> {
@@ -64,6 +67,15 @@ public class FileCleanTask {
         } else {
             log.info("No files to delete");
         }
-        log.warn("File clean task finished...");
+        log.info("File clean task finished...");
+    }
+
+    /**
+     * Clean expired email tokens every day at 2:00 AM.
+     */
+    @Scheduled(cron = "0 0 2 * * *")
+    public void cleanup() {
+        long n = emailTokenRepository.deleteByExpireTimeBefore(Instant.now());
+        log.info("cleaned {} tokens", n);
     }
 }

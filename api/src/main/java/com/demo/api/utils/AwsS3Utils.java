@@ -1,10 +1,10 @@
 package com.demo.api.utils;
 
 import cn.hutool.core.util.ObjectUtil;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -28,16 +28,31 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * AWS S3 utility class (@Value-injected configuration)
+ * AWS S3 utils
  * See AWS SDK for Java v2 official documentation
  * https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_s3_code_examples.html
  */
 @Slf4j
 @Component
 public class AwsS3Utils {
-
-    @Value("${aws.s3.region}")
-    private String region;
+    private final S3Client s3Client;
+    public AwsS3Utils(@Value("${aws.accesskeyId}") String accesskeyId,
+                      @Value("${aws.secretAccessKey}") String secretAccessKey,
+                      @Value("${aws.region}") String region) {
+        AwsBasicCredentials creds = AwsBasicCredentials.create(accesskeyId, secretAccessKey);
+        this.s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(creds))
+                .build();
+    }
+    @PreDestroy
+    public void close() {
+        try {
+            s3Client.close();
+        } catch (Exception e) {
+            log.debug("Ignore s3Client close error", e);
+        }
+    }
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
@@ -48,20 +63,6 @@ public class AwsS3Utils {
     @Value("${aws.s3.cdn}")
     private String cdn;
 
-    @Value("${aws.s3.accesskeyId}")
-    private String accesskeyId;
-
-    @Value("${aws.s3.secretAccessKey}")
-    private String secretAccessKey;
-
-    private S3Client newS3Client() {
-        AwsBasicCredentials creds = AwsBasicCredentials.create(accesskeyId, secretAccessKey);
-        return S3Client.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(creds))
-                .build();
-    }
-
     /**
      * 1. S3 single file upload
      *
@@ -70,8 +71,6 @@ public class AwsS3Utils {
      * @return Return URL (https://{cdn}/{dir/yyyy/MM/xxx.png})
      */
     public String upload(InputStream in, String originalFilename, boolean isAvatar) throws Exception {
-        S3Client s3 = newS3Client();
-
         // If it is an avatar, put it under elec5620-stage2/avatars
         String baseDir = isAvatar ? (dirName + "/avatars") : dirName;
 
@@ -95,15 +94,13 @@ public class AwsS3Utils {
             default -> "application/octet-stream"; // Default type when file type is unknown
         };
 
-        try (s3) {
-            PutObjectRequest putReq = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(objectKey)
-                    .contentType(contentType)
-                    .build();
+        PutObjectRequest putReq = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .contentType(contentType)
+                .build();
 
-            s3.putObject(putReq, RequestBody.fromBytes(bytes));
-        }
+        s3Client.putObject(putReq, RequestBody.fromBytes(bytes));
 
         return "https://" + cdn + "/" + objectKey;
     }
@@ -187,24 +184,22 @@ public class AwsS3Utils {
      * @param size    Maximum number to list (up to 1000)
      */
     public List<String> listFiles(String preFix, int size) throws Exception {
-        S3Client s3 = newS3Client();
         if (size > 1000) {
             size = 1000;
             log.warn("A maximum of 1000 files is allowed, it has been automatically adjusted to 1000");
         }
 
         List<String> fileList = new ArrayList<>();
-        try (s3) {
-            ListObjectsV2Response resp = s3.listObjectsV2(ListObjectsV2Request.builder()
-                    .bucket(bucketName)
-                    .prefix(preFix)
-                    .maxKeys(size)
-                    .build());
-            List<S3Object> contents = resp.contents();
-            if (ObjectUtil.isNotEmpty(contents)) {
-                fileList = contents.stream().map(S3Object::key).toList();
-            }
+        ListObjectsV2Response resp = s3Client.listObjectsV2(ListObjectsV2Request.builder()
+                .bucket(bucketName)
+                .prefix(preFix)
+                .maxKeys(size)
+                .build());
+        List<S3Object> contents = resp.contents();
+        if (ObjectUtil.isNotEmpty(contents)) {
+            fileList = contents.stream().map(S3Object::key).toList();
         }
+
         return fileList;
     }
 
@@ -215,7 +210,6 @@ public class AwsS3Utils {
      * @param pageSize Page size (max 1000)
      */
     public List<String> listPageAllFiles(String preFix, int pageSize) throws Exception {
-        S3Client s3 = newS3Client();
         if (pageSize > 1000) {
             pageSize = 1000;
             log.warn("A maximum of 1000 files every time is allowed, it has been automatically adjusted to 1000");
@@ -224,24 +218,23 @@ public class AwsS3Utils {
         List<String> fileList = new ArrayList<>();
         String continuationToken = null;
 
-        try (s3) {
-            ListObjectsV2Response resp;
-            do {
-                var builder = ListObjectsV2Request.builder()
-                        .bucket(bucketName)
-                        .prefix(preFix)
-                        .maxKeys(pageSize);
-                if (continuationToken != null) builder.continuationToken(continuationToken);
+        ListObjectsV2Response resp;
+        do {
+            var builder = ListObjectsV2Request.builder()
+                    .bucket(bucketName)
+                    .prefix(preFix)
+                    .maxKeys(pageSize);
+            if (continuationToken != null) builder.continuationToken(continuationToken);
 
-                resp = s3.listObjectsV2(builder.build());
+            resp = s3Client.listObjectsV2(builder.build());
 
-                List<S3Object> contents = resp.contents();
-                if (ObjectUtil.isNotEmpty(contents)) {
-                    fileList.addAll(contents.stream().map(S3Object::key).toList());
-                }
-                continuationToken = resp.nextContinuationToken();
-            } while (resp.isTruncated());
-        }
+            List<S3Object> contents = resp.contents();
+            if (ObjectUtil.isNotEmpty(contents)) {
+                fileList.addAll(contents.stream().map(S3Object::key).toList());
+            }
+            continuationToken = resp.nextContinuationToken();
+        } while (resp.isTruncated());
+
         return fileList;
     }
 
@@ -251,13 +244,10 @@ public class AwsS3Utils {
      * @param objectKey File key (without bucket name), e.g.: elec5620-stage2/2025/06/xxx.png
      */
     public void deleteFile(String objectKey) throws Exception {
-        S3Client s3 = newS3Client();
-        try (s3) {
-            s3.deleteObject(DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(objectKey)
-                    .build());
-        }
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .build());
     }
 
     /**
@@ -266,23 +256,20 @@ public class AwsS3Utils {
      * @param objectKeys List of keys to delete
      */
     public void batchDeleteFiles(List<String> objectKeys) throws Exception {
-        S3Client s3 = newS3Client();
-        try (s3) {
-            for (int i = 0; i < objectKeys.size(); i += 1000) {
-                int end = Math.min(i + 1000, objectKeys.size());
-                List<String> subList = objectKeys.subList(i, end);
-                log.info("Batch deleting files, current batch: {}, file count: {}", (i / 1000) + 1, subList.size());
+        for (int i = 0; i < objectKeys.size(); i += 1000) {
+            int end = Math.min(i + 1000, objectKeys.size());
+            List<String> subList = objectKeys.subList(i, end);
+            log.info("Batch deleting files, current batch: {}, file count: {}", (i / 1000) + 1, subList.size());
 
-                List<ObjectIdentifier> ids = new ArrayList<>(subList.size());
-                for (String key : subList) {
-                    ids.add(ObjectIdentifier.builder().key(key).build());
-                }
-
-                s3.deleteObjects(DeleteObjectsRequest.builder()
-                        .bucket(bucketName)
-                        .delete(Delete.builder().objects(ids).quiet(true).build())
-                        .build());
+            List<ObjectIdentifier> ids = new ArrayList<>(subList.size());
+            for (String key : subList) {
+                ids.add(ObjectIdentifier.builder().key(key).build());
             }
+
+            s3Client.deleteObjects(DeleteObjectsRequest.builder()
+                    .bucket(bucketName)
+                    .delete(Delete.builder().objects(ids).quiet(true).build())
+                    .build());
         }
     }
 }

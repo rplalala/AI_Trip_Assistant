@@ -37,7 +37,12 @@ public class User extends BaseModel {
     @Column(columnDefinition = "TEXT")
     private String avatar;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
     @Column(name = "token_version", nullable = false)
+    @Builder.Default
     private Integer tokenVersion = 1; // Default 1
 
 }
