@@ -1,6 +1,7 @@
 package com.demo.api.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.demo.api.dto.DeleteAccountDTO;
 import com.demo.api.dto.ProfileDTO;
 import com.demo.api.dto.UpdatePasswordDTO;
 import com.demo.api.exception.BusinessException;
@@ -97,5 +98,19 @@ public class UserServiceImpl implements UserService {
         user.setAvatar(newAvatarUrl);
         userRepository.save(user);
     }
+
+    /**
+     * delete user by userId
+     * @param userId
+     */
+    @Override
+    public void deleteUser(Long userId, DeleteAccountDTO deleteAccountDTO) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException("user not found"));
+        if (!passwordEncoder.matches(deleteAccountDTO.getVerifyPassword(), user.getPassword())){
+            throw new BusinessException("password is incorrect");
+        }
+        userRepository.deleteById(userId);
+    }
+
 
 }
