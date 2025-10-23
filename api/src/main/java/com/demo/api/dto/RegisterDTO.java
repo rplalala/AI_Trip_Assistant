@@ -15,14 +15,14 @@ public class RegisterDTO {
 
     @NotBlank
     @Size(min=3,max=30)
-    @Pattern(regexp = "^[A-Za-z0-9_\\-]+$", message = "用户名只能包含字母、数字、下划线和短横线")
-    private String username; // 注册用户名，3-30位，只能包含字母、数字、下划线和短横线。必填
+    @Pattern(regexp = "^[A-Za-z0-9_\\-]+$", message = "Username can only contain letters, numbers, underscores, and hyphens")
+    private String username; // Registration username, 3-30 chars, only letters, numbers, underscores, and hyphens. Required
 
     @NotBlank
     @Email
-    private String email; // 注册邮箱。必填
+    private String email; // Registration email. Required
 
     @NotBlank
     @Size(min=6,max=64)
-    private String password; // 注册密码，6-64位，必填
+    private String password; // Registration password, 6-64 chars. Required
 }

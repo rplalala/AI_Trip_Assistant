@@ -14,9 +14,9 @@ public class LoginDTO {
 
     @NotBlank
     @Email
-    private String email; // 用户登录邮箱。必填
+    private String email; // User login email. Required
 
     @NotBlank
     @Size(min=6,max=64)
-    private String password; // 用户登录密码 6-64位。必填
+    private String password; // User login password, 6-64 chars. Required
 }

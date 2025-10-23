@@ -31,10 +31,10 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Value( "${default.avatar-url}")
-    private String DEFAULT_AVATAR; // 默认头像
+    private String DEFAULT_AVATAR; // Default avatar
 
     /**
-     * 登录
+     * Login
      * @param loginDTO
      * @return
      */
@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService {
             throw new AuthException("Incorrect email or password");
         }
 
-        // 把userId放入token的subject，userName和email放到token的email
+        // Put userId into the token subject; put username and email into token claims
         String token = jwtUtils.generateJwt(
                 user.getId().toString(),
                 Map.of("username", user.getUsername(),
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 注册
+     * Register
      * @param registerDTO
      */
     @Override
@@ -74,14 +74,14 @@ public class UserServiceImpl implements UserService {
                 .username(registerDTO.getUsername())
                 .email(registerDTO.getEmail())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
-                .avatar(DEFAULT_AVATAR) // 默认头像
+                .avatar(DEFAULT_AVATAR) // Default avatar
                 .tokenVersion(1)
                 .build();
         userRepository.save(user);
     }
 
     /**
-     * 获取用户详情页信息
+     * Get user profile details
      * @param userId
      * @return
      */
@@ -94,7 +94,7 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 更新用户详情页信息，可选 username, gender, age
+     * Update user profile details; optional fields: username, gender, age
      * @param userId
      * @param profileDTO
      */
@@ -119,14 +119,14 @@ public class UserServiceImpl implements UserService {
         try {
             userRepository.save(user);
         } catch (DataIntegrityViolationException ex) {
-            // 并发兜底
+            // Concurrency fallback
             throw new BusinessException("username exists");
         }
 
     }
 
     /**
-     * 更新用户密码
+     * Update user password
      * @param userId
      * @param passwordDTO
      */
@@ -138,13 +138,13 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("old password is incorrect");
         }
         user.setPassword(passwordEncoder.encode(passwordDTO.getNewPassword()));
-        // 更改后 jwt token版本 +1，之前分发的token失效
+        // After the change, increment JWT token version by 1; previously issued tokens become invalid
         user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
     }
 
     /**
-     * 更新用户新上传的头像
+     * Update the newly uploaded user avatar
      * @param userId
      * @param newAvatarUrl
      */

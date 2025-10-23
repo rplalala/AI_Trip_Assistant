@@ -28,8 +28,8 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * AWS S3 工具类（@Value 注入配置）
- * 详情见 AWS SDK for Java v2 官方文档
+ * AWS S3 utility class (@Value-injected configuration)
+ * See AWS SDK for Java v2 official documentation
  * https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_s3_code_examples.html
  */
 @Slf4j
@@ -54,9 +54,6 @@ public class AwsS3Utils {
     @Value("${aws.s3.secretAccessKey}")
     private String secretAccessKey;
 
-    /**
-     * 0. 创建 S3Client 实例
-     */
     private S3Client newS3Client() {
         AwsBasicCredentials creds = AwsBasicCredentials.create(accesskeyId, secretAccessKey);
         return S3Client.builder()
@@ -66,25 +63,25 @@ public class AwsS3Utils {
     }
 
     /**
-     * 1. S3 单文件上传
+     * 1. S3 single file upload
      *
-     * @param in               文件输入流
-     * @param originalFilename 原始文件名
-     * @return 返回 URL（https://{cdn}/{dir/yyyy/MM/xxx.png}）
+     * @param in               file input stream
+     * @param originalFilename original filename
+     * @return Return URL (https://{cdn}/{dir/yyyy/MM/xxx.png})
      */
     public String upload(InputStream in, String originalFilename, boolean isAvatar) throws Exception {
         S3Client s3 = newS3Client();
 
-        // 如果是头像，则放到elec5620-stage2/avatars目录下
+        // If it is an avatar, put it under elec5620-stage2/avatars
         String baseDir = isAvatar ? (dirName + "/avatars") : dirName;
 
-        // 目录与文件名：改写文件名
+        // Directory and file name: rewrite the filename
         String dir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM"));
         String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
         String newFileName = UUID.randomUUID().toString().replace("-", "") + suffix;
         String objectKey = baseDir + "/" + dir + "/" + newFileName;
 
-        // 读成 Byte[] 获取 content-length
+        // Read into byte[] to get content-length
         ByteArrayOutputStream bos = new ByteArrayOutputStream(Math.max(32 * 1024, in.available()));
         in.transferTo(bos);
         byte[] bytes = bos.toByteArray();
@@ -95,7 +92,7 @@ public class AwsS3Utils {
             case ".gif" -> "image/gif";
             case ".svg" -> "image/svg+xml";
             case ".webp" -> "image/webp";
-            default -> "application/octet-stream"; // 文件类型未知时的默认类型
+            default -> "application/octet-stream"; // Default type when file type is unknown
         };
 
         try (s3) {
@@ -112,10 +109,10 @@ public class AwsS3Utils {
     }
 
     /**
-     * 1.1 从外链url下载临时图片到内容再上传，并返回最终url (AWS S3)
+     * 1.1 Download image from external URL to memory, then upload, and return final URL (AWS S3)
      *
-     * @param imageUrl 外链url
-     * @return 返回 URL（https://{cdn}/{dir/yyyy/MM/xxx.png}）
+     * @param imageUrl external URL
+     * @return Return URL (https://{cdn}/{dir/yyyy/MM/xxx.png})
      */
     public String uploadFromUrl(String imageUrl) throws Exception {
         HttpClient client = HttpClient.newBuilder()
@@ -144,7 +141,7 @@ public class AwsS3Utils {
             throw new IllegalArgumentException("File too large, max size is 10 MB");
         }
 
-        // 推断后缀
+        // Infer file suffix
         String suffix = null;
         String ct = contentType.toLowerCase(Locale.ROOT);
         if (ct.contains("jpeg") || ct.contains("jpg")) suffix = ".jpg";
@@ -165,7 +162,7 @@ public class AwsS3Utils {
         }
         if (suffix == null) suffix = ".jpg";
 
-        // 读取到内存并做 10MB 限流
+        // Read into memory and enforce 10 MB limit
         try (InputStream in = response.body(); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             byte[] buf = new byte[8192];
             long total = 0;
@@ -177,15 +174,17 @@ public class AwsS3Utils {
                 }
                 bos.write(buf, 0, n);
             }
-            return upload(new ByteArrayInputStream(bos.toByteArray()), "temp" + suffix, false);
+            String s3Url = upload(new ByteArrayInputStream(bos.toByteArray()), "temp" + suffix, false);
+            log.info("Upload from {} to {}", imageUrl, s3Url);
+            return s3Url;
         }
     }
 
     /**
-     * 2. 列举AWS S3中指定前缀的文件（适用于文件数量≤1000）
+     * 2. List files in AWS S3 with the specified prefix (applicable when file count ≤ 1000)
      *
-     * @param preFix  前缀（例：elec5620-stage2/2025）
-     * @param size    最多列举多少个（最大1000）
+     * @param preFix  Prefix (e.g., elec5620-stage2/2025)
+     * @param size    Maximum number to list (up to 1000)
      */
     public List<String> listFiles(String preFix, int size) throws Exception {
         S3Client s3 = newS3Client();
@@ -210,10 +209,10 @@ public class AwsS3Utils {
     }
 
     /**
-     * 3. 分页列举AWS S3中指定前缀的文件（适用于文件数量>1000）
+     * 3. Paginated listing of files in AWS S3 with the specified prefix (applicable when file count > 1000)
      *
-     * @param preFix   前缀
-     * @param pageSize 每页数量（最大1000）
+     * @param preFix   Prefix
+     * @param pageSize Page size (max 1000)
      */
     public List<String> listPageAllFiles(String preFix, int pageSize) throws Exception {
         S3Client s3 = newS3Client();
@@ -247,9 +246,9 @@ public class AwsS3Utils {
     }
 
     /**
-     * 4. 删除单个文件
+     * 4. Delete a single file
      *
-     * @param objectKey 文件Key（不含Bucket名），例：elec5620-stage2/2025/06/xxx.png
+     * @param objectKey File key (without bucket name), e.g.: elec5620-stage2/2025/06/xxx.png
      */
     public void deleteFile(String objectKey) throws Exception {
         S3Client s3 = newS3Client();
@@ -262,9 +261,9 @@ public class AwsS3Utils {
     }
 
     /**
-     * 5. 批量删除多个文件（一次最多1000个，超过需分批）
+     * 5. Batch delete multiple files (up to 1000 at a time; split into batches if exceeded)
      *
-     * @param objectKeys 要删除的 Key 列表
+     * @param objectKeys List of keys to delete
      */
     public void batchDeleteFiles(List<String> objectKeys) throws Exception {
         S3Client s3 = newS3Client();
