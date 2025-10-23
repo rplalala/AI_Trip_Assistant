@@ -28,7 +28,7 @@ export default function VerifyEmailPage() {
                 setStatus('success');
                 refreshProfile()
                     .then(() => {
-                        navigate('/trips', { replace: true });
+                        setTimeout(() => navigate('/trips', { replace: true }), 1200);
                     })
             })
             .catch((err: unknown) => {

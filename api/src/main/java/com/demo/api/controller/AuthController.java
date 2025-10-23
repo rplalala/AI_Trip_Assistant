@@ -82,6 +82,12 @@ public class AuthController {
         return ApiRespond.success();
     }
 
+    @GetMapping("/verify-reset-password-email")
+    public ApiRespond<Void> verifyResetPasswordEmail(@RequestParam String token) {
+        authService.verifyResetPasswordEmailByToken(token);
+        return ApiRespond.success();
+    }
+
     /**
      * Resend verification email
      * user login but email exists and not verified

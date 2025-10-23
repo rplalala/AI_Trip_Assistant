@@ -220,9 +220,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        EmailToken emailToken = emailTokenRepository
-                .findByResetPasswordTokenAndUsedIsFalseAndExpireTimeAfter(token, Instant.now())
-                .orElseThrow(() -> new BusinessException("Invalid or expired token"));
+        EmailToken emailToken = verifyResetPasswordEmailByToken(token);
 
         User user = userRepository.findById(emailToken.getUserId())
                 .orElseThrow(() -> new BusinessException("User not found"));
@@ -240,5 +238,13 @@ public class AuthServiceImpl implements AuthService {
         emailToken.setUsed(true);
         emailTokenRepository.save(emailToken);
         log.info("resetPasswordToken {} used", token);
+    }
+
+    @Override
+    @Transactional
+    public EmailToken verifyResetPasswordEmailByToken(String token) {
+        return emailTokenRepository
+                .findByResetPasswordTokenAndUsedIsFalseAndExpireTimeAfter(token, Instant.now())
+                .orElseThrow(() -> new BusinessException("Invalid or expired token"));
     }
 }

@@ -37,7 +37,8 @@ public class AuthConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers("/api/register", "/api/login", "/api/verify-email","/api/forgot-password",
-                                "/api/reset-password", "/api/resend-verify-email", "/api/trip/test-generate").permitAll()
+                                "/api/reset-password", "/api/resend-verify-email", "/api/verify-reset-password-email",
+                                "/api/trip/test-generate").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

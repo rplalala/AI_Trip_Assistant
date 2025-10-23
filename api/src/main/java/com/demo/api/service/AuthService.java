@@ -2,6 +2,7 @@ package com.demo.api.service;
 
 import com.demo.api.dto.LoginDTO;
 import com.demo.api.dto.RegisterDTO;
+import com.demo.api.model.EmailToken;
 
 public interface AuthService {
     String login(LoginDTO loginDTO);
@@ -11,4 +12,5 @@ public interface AuthService {
     void sendForgotPasswordEmail(String email);
     void resetPassword(String token, String newPassword);
     void resendVerifyEmail(String email);
+    EmailToken verifyResetPasswordEmailByToken(String token);
 }

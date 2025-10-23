@@ -20,7 +20,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { setStatus, refreshProfile } = useAuth();
-    const from = (location.state)?.from?.pathname || '/';
+    const from = (location.state)?.from?.pathname || '/trips';
     const { message } = AntdApp.useApp();
 
     const [loadingLogin, setLoadingLogin] = useState(false);
