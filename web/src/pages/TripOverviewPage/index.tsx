@@ -1,6 +1,7 @@
 // src/pages/Trips/Overview/index.tsx
-import React from "react";
+import React, { useEffect, useState } from 'react'
 import { Link, useParams } from "react-router-dom";
+import { getTripInsights, type TripInsightsResponse } from '../../api/trip';
 import {
   Breadcrumb,
   Typography,
@@ -19,8 +20,6 @@ import {
   CoffeeOutlined,
   ShopOutlined,
   RocketOutlined,
-  AlertOutlined,
-  CheckCircleTwoTone,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -40,12 +39,6 @@ type TimelineEvent = {
   subtitle: string;
   color: string;
   warn?: boolean;
-};
-
-type AlertItem = {
-  icon: React.ReactNode;
-  title: string;
-  time: string;
 };
 
 type BookingRow = {
@@ -95,29 +88,6 @@ const timelineEvents: TimelineEvent[] = [
   },
 ];
 
-const alerts: AlertItem[] = [
-  {
-    icon: <AlertOutlined />,
-    title: "Weather Update: Light rain expected",
-    time: "Mar 21, 2025, 9:00 AM",
-  },
-  {
-    icon: <CheckCircleTwoTone twoToneColor="#52c41a" />,
-    title: "Sushi Saito: Reservation confirmed",
-    time: "Mar 21, 2025, 12:00 PM",
-  },
-  {
-    icon: <AlertOutlined />,
-    title: "Ghibli Museum: Opening hours changed",
-    time: "Mar 22, 2025, 10:00 AM",
-  },
-  {
-    icon: <AlertOutlined />,
-    title: "Budget Warning: Approaching limit",
-    time: "Mar 22, 2025, 6:00 PM",
-  },
-];
-
 const bookings: BookingRow[] = [
   { key: 1, name: "Flight to Tokyo", date: "Mar 20, 2025", status: "Confirmed" },
   { key: 2, name: "Hotel in Shinjuku", date: "Mar 20–23, 2025", status: "Confirmed" },
@@ -137,10 +107,21 @@ const bookingColumns: TableProps<BookingRow>["columns"] = [
   },
 ];
 
-export default function TripOverview(): JSX.Element {
+export default function TripOverview() {
   const { tripId } = useParams<{ tripId?: string }>();
   const effectiveTripId = tripId ?? "tokyo-spring";
   const trip = mockTrip(effectiveTripId);
+  const [tripInsights, setTripInsights] = useState<TripInsightsResponse[]>([]);
+
+  useEffect(() => {
+    const tripId = '1'; // TODO
+    if (!tripId) return;
+
+    getTripInsights(tripId)
+        .then((res) => {
+          setTripInsights(res);
+        })
+  }, []);
 
   const tabsItems: TabsProps["items"] = [
     { key: "timeline", label: "Timeline", children: null },
@@ -273,18 +254,18 @@ export default function TripOverview(): JSX.Element {
           </Card>
         </Col>
 
-        {/* 右侧：Alerts Feed */}
+        {/* 右侧：AI Generated Trip Insights */}
         <Col xs={24} lg={8}>
-          <Card title="Alerts Feed">
-            <List<AlertItem>
+          <Card title="Trip Insights">
+            <List<TripInsightsResponse>
               itemLayout="horizontal"
-              dataSource={alerts}
+              dataSource={tripInsights}
               renderItem={(item) => (
                 <List.Item>
                   <List.Item.Meta
                     avatar={<div style={{ fontSize: 18 }}>{item.icon}</div>}
                     title={<div style={{ fontWeight: 600 }}>{item.title}</div>}
-                    description={<Text type="secondary">{item.time}</Text>}
+                    description={<Text>{item.content}</Text>}
                   />
                 </List.Item>
               )}
