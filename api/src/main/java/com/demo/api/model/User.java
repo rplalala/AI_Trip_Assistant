@@ -32,12 +32,17 @@ public class User extends BaseModel {
     private Integer age;
 
     @Column
-    private Integer gender; //性别, 1: Male, 2: Female
+    private Integer gender; // Gender, 1: Male, 2: Female
 
     @Column(columnDefinition = "TEXT")
     private String avatar;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
     @Column(name = "token_version", nullable = false)
-    private Integer tokenVersion = 1; // 默认 1
+    @Builder.Default
+    private Integer tokenVersion = 1; // Default 1
 
 }

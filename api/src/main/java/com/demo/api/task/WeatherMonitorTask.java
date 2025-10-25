@@ -1,7 +1,7 @@
 package com.demo.api.task;
 
 /**
- * TODO: 天气监控任务：每个三天重新调用一次天气api
+ * TODO: Weather monitoring task: call the weather API every three days
  */
 public class WeatherMonitorTask {
 }

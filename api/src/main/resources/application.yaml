@@ -32,13 +32,17 @@ jwt:
     expireTime: 3600000
 
 aws:
+  region: ap-southeast-2
+  accesskeyId: ***REMOVED***
+  secretAccessKey: ***REMOVED***
   s3:
-    region: ap-southeast-2
     bucket-name: buckets-zihang
     dir-name: elec5620-stage2
     cdn: awscdn.dingzh.cc
-    accesskeyId: ***REMOVED***
-    secretAccessKey: ***REMOVED***
+
+sendgrid:
+  api-key: "***REMOVED***"
+  from: "dingzh157@gmail.com"
 
 default:
   avatar-url: "https://awscdn.dingzh.cc/elec5620-stage2/avatars/default_avatar.png"
@@ -46,6 +50,9 @@ default:
 openweather:
   api:
     key: "***REMOVED***"
+
+unsplash:
+  access-key: ***REMOVED***
 
 feign:
   httpclient:

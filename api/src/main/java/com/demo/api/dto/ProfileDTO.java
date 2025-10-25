@@ -14,22 +14,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProfileDTO {
 
-    @Size(min=3,max=30) // username不为null时，长度被限制在3-30
-    @Pattern(regexp = "^[A-Za-z0-9_\\-]+$", message = "用户名只能包含字母、数字、下划线和短横线")
-    private String username; // 用户名 3-30位，只能包含字母、数字、下划线和短横线。非必须
+    @Size(min=3,max=30) // When username is not null, length is limited to 3-30
+    @Pattern(regexp = "^[A-Za-z0-9_\\-]+$", message = "Username can only contain letters, numbers, underscores, and hyphens")
+    private String username; // Username, 3-30 chars, only letters, numbers, underscore and hyphen. Optional
 
-    @Min(0) // age不为null时，范围是0-150
+    @Min(0) // When age is not null, the range is 0-150
     @Max(150)
-    private Integer age; // 年龄 0-150。非必须
+    private Integer age; // Age 0-150. Optional
 
     @Min(1)
     @Max(2)
-    private Integer gender; // 性别，非必须。 1: Male, 2: Female
+    private Integer gender; // Gender, optional. 1: Male, 2: Female
 
-    // 只读：请求体中的 email 会被忽略，响应中仍然返回
+    // Read-only: email in the request body will be ignored, still returned in the response
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String email; // 邮箱
+    private String email; // Email
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String avatar; // 用户头像。
+    private String avatar; // User avatar.
 }

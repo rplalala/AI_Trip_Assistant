@@ -71,7 +71,7 @@ Or you can use any other git gui client, like Github Desktop, TortoiseGit.
 
 ### Setup PostgresSQL
 This project uses Neon to host PostgreSQL.
-
+Neon project: https://console.neon.tech/app/projects/round-sound-33830706
 Please create a database in the Neon Console https://console.neon.tech, 
 and then fill in the corresponding values for `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password` in api/src/main/resources/application.yaml.
 

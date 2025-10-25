@@ -11,7 +11,7 @@ export default function HomePage() {
         if (status === 'unauthenticated') {
             navigate('/login', { state: { from: location } })
         } else if (status === 'authenticated') {
-            navigate('/trips/new')
+            navigate('/trips')
         }
     }
 

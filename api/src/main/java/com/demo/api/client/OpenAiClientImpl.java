@@ -2,6 +2,7 @@ package com.demo.api.client;
 
 import java.util.List;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,8 @@ public class OpenAiClientImpl implements OpenAiClient {
 
     // Logger for debugging and monitoring
     private static final Logger log = LoggerFactory.getLogger(OpenAiClientImpl.class);
+
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     // OpenAI Chat Completions endpoint
     private static final String CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
@@ -110,6 +113,61 @@ public class OpenAiClientImpl implements OpenAiClient {
             // HTTP request failed
             throw new IllegalStateException("Failed to call OpenAI API", ex);
         }
+    }
+
+    /**
+     * Parses the inner "content" JSON from an OpenAI ChatCompletion response
+     * into the specified target type.
+     *
+     * @param openAiJson The full JSON string returned by the OpenAI API
+     * @param clazz      The target class type for deserialization (e.g., InsightResponse.class)
+     * @return Deserialized object of type T
+     */
+    @Override
+    public <T> T parseContent(String openAiJson, Class<T> clazz) {
+        log.info("OpenAiClient parseContent start: {}", openAiJson);
+
+        try {
+            // Parse the outer OpenAI JSON
+            JsonNode root = mapper.readTree(openAiJson);
+            String contentJson = root.path("choices")
+                    .get(0)
+                    .path("message")
+                    .path("content")
+                    .asText();
+
+            // Clean Markdown code fences if present
+            contentJson = cleanJsonString(contentJson);
+
+            // Deserialize the "content" field into the target type
+            return mapper.readValue(contentJson, clazz);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse OpenAI response", e);
+            return null;
+        }
+    }
+
+    private static String cleanJsonString(String content) {
+        if (content == null) return null;
+
+        // Remove Markdown code fences like ```json ... ``` or ``` ... ```
+        content = content.trim();
+        if (content.startsWith("```")) {
+            // Find the first '{' or '[' after the code fence
+            int firstBrace = content.indexOf('{');
+            int firstBracket = content.indexOf('[');
+            int start = (firstBrace >= 0 && firstBracket >= 0)
+                    ? Math.min(firstBrace, firstBracket)
+                    : Math.max(firstBrace, firstBracket);
+
+            int endBrace = Math.max(content.lastIndexOf('}'), content.lastIndexOf(']'));
+            if (start >= 0 && endBrace > start) {
+                content = content.substring(start, endBrace + 1);
+            }
+        }
+
+        // Remove invisible control characters (safety)
+        return content.replaceAll("[\\u0000-\\u001F]", "").trim();
     }
 
     /**
