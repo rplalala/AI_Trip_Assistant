@@ -10,6 +10,7 @@ import com.demo.api.repository.TripDailySummaryRepository;
 import com.demo.api.repository.TripHotelRepository;
 import com.demo.api.repository.TripTransportationRepository;
 import com.demo.api.service.TripStorageService;
+import com.demo.api.utils.UnsplashImgUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -43,29 +44,30 @@ public class TripStorageServiceImpl implements TripStorageService {
     private final TripHotelRepository tripHotelRepository;
     private final TripAttractionRepository tripAttractionRepository;
     private final TripDailySummaryRepository tripDailySummaryRepository;
+    private final UnsplashImgUtils unsplashImgUtils;
 
     @Override
     @Transactional
     public void storeTripPlan(TripPreference preference, String tripPlanJson) {
-        if (preference == null || preference.getTripId() == null) {
+        if (preference == null || preference.getId() == null) {
             throw new IllegalArgumentException("Trip preference with persistent tripId is required");
         }
         if (!StringUtils.hasText(tripPlanJson)) {
-            log.warn("Empty trip plan JSON for trip {}", preference.getTripId());
+            log.warn("Empty trip plan JSON for trip {}", preference.getId());
             return;
         }
 
         try {
             JsonNode root = objectMapper.readTree(tripPlanJson);
 
-            tripDailySummaryRepository.deleteAll(tripDailySummaryRepository.findByTripId(preference.getTripId()));
+            tripDailySummaryRepository.deleteAll(tripDailySummaryRepository.findByTripId(preference.getId()));
             List<TripDailySummary> summariesToSave = readDailySummaries(root.path("daily_summaries"), preference);
             tripDailySummaryRepository.saveAll(summariesToSave);
 
             // Clear previously generated activities for idempotency.
-            tripTransportationRepository.deleteAll(tripTransportationRepository.findByTripId(preference.getTripId()));
-            tripHotelRepository.deleteAll(tripHotelRepository.findByTripId(preference.getTripId()));
-            tripAttractionRepository.deleteAll(tripAttractionRepository.findByTripId(preference.getTripId()));
+            tripTransportationRepository.deleteAll(tripTransportationRepository.findByTripId(preference.getId()));
+            tripHotelRepository.deleteAll(tripHotelRepository.findByTripId(preference.getId()));
+            tripAttractionRepository.deleteAll(tripAttractionRepository.findByTripId(preference.getId()));
 
             ArrayNode activitiesNode = root.has("activities") && root.get("activities").isArray()
                     ? (ArrayNode) root.get("activities")
@@ -81,7 +83,7 @@ public class TripStorageServiceImpl implements TripStorageService {
                     case "transportation" -> transportation.add(mapTransportation(activityNode, preference));
                     case "hotel" -> hotels.add(mapHotel(activityNode, preference));
                     case "attraction" -> attractions.add(mapAttraction(activityNode, preference));
-                    default -> log.debug("Skipping activity with unsupported type '{}' for trip {}", type, preference.getTripId());
+                    default -> log.debug("Skipping activity with unsupported type '{}' for trip {}", type, preference.getId());
                 }
             }
 
@@ -90,11 +92,13 @@ public class TripStorageServiceImpl implements TripStorageService {
             tripAttractionRepository.saveAll(attractions);
 
             log.info("Stored trip plan for trip {} ({} transportation / {} hotels / {} attractions)",
-                    preference.getTripId(), transportation.size(), hotels.size(), attractions.size());
+                    preference.getId(), transportation.size(), hotels.size(), attractions.size());
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to persist trip plan JSON", ex);
         }
     }
+
+    // ----- other ------
 
     private List<TripDailySummary> readDailySummaries(JsonNode node, TripPreference preference) {
         List<TripDailySummary> result = new ArrayList<>();
@@ -105,9 +109,12 @@ public class TripStorageServiceImpl implements TripStorageService {
                     continue;
                 }
                 TripDailySummary summary = new TripDailySummary();
-                summary.setTripId(preference.getTripId());
+                summary.setTripId(preference.getId());
                 summary.setDate(date);
                 summary.setSummary(optionalText(summaryNode, "summary").orElse(null));
+                String imageDescription = optionalText(summaryNode, "image_description").orElse(null);
+                summary.setImageDescription(imageDescription);
+                summary.setImageUrl(unsplashImgUtils.getImgUrls(imageDescription,1,500,500).getFirst());
                 result.add(summary);
             }
         }
@@ -154,32 +161,36 @@ public class TripStorageServiceImpl implements TripStorageService {
         String title = optionalText(node, "title").orElse(null);
         String status = optionalText(node, "status").orElse(DEFAULT_STATUS);
         Boolean reservationRequired = node.hasNonNull("reservation_required") ? node.get("reservation_required").asBoolean() : null;
-        String imageUrl = optionalText(node, "image_url").orElse(null);
+        String imageDescription = optionalText(node, "image_description").orElse(null);
+        String imageUrl = unsplashImgUtils.getImgUrls(imageDescription,1,500,500).getFirst();
 
         if (target instanceof TripTransportation transport) {
-            transport.setTripId(preference.getTripId());
+            transport.setTripId(preference.getId());
             transport.setDate(date);
             transport.setTime(time);
             transport.setTitle(title);
             transport.setStatus(status);
             transport.setReservationRequired(reservationRequired);
             transport.setImageUrl(imageUrl);
+            transport.setImageDescription(imageDescription);
         } else if (target instanceof TripHotel hotel) {
-            hotel.setTripId(preference.getTripId());
+            hotel.setTripId(preference.getId());
             hotel.setDate(date);
             hotel.setTime(time);
             hotel.setTitle(title);
             hotel.setStatus(status);
             hotel.setReservationRequired(reservationRequired);
             hotel.setImageUrl(imageUrl);
+            hotel.setImageDescription(imageDescription);
         } else if (target instanceof TripAttraction attraction) {
-            attraction.setTripId(preference.getTripId());
+            attraction.setTripId(preference.getId());
             attraction.setDate(date);
             attraction.setTime(time);
             attraction.setTitle(title);
             attraction.setStatus(status);
             attraction.setReservationRequired(reservationRequired);
             attraction.setImageUrl(imageUrl);
+            attraction.setImageDescription(imageDescription);
         }
     }
 

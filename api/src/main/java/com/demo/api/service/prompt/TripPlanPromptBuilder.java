@@ -1,20 +1,19 @@
 package com.demo.api.service.prompt;
 
+import com.demo.api.dto.DailyWeatherDTO;
+import com.demo.api.model.TripPreference;
+import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 
-import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
-
-import com.demo.api.dto.DailyWeatherDTO;
-import com.demo.api.model.TripPreference;
-
 @Component
-public class PromptBuilder {
+public class TripPlanPromptBuilder {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 
@@ -117,44 +116,49 @@ public class PromptBuilder {
 
                     Instructions for the itinerary generation:
 
-                    ✅ You must return **ONLY** a JSON object with two keys: "daily_summaries" and "activities".
+                    You must return **ONLY** a JSON object with two keys: "daily_summaries" and "activities".
 
-                    1️⃣ "daily_summaries" is a list of objects, each with (in order):
+                    "daily_summaries" is a list of objects, each with (in order):
                         - "date": travel date in yyyy-MM-dd format
                         - "summary": a short natural language description of the day
+                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
-                    2️⃣ "activities" is a list of scheduled activities. Each activity has (in order):
+                    "activities" is a list of scheduled activities. Each activity has (in order):
                         - "date": yyyy-MM-dd
                         - "type": one of "transportation", "hotel", or "attraction"
                         - "time": HH:mm format (e.g., "14:00")
                         - "title": short title to show on a timeline
                         - "status": always set to "pending"
                         - "reservation_required": true if booking is needed, else false
-                        - "image_url": can be null (leave it null, will be added later)
+                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
-                    🎒 For "transportation" type, include (in order):
+                    For "transportation" type, include (in order):
                         - "from": starting location
                         - "to": destination
                         - "provider": airline/bus company/etc.
                         - "ticket_type": e.g., "economy"
                         - "price": number
                         - "currency": e.g., "JPY" or "AUD"
+                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
-                    🏨 For "hotel" type, include (in order):
+                    For "hotel" type, include (in order):
                         - "hotel_name": hotel name
                         - "room_type": e.g., "Double room"
                         - "people": number of guests
                         - "nights": how many nights
                         - "price": number
                         - "currency": e.g., "JPY"
+                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
-                    🎯 For "attraction" type (includes restaurants, parks, temples) (in order):
+                    For "attraction" type (includes restaurants, parks, temples) (in order):
                         - "location": e.g., "Shinjuku, Tokyo"
                         - "ticket_price": number (meal or entry cost)
                         - "people": number of attendees
                         - "currency": e.g., "JPY"
+                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
-                    ⚠️ Do NOT return markdown, explanation, or any wrapper text.
+                    All fields MUST have a value, cannot be null! Do not invent impossible data.
+                    Do NOT return markdown, explanation, or any wrapper text.
                     Just return pure JSON object, well-formatted.
                     """);
     }

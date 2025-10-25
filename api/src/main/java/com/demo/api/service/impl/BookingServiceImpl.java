@@ -1,19 +1,13 @@
 package com.demo.api.service.impl;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import com.demo.api.client.BookingApiClient;
+import com.demo.api.dto.booking.*;
+import com.demo.api.exception.BookingApiException;
+import com.demo.api.model.*;
+import com.demo.api.repository.*;
+import com.demo.api.service.BookingService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,30 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import com.demo.api.client.BookingApiClient;
-import com.demo.api.dto.booking.ConfirmReq;
-import com.demo.api.dto.booking.ConfirmResp;
-import com.demo.api.dto.booking.ItineraryQuoteItem;
-import com.demo.api.dto.booking.ItineraryQuoteReq;
-import com.demo.api.dto.booking.ItineraryQuoteReqItem;
-import com.demo.api.dto.booking.ItineraryQuoteResp;
-import com.demo.api.dto.booking.QuoteItem;
-import com.demo.api.dto.booking.QuoteReq;
-import com.demo.api.dto.booking.QuoteResp;
-import com.demo.api.exception.BookingApiException;
-import com.demo.api.model.TripAttraction;
-import com.demo.api.model.TripBookingQuote;
-import com.demo.api.model.TripHotel;
-import com.demo.api.model.TripPreference;
-import com.demo.api.model.TripTransportation;
-import com.demo.api.repository.TripAttractionRepository;
-import com.demo.api.repository.TripBookingQuoteRepository;
-import com.demo.api.repository.TripHotelRepository;
-import com.demo.api.repository.TripPreferenceRepository;
-import com.demo.api.repository.TripTransportationRepository;
-import com.demo.api.service.BookingService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service implementation for handling booking logic via external Booking API.
@@ -227,7 +204,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private TripPreference fetchPreference(Long tripId) {
-        return tripPreferenceRepository.findByTripId(tripId)
+        return tripPreferenceRepository.findById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("Trip preference not found for tripId " + tripId));
     }
 
@@ -252,8 +229,8 @@ public class BookingServiceImpl implements BookingService {
         TripTransportation entity = tripTransportationRepository.findById(entityId)
                 .orElseThrow(() -> new IllegalArgumentException("Transportation not found: " + entityId));
         if (validateTrip) {
-            Assert.isTrue(Objects.equals(entity.getTripId(), preference.getTripId()),
-                    "Transportation does not belong to trip " + preference.getTripId());
+            Assert.isTrue(Objects.equals(entity.getTripId(), preference.getId()),
+                    "Transportation does not belong to trip " + preference.getId());
         }
         LocalDate date = Objects.requireNonNull(entity.getDate(), "Transportation date is required");
         Map<String, Object> params = new LinkedHashMap<>();
@@ -276,8 +253,8 @@ public class BookingServiceImpl implements BookingService {
         TripHotel entity = tripHotelRepository.findById(entityId)
                 .orElseThrow(() -> new IllegalArgumentException("Hotel not found: " + entityId));
         if (validateTrip) {
-            Assert.isTrue(Objects.equals(entity.getTripId(), preference.getTripId()),
-                    "Hotel does not belong to trip " + preference.getTripId());
+            Assert.isTrue(Objects.equals(entity.getTripId(), preference.getId()),
+                    "Hotel does not belong to trip " + preference.getId());
         }
         LocalDate checkIn = Objects.requireNonNull(entity.getDate(), "Hotel check-in date is required");
         int nights = entity.getNights() != null && entity.getNights() > 0 ? entity.getNights() : 1;
@@ -301,8 +278,8 @@ public class BookingServiceImpl implements BookingService {
         TripAttraction entity = tripAttractionRepository.findById(entityId)
                 .orElseThrow(() -> new IllegalArgumentException("Attraction not found: " + entityId));
         if (validateTrip) {
-            Assert.isTrue(Objects.equals(entity.getTripId(), preference.getTripId()),
-                    "Attraction does not belong to trip " + preference.getTripId());
+            Assert.isTrue(Objects.equals(entity.getTripId(), preference.getId()),
+                    "Attraction does not belong to trip " + preference.getId());
         }
         LocalDate date = Objects.requireNonNull(entity.getDate(), "Attraction date is required");
         Map<String, Object> params = new LinkedHashMap<>();

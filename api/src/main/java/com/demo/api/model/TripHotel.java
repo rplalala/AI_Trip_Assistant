@@ -1,17 +1,12 @@
 package com.demo.api.model;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 /**
  * Lodging recommendations associated with the trip itinerary.
@@ -22,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripHotel {
+public class TripHotel extends BaseModel{
 
     // Primary key for the hotel record.
     @Id
@@ -49,6 +44,9 @@ public class TripHotel {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "image_description")
+    private String imageDescription;
 
     @Column(name = "hotel_name")
     private String hotelName;

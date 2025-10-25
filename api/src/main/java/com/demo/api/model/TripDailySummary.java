@@ -1,17 +1,12 @@
 package com.demo.api.model;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 /**
  * Daily overview for generated trip itineraries.
@@ -22,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripDailySummary {
+public class TripDailySummary extends BaseModel{
 
     // Primary key for the daily summary entry.
     @Id
@@ -38,6 +33,9 @@ public class TripDailySummary {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "image_description")
+    private String imageDescription;
 
     @Column(length = 4096)
     private String summary;

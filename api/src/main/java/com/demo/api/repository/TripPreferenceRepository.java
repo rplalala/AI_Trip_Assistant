@@ -1,12 +1,11 @@
 package com.demo.api.repository;
 
-import java.util.Optional;
-
+import com.demo.api.model.TripPreference;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.demo.api.model.TripPreference;
+import java.util.Optional;
 
 public interface TripPreferenceRepository extends JpaRepository<TripPreference, Long> {
 
-    Optional<TripPreference> findByTripId(Long tripId);
+    Optional<TripPreference> findById(Long tripId);
 }

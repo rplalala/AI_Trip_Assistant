@@ -1,8 +1,8 @@
 package com.demo.api.client;
 
-import java.util.List;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,8 +15,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 
 /**
  * Implementation of the OpenAiClient interface using RestTemplate
@@ -27,8 +26,6 @@ public class OpenAiClientImpl implements OpenAiClient {
 
     // Logger for debugging and monitoring
     private static final Logger log = LoggerFactory.getLogger(OpenAiClientImpl.class);
-
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     // OpenAI Chat Completions endpoint
     private static final String CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
@@ -129,7 +126,7 @@ public class OpenAiClientImpl implements OpenAiClient {
 
         try {
             // Parse the outer OpenAI JSON
-            JsonNode root = mapper.readTree(openAiJson);
+            JsonNode root = objectMapper.readTree(openAiJson);
             String contentJson = root.path("choices")
                     .get(0)
                     .path("message")
@@ -140,7 +137,7 @@ public class OpenAiClientImpl implements OpenAiClient {
             contentJson = cleanJsonString(contentJson);
 
             // Deserialize the "content" field into the target type
-            return mapper.readValue(contentJson, clazz);
+            return objectMapper.readValue(contentJson, clazz);
         } catch (JsonProcessingException e) {
             log.error("Failed to parse OpenAI response", e);
             return null;

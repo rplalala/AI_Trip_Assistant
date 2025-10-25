@@ -1,17 +1,12 @@
 package com.demo.api.model;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 /**
  * Transportation details produced for each day of the trip plan.
@@ -22,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripTransportation {
+public class TripTransportation extends BaseModel{
 
     // Primary key for the transportation record.
     @Id
@@ -49,6 +44,9 @@ public class TripTransportation {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "image_description")
+    private String imageDescription;
 
     @Column(name = "from_location")
     private String from;

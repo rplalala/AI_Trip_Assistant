@@ -23,7 +23,7 @@ export interface TripInsightsResponse {
 }
 
 export async function generateTrip(payload: generateTripPayload) {
-    return apiRequest<string>('/api/trip/test-generate', {
+    return apiRequest<void>('/api/trip/generate-plan', {
         method: 'POST',
         body: payload,
     });
