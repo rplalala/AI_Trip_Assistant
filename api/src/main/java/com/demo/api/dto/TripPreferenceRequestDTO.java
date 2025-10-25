@@ -1,11 +1,11 @@
 package com.demo.api.dto;
 
-import java.time.LocalDate;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 /**
  * Trip preference payload received from the frontend.
@@ -15,9 +15,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TripPreferenceRequestDTO {
-
-    /** Identifier of the user requesting the trip plan. */
-    private Long userId;
 
     /** Country the user will depart from. */
     private String fromCountry;

@@ -1,17 +1,12 @@
 package com.demo.api.model;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 /**
  * Attraction or activity recommendation for the trip itinerary.
@@ -22,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripAttraction {
+public class TripAttraction extends BaseModel{
 
     // Primary key for the attraction record.
     @Id
@@ -48,6 +43,9 @@ public class TripAttraction {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "image_description")
+    private String imageDescription;
 
     private String location;
 

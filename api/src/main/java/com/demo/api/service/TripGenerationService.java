@@ -11,5 +11,5 @@ public interface TripGenerationService {
      */
     // void generateTripFromPreference(TripPreferenceRequestDTO dto);
 
-    String generateTripAndReturnJson(TripPreferenceRequestDTO dto); // for testing purposes !!!
+    void generateTripAndReturnJson(TripPreferenceRequestDTO dto, String userId); // for testing purposes !!!
 }

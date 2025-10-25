@@ -1,14 +1,14 @@
 package com.demo.api.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.demo.api.model.TripPreference;
+import com.demo.api.model.TripWeather;
+import com.demo.api.repository.TripWeatherRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.modelmapper.ModelMapper;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.time.LocalDate;
@@ -18,16 +18,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.modelmapper.ModelMapper;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
-
-import com.demo.api.model.TripPreference;
-import com.demo.api.model.TripWeather;
-import com.demo.api.repository.TripWeatherRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 class WeatherServiceImplTest {
 
@@ -46,7 +40,7 @@ class WeatherServiceImplTest {
     @Test
     void fetchAndStoreWeather_filtersToTripWindow_andUpsertsPerDay() {
         TripPreference preference = TripPreference.builder()
-                .tripId(42L)
+                .id(42L)
                 .toCity("Sydney")
                 .toCountry("AU")
                 .startDate(LocalDate.of(2023, 1, 1))
@@ -58,7 +52,7 @@ class WeatherServiceImplTest {
 
         Map<LocalDate, TripWeather> store = new HashMap<>();
 
-        when(tripWeatherRepository.findByTripId(preference.getTripId()))
+        when(tripWeatherRepository.findByTripId(preference.getId()))
                 .thenAnswer(invocation -> store.values().stream().toList());
 
         when(tripWeatherRepository.saveAll(any()))

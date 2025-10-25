@@ -1,17 +1,12 @@
 package com.demo.api.model;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 /**
  * Trip preference details captured from users to drive trip generation workflows.
@@ -22,12 +17,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripPreference {
+public class TripPreference extends BaseModel{
 
     /** Unique identifier for the saved trip preference record. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long tripId;
+    private Long id;
 
     /** Identifier of the user who created this preference. */
     private Long userId;

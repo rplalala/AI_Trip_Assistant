@@ -7,42 +7,36 @@ import com.demo.api.service.TripGenerationService;
 import com.demo.api.service.TripInsightService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/trip")
-public class TripTestController {
+public class TripController {
 
-    private static final Logger log = LoggerFactory.getLogger(TripTestController.class);
+    private static final Logger log = LoggerFactory.getLogger(TripController.class);
 
     private final TripGenerationService tripGenerationService;
 
     private final TripInsightService tripInsightService;
 
-    public TripTestController(TripGenerationService tripGenerationService, TripInsightService tripInsightService) {
+    public TripController(TripGenerationService tripGenerationService, TripInsightService tripInsightService) {
         this.tripGenerationService = tripGenerationService;
         this.tripInsightService = tripInsightService;
     }
 
-    @PostMapping("/test-generate")
-    public ApiRespond<String> testGenerate(@RequestBody TripPreferenceRequestDTO dto) {
-        log.info("Received test trip generation request for user {} from {}, {} to {}, {}",
-                dto.getUserId(),
-                dto.getFromCity(),
-                dto.getFromCountry(),
-                dto.getToCity(),
-                dto.getToCountry());
+    @PostMapping("/generate-plan")
+    public ApiRespond<Void> generatePlan(@RequestBody TripPreferenceRequestDTO dto,
+                                         @AuthenticationPrincipal String userId) {
 
-        tripGenerationService.generateTripAndReturnJson(dto);
+        log.info("Received trip generation request: {}", dto);
 
-        String generatedJson = tripGenerationService.generateTripAndReturnJson(dto);
-
-        log.info("Generated Trip JSON:\n{}", generatedJson);
+        tripGenerationService.generateTripAndReturnJson(dto, userId);
 
         // return the generated JSON as the response body
-        return ApiRespond.success(generatedJson);
+        return ApiRespond.success();
     }
 
     @GetMapping("/insights")

@@ -1,17 +1,10 @@
 package com.demo.api;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-
+import com.demo.api.client.BookingApiClient;
+import com.demo.api.dto.booking.*;
+import com.demo.api.model.*;
+import com.demo.api.repository.*;
+import com.demo.api.service.impl.BookingServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,23 +12,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.demo.api.client.BookingApiClient;
-import com.demo.api.dto.booking.ConfirmResp;
-import com.demo.api.dto.booking.ItineraryQuoteItem;
-import com.demo.api.dto.booking.ItineraryQuoteResp;
-import com.demo.api.dto.booking.QuoteItem;
-import com.demo.api.dto.booking.QuoteResp;
-import com.demo.api.model.TripAttraction;
-import com.demo.api.model.TripBookingQuote;
-import com.demo.api.model.TripHotel;
-import com.demo.api.model.TripPreference;
-import com.demo.api.model.TripTransportation;
-import com.demo.api.repository.TripAttractionRepository;
-import com.demo.api.repository.TripBookingQuoteRepository;
-import com.demo.api.repository.TripHotelRepository;
-import com.demo.api.repository.TripPreferenceRepository;
-import com.demo.api.repository.TripTransportationRepository;
-import com.demo.api.service.impl.BookingServiceImpl;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Transactional
@@ -82,7 +67,7 @@ class BookingServiceIntegrationTest {
     @Test
     void quoteSingleItemPersistsQuote() {
         TripHotel hotel = tripHotelRepository.save(TripHotel.builder()
-                .tripId(preference.getTripId())
+                .tripId(preference.getId())
                 .date(LocalDate.now().plusDays(7))
                 .hotelName("Harbour Hotel")
                 .roomType("Deluxe")
@@ -110,10 +95,10 @@ class BookingServiceIntegrationTest {
         );
         when(bookingApiClient.postQuote(any())).thenReturn(quoteResp);
 
-        TripBookingQuote result = bookingService.quoteSingleItem(preference.getTripId(), "hotel", hotel.getId());
+        TripBookingQuote result = bookingService.quoteSingleItem(preference.getId(), "hotel", hotel.getId());
 
         assertThat(result.getQuoteToken()).isEqualTo("qt_hotel_123");
-        assertThat(result.getTripId()).isEqualTo(preference.getTripId());
+        assertThat(result.getTripId()).isEqualTo(preference.getId());
         assertThat(result.getEntityId()).isEqualTo(hotel.getId());
         assertThat(result.getStatus()).isEqualTo("quoted");
         assertThat(result.getTotalAmount()).isEqualTo(150);
@@ -125,7 +110,7 @@ class BookingServiceIntegrationTest {
     @Test
     void quoteItineraryStoresQuotesForEachItem() {
         TripTransportation transport = tripTransportationRepository.save(TripTransportation.builder()
-                .tripId(preference.getTripId())
+                .tripId(preference.getId())
                 .date(LocalDate.now().plusDays(3))
                 .from("SYD")
                 .to("MEL")
@@ -135,7 +120,7 @@ class BookingServiceIntegrationTest {
                 .build());
 
         TripAttraction attraction = tripAttractionRepository.save(TripAttraction.builder()
-                .tripId(preference.getTripId())
+                .tripId(preference.getId())
                 .date(LocalDate.now().plusDays(4))
                 .title("Opera House Tour")
                 .location("Sydney")
@@ -192,11 +177,11 @@ class BookingServiceIntegrationTest {
         );
         when(bookingApiClient.postItineraryQuote(any())).thenReturn(itineraryQuoteResp);
 
-        ItineraryQuoteResp response = bookingService.quoteItinerary(preference.getTripId());
+        ItineraryQuoteResp response = bookingService.quoteItinerary(preference.getId());
 
         assertThat(response.quoteToken()).isEqualTo("iti_qt_456");
 
-        List<TripBookingQuote> quotes = tripBookingQuoteRepository.findByTripId(preference.getTripId());
+        List<TripBookingQuote> quotes = tripBookingQuoteRepository.findByTripId(preference.getId());
         assertThat(quotes).hasSize(2);
         assertThat(quotes).allMatch(quote -> "quoted".equals(quote.getStatus()));
         assertThat(quotes)
@@ -213,7 +198,7 @@ class BookingServiceIntegrationTest {
     void confirmBookingUpdatesStatus() {
         // Seed quotes via itinerary call
         TripTransportation transport = tripTransportationRepository.save(TripTransportation.builder()
-                .tripId(preference.getTripId())
+                .tripId(preference.getId())
                 .date(LocalDate.now().plusDays(3))
                 .from("SYD")
                 .to("MEL")
@@ -250,7 +235,7 @@ class BookingServiceIntegrationTest {
                 BigDecimal.ZERO
         );
         when(bookingApiClient.postItineraryQuote(any())).thenReturn(itineraryQuoteResp);
-        bookingService.quoteItinerary(preference.getTripId());
+        bookingService.quoteItinerary(preference.getId());
 
         ConfirmResp confirmResponse = new ConfirmResp(
                 "CONFIRMED",

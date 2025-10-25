@@ -1,19 +1,18 @@
 package com.demo.api.service.impl;
 
-import java.net.URI;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import com.demo.api.dto.DailyWeatherDTO;
+import com.demo.api.model.TripPreference;
+import com.demo.api.model.TripWeather;
+import com.demo.api.repository.TripWeatherRepository;
+import com.demo.api.service.WeatherService;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,20 +23,14 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.demo.api.dto.DailyWeatherDTO;
-import com.demo.api.model.TripPreference;
-import com.demo.api.model.TripWeather;
-import com.demo.api.repository.TripWeatherRepository;
-import com.demo.api.service.WeatherService;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import java.net.URI;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This service communicates with the OpenWeatherMap API to fetch
@@ -89,7 +82,7 @@ public class WeatherServiceImpl implements WeatherService {
         // 3. Parse JSON response into structured objects
         OpenWeatherForecastResponse forecastResponse = parseResponse(responseJson);
         if (forecastResponse == null || forecastResponse.getList() == null || forecastResponse.getList().isEmpty()) {
-            log.warn("No forecast data returned for trip {}", preference.getTripId());
+            log.warn("No forecast data returned for trip {}", preference.getId());
             return;
         }
 
@@ -115,12 +108,12 @@ public class WeatherServiceImpl implements WeatherService {
                 .toList();
 
         if (filteredSummaries.isEmpty()) {
-            log.info("No weather summaries within trip window for trip {}", preference.getTripId());
+            log.info("No weather summaries within trip window for trip {}", preference.getId());
             return;
         }
 
         // 6. Upsert TripWeather entities for the filtered summaries
-        Map<LocalDate, TripWeather> existingByDate = tripWeatherRepository.findByTripId(preference.getTripId())
+        Map<LocalDate, TripWeather> existingByDate = tripWeatherRepository.findByTripId(preference.getId())
                 .stream()
                 .collect(Collectors.toMap(TripWeather::getDate, Function.identity()));
 
@@ -129,7 +122,7 @@ public class WeatherServiceImpl implements WeatherService {
             TripWeather weather = existingByDate.get(summary.getDate());
             if (weather == null) {
                 weather = modelMapper.map(summary, TripWeather.class);
-                weather.setTripId(preference.getTripId());
+                weather.setTripId(preference.getId());
                 existingByDate.put(summary.getDate(), weather);
             } else {
                 weather.setMinTemp(summary.getMinTemp());
@@ -141,7 +134,7 @@ public class WeatherServiceImpl implements WeatherService {
 
         tripWeatherRepository.saveAll(toSave);
 
-        log.info("Stored {} daily weather records for trip {}", toSave.size(), preference.getTripId());
+        log.info("Stored {} daily weather records for trip {}", toSave.size(), preference.getId());
     }
 
     // ---------------- Helper Methods ---------------- //
@@ -153,7 +146,7 @@ public class WeatherServiceImpl implements WeatherService {
         if (preference == null) {
             throw new IllegalArgumentException("Trip preference is required");
         }
-        if (preference.getTripId() == null) {
+        if (preference.getId() == null) {
             throw new IllegalArgumentException("Trip preference must include a tripId");
         }
         if (!StringUtils.hasText(preference.getToCity())) {
