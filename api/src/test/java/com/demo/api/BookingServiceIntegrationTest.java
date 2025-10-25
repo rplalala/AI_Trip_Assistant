@@ -6,9 +6,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.demo.api.client.BookingApiClient;
 import com.demo.api.dto.booking.ConfirmResp;
+import com.demo.api.dto.booking.ItineraryQuoteItem;
 import com.demo.api.dto.booking.ItineraryQuoteResp;
 import com.demo.api.dto.booking.QuoteItem;
 import com.demo.api.dto.booking.QuoteResp;
@@ -90,21 +93,19 @@ class BookingServiceIntegrationTest {
                 .build());
 
         QuoteItem quoteItem = new QuoteItem(
-                "hotel_" + hotel.getId(),
-                "sku-hotel",
-                150,
+                "HTL_" + hotel.getId(),
+                BigDecimal.valueOf(150),
                 1,
-                150,
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(150),
                 "AUD",
-                null,
-                null,
-                "Harbour Hotel"
+                999,
+                Map.of("hotel_name", "Harbour Hotel"),
+                "Free cancellation up to 24h"
         );
         QuoteResp quoteResp = new QuoteResp(
                 "qt_hotel_123",
                 OffsetDateTime.now().plusHours(1),
-                "AUD",
-                "quoted",
                 List.of(quoteItem)
         );
         when(bookingApiClient.postQuote(any())).thenReturn(quoteResp);
@@ -142,35 +143,52 @@ class BookingServiceIntegrationTest {
                 .status("pending")
                 .build());
 
-        QuoteItem transportItem = new QuoteItem(
-                "transport_" + transport.getId(),
-                "sku-flight",
-                150,
+        QuoteItem transportLineItem = new QuoteItem(
+                "SKU_FLIGHT",
+                BigDecimal.valueOf(150),
                 2,
-                300,
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(300),
                 "AUD",
-                null,
-                "Qantas Airways",
+                50,
+                Map.of("provider", "Qantas Airways"),
                 null
         );
-        QuoteItem attractionItem = new QuoteItem(
-                "attraction_" + attraction.getId(),
-                "sku-tour",
-                60,
+        ItineraryQuoteItem transportItem = new ItineraryQuoteItem(
+                "transport_" + transport.getId(),
+                "transportation",
                 2,
-                120,
+                BigDecimal.valueOf(300),
+                BigDecimal.ZERO,
+                List.of(transportLineItem)
+        );
+        QuoteItem attractionLineItem = new QuoteItem(
+                "SKU_TOUR",
+                BigDecimal.valueOf(60),
+                2,
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(120),
                 "AUD",
-                60,
-                null,
+                75,
+                Map.of("location", "Sydney"),
                 null
+        );
+        ItineraryQuoteItem attractionItem = new ItineraryQuoteItem(
+                "attraction_" + attraction.getId(),
+                "attraction",
+                2,
+                BigDecimal.valueOf(120),
+                BigDecimal.ZERO,
+                List.of(attractionLineItem)
         );
 
         ItineraryQuoteResp itineraryQuoteResp = new ItineraryQuoteResp(
                 "iti_qt_456",
                 OffsetDateTime.now().plusHours(2),
                 "AUD",
-                "quoted",
-                List.of(transportItem, attractionItem)
+                List.of(transportItem, attractionItem),
+                BigDecimal.valueOf(420),
+                BigDecimal.ZERO
         );
         when(bookingApiClient.postItineraryQuote(any())).thenReturn(itineraryQuoteResp);
 
@@ -204,40 +222,46 @@ class BookingServiceIntegrationTest {
                 .status("pending")
                 .build());
 
-        QuoteItem transportItem = new QuoteItem(
-                "transport_" + transport.getId(),
-                "sku-flight",
-                150,
+        QuoteItem transportLineItem = new QuoteItem(
+                "SKU_FLIGHT",
+                BigDecimal.valueOf(150),
                 2,
-                300,
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(300),
                 "AUD",
-                null,
-                "Qantas Airways",
+                50,
+                Map.of("provider", "Qantas Airways"),
                 null
+        );
+        ItineraryQuoteItem transportItem = new ItineraryQuoteItem(
+                "transport_" + transport.getId(),
+                "transportation",
+                2,
+                BigDecimal.valueOf(300),
+                BigDecimal.ZERO,
+                List.of(transportLineItem)
         );
         ItineraryQuoteResp itineraryQuoteResp = new ItineraryQuoteResp(
                 "iti_qt_789",
                 OffsetDateTime.now().plusHours(2),
                 "AUD",
-                "quoted",
-                List.of(transportItem)
+                List.of(transportItem),
+                BigDecimal.valueOf(300),
+                BigDecimal.ZERO
         );
         when(bookingApiClient.postItineraryQuote(any())).thenReturn(itineraryQuoteResp);
         bookingService.quoteItinerary(preference.getTripId());
 
         ConfirmResp confirmResponse = new ConfirmResp(
-                "iti_qt_789",
-                "confirmed",
+                "CONFIRMED",
                 "voucher123",
-                "inv456",
-                OffsetDateTime.now(),
-                List.of(new ConfirmResp.ConfirmedItem("transport_" + transport.getId(), "confirmed"))
+                "inv456"
         );
         when(bookingApiClient.postConfirm(any(), any())).thenReturn(confirmResponse);
 
         ConfirmResp confirmResp = bookingService.confirmBooking("iti_qt_789", List.of("transport_" + transport.getId()));
 
-        assertThat(confirmResp.status()).isEqualTo("confirmed");
+        assertThat(confirmResp.status()).isEqualTo("CONFIRMED");
 
         TripBookingQuote quote = tripBookingQuoteRepository.findByQuoteTokenAndItemReference("iti_qt_789", "transport_" + transport.getId())
                 .orElseThrow();

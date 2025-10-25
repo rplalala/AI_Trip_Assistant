@@ -1,5 +1,7 @@
 package com.demo.api.service.impl;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -22,6 +24,7 @@ import org.springframework.util.StringUtils;
 import com.demo.api.client.BookingApiClient;
 import com.demo.api.dto.booking.ConfirmReq;
 import com.demo.api.dto.booking.ConfirmResp;
+import com.demo.api.dto.booking.ItineraryQuoteItem;
 import com.demo.api.dto.booking.ItineraryQuoteReq;
 import com.demo.api.dto.booking.ItineraryQuoteReqItem;
 import com.demo.api.dto.booking.ItineraryQuoteResp;
@@ -154,20 +157,21 @@ public class BookingServiceImpl implements BookingService {
         try {
             ItineraryQuoteResp response = bookingApiClient.postItineraryQuote(request);
             String rawResponse = serializeSafely(response);
-            for (QuoteItem item : response.items()) {
-                String itemReference = item.itemReference();
+            for (ItineraryQuoteItem item : response.items()) {
+                String itemReference = item.reference();
                 ItineraryItemContext ctx = contexts.stream()
                         .filter(candidate -> candidate.reference().equals(itemReference))
                         .findFirst()
                         .orElseThrow(() -> new IllegalStateException("Unexpected itinerary item reference: " + itemReference));
+                String itemCurrency = resolveItemCurrency(item, ctx, response.currency());
 
                 upsertQuoteRecord(
                         tripId,
                         ctx.productType(),
                         ctx.entityId(),
                         response.quoteToken(),
-                        item.currency() != null ? item.currency() : ctx.currency(),
-                        item.total(),
+                        itemCurrency,
+                        toIntegerAmount(item.total()),
                         toInstant(response.expiresAt()),
                         rawResponse,
                         "quoted"
@@ -513,16 +517,40 @@ public class BookingServiceImpl implements BookingService {
         if (items == null || items.isEmpty()) {
             return null;
         }
-        int total = 0;
-        boolean hasTotal = false;
+        BigDecimal total = BigDecimal.ZERO;
+        boolean hasAmount = false;
         for (QuoteItem item : items) {
-            Integer itemTotal = item.total();
+            BigDecimal itemTotal = item.total();
             if (itemTotal != null) {
-                total += itemTotal;
-                hasTotal = true;
+                total = total.add(itemTotal);
+                hasAmount = true;
             }
         }
-        return hasTotal ? total : null;
+        return hasAmount ? toIntegerAmount(total) : null;
+    }
+
+    private String resolveItemCurrency(ItineraryQuoteItem item, ItineraryItemContext ctx, String fallbackCurrency) {
+        if (item.quoteItems() != null && !item.quoteItems().isEmpty()) {
+            QuoteItem firstQuoteItem = item.quoteItems().get(0);
+            if (StringUtils.hasText(firstQuoteItem.currency())) {
+                return firstQuoteItem.currency();
+            }
+        }
+        if (StringUtils.hasText(ctx.currency())) {
+            return ctx.currency();
+        }
+        return fallbackCurrency;
+    }
+
+    private Integer toIntegerAmount(BigDecimal amount) {
+        if (amount == null) {
+            return null;
+        }
+        BigDecimal normalised = amount.stripTrailingZeros();
+        if (normalised.scale() <= 0) {
+            return normalised.intValue();
+        }
+        return normalised.setScale(0, RoundingMode.HALF_UP).intValue();
     }
 
     /**

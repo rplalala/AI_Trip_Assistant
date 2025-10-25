@@ -4,11 +4,13 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -107,18 +109,39 @@ public class WeatherServiceImpl implements WeatherService {
                 .sorted(Comparator.comparing(DailyWeatherDTO::getDate))
                 .toList();
 
-        // 6. Convert DTOs into TripWeather entities and persist them
-        List<TripWeather> entities = dailySummaries.stream()
-                .map(dto -> {
-                    TripWeather weather = modelMapper.map(dto, TripWeather.class);
-                    weather.setTripId(preference.getTripId());
-                    return weather;
-                })
+        // Filter summaries to the trip's date window (if defined)
+        List<DailyWeatherDTO> filteredSummaries = dailySummaries.stream()
+                .filter(dto -> isWithinTripWindow(dto.getDate(), preference))
                 .toList();
 
-        tripWeatherRepository.saveAll(entities);
+        if (filteredSummaries.isEmpty()) {
+            log.info("No weather summaries within trip window for trip {}", preference.getTripId());
+            return;
+        }
 
-        log.info("Stored {} daily weather records for trip {}", entities.size(), preference.getTripId());
+        // 6. Upsert TripWeather entities for the filtered summaries
+        Map<LocalDate, TripWeather> existingByDate = tripWeatherRepository.findByTripId(preference.getTripId())
+                .stream()
+                .collect(Collectors.toMap(TripWeather::getDate, Function.identity()));
+
+        List<TripWeather> toSave = new ArrayList<>();
+        for (DailyWeatherDTO summary : filteredSummaries) {
+            TripWeather weather = existingByDate.get(summary.getDate());
+            if (weather == null) {
+                weather = modelMapper.map(summary, TripWeather.class);
+                weather.setTripId(preference.getTripId());
+                existingByDate.put(summary.getDate(), weather);
+            } else {
+                weather.setMinTemp(summary.getMinTemp());
+                weather.setMaxTemp(summary.getMaxTemp());
+                weather.setWeatherCondition(summary.getWeatherCondition());
+            }
+            toSave.add(weather);
+        }
+
+        tripWeatherRepository.saveAll(toSave);
+
+        log.info("Stored {} daily weather records for trip {}", toSave.size(), preference.getTripId());
     }
 
     // ---------------- Helper Methods ---------------- //
@@ -136,6 +159,18 @@ public class WeatherServiceImpl implements WeatherService {
         if (!StringUtils.hasText(preference.getToCity())) {
             throw new IllegalArgumentException("Trip preference must include a city");
         }
+    }
+
+    private boolean isWithinTripWindow(LocalDate date, TripPreference preference) {
+        LocalDate start = preference.getStartDate();
+        LocalDate end = preference.getEndDate();
+        if (start != null && date.isBefore(start)) {
+            return false;
+        }
+        if (end != null && date.isAfter(end)) {
+            return false;
+        }
+        return true;
     }
 
     /**

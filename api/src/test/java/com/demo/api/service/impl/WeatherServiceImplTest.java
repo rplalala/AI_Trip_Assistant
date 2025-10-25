@@ -1,12 +1,12 @@
 package com.demo.api.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,10 +14,9 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,28 +58,17 @@ class WeatherServiceImplTest {
 
         Map<LocalDate, TripWeather> store = new HashMap<>();
 
-        when(tripWeatherRepository.existsByTripIdAndDate(eq(preference.getTripId()), any(LocalDate.class)))
-                .thenAnswer(invocation -> {
-                    LocalDate date = invocation.getArgument(1);
-                    TripWeather weather = store.get(date);
-                    return weather != null && Objects.equals(weather.getTripId(), preference.getTripId());
-                });
+        when(tripWeatherRepository.findByTripId(preference.getTripId()))
+                .thenAnswer(invocation -> store.values().stream().toList());
 
-        when(tripWeatherRepository.findByTripIdAndDate(eq(preference.getTripId()), any(LocalDate.class)))
+        when(tripWeatherRepository.saveAll(any()))
                 .thenAnswer(invocation -> {
-                    LocalDate date = invocation.getArgument(1);
-                    TripWeather weather = store.get(date);
-                    if (weather != null && Objects.equals(weather.getTripId(), preference.getTripId())) {
-                        return Optional.of(weather);
+                    @SuppressWarnings("unchecked")
+                    List<TripWeather> batch = invocation.getArgument(0, List.class);
+                    for (TripWeather weather : batch) {
+                        store.put(weather.getDate(), weather);
                     }
-                    return Optional.empty();
-                });
-
-        when(tripWeatherRepository.save(any(TripWeather.class)))
-                .thenAnswer(invocation -> {
-                    TripWeather weather = invocation.getArgument(0);
-                    store.put(weather.getDate(), weather);
-                    return weather;
+                    return batch;
                 });
 
         // First invocation stores new records, second invocation should update in place.
@@ -104,8 +92,10 @@ class WeatherServiceImplTest {
         assertEquals(25.0, dayTwo.getMaxTemp());
         assertEquals("Clear", dayTwo.getWeatherCondition());
 
-        verify(tripWeatherRepository, never()).existsByTripIdAndDate(eq(preference.getTripId()), eq(LocalDate.of(2022, 12, 31)));
-        verify(tripWeatherRepository, never()).existsByTripIdAndDate(eq(preference.getTripId()), eq(LocalDate.of(2023, 1, 3)));
+        assertFalse(store.containsKey(LocalDate.of(2022, 12, 31)));
+        assertFalse(store.containsKey(LocalDate.of(2023, 1, 3)));
+
+        verify(tripWeatherRepository, times(2)).saveAll(any());
     }
 
     private static String buildForecastResponse() {
@@ -135,4 +125,3 @@ class WeatherServiceImplTest {
         return date.atTime(hour, 0).toEpochSecond(ZoneOffset.UTC);
     }
 }
-
