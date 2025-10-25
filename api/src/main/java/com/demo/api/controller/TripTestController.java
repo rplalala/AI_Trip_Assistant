@@ -2,13 +2,12 @@ package com.demo.api.controller;
 
 import com.demo.api.ApiRespond;
 import com.demo.api.dto.TripInsightDTO;
+import com.demo.api.dto.TripPreferenceRequestDTO;
+import com.demo.api.service.TripGenerationService;
 import com.demo.api.service.TripInsightService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.demo.api.dto.TripPreferenceRequestDTO;
-import com.demo.api.service.TripGenerationService;
 
 import java.util.List;
 
@@ -28,7 +27,7 @@ public class TripTestController {
     }
 
     @PostMapping("/test-generate")
-    public ResponseEntity<String> testGenerate(@RequestBody TripPreferenceRequestDTO dto) {
+    public ApiRespond<String> testGenerate(@RequestBody TripPreferenceRequestDTO dto) {
         log.info("Received test trip generation request for user {} from {}, {} to {}, {}",
                 dto.getUserId(),
                 dto.getFromCity(),
@@ -43,7 +42,7 @@ public class TripTestController {
         log.info("Generated Trip JSON:\n{}", generatedJson);
 
         // return the generated JSON as the response body
-        return ResponseEntity.ok(generatedJson);
+        return ApiRespond.success(generatedJson);
     }
 
     @GetMapping("/insights")

@@ -4,9 +4,9 @@ import com.demo.api.ApiRespond;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -90,12 +90,14 @@ public class GlobalExceptionHandler {
      * Handling exceptions when calling external services (Booking Service)
      */
     @ExceptionHandler(FeignException.class)
-    public ResponseEntity<ApiRespond<Void>> handleFeignException(FeignException e) {
+    public ApiRespond<Void> handleFeignException(FeignException e, HttpServletResponse resp) {
         ExternalError externalError = parseExternalError(e);
         HttpStatus status = mapStatus(externalError, e.status());
+        resp.setStatus(status.value());
         String message = mapMessage(externalError);
-        log.warn("Booking service error: status={}, code={}, message={}", status, externalError.code(), externalError.message());
-        return ResponseEntity.status(status).body(ApiRespond.error(message));
+        log.warn("Booking service error: status={}, code={}, message={}",
+                status, externalError.code(), externalError.message());
+        return ApiRespond.error(message);
     }
 
     private ExternalError parseExternalError(FeignException e) {
