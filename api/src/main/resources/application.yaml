@@ -54,6 +54,10 @@ openweather:
 unsplash:
   access-key: ***REMOVED***
 
+google:
+  maps:
+    api-key: "${GOOGLE_MAPS_API_KEY:}"
+
 feign:
   httpclient:
     enabled: true
@@ -68,4 +72,5 @@ feign:
 
 booking:
   base-url: http://localhost:8092/api/booking
-
+  service:
+    base-url: ${booking.base-url}

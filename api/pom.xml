@@ -118,6 +118,19 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
             <version>4.3.0</version>
         </dependency>
+        <!-- Netty macOS native DNS resolver to avoid fallback warnings on Mac laptops -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-x86_64</classifier>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- OpenAI -->
         <dependency>
