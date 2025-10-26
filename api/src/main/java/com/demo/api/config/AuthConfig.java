@@ -4,6 +4,8 @@ import com.demo.api.ApiRespond;
 import com.demo.api.filter.JwtFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+
+import org.hibernate.Remove;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -36,7 +38,7 @@ public class AuthConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/register", "/api/login", "/api/verify-email","/api/forgot-password",
-                                "/api/reset-password", "/api/resend-verify-email", "/api/verify-reset-password-email")
+                                "/api/reset-password", "/api/resend-verify-email", "/api/verify-reset-password-email") 
                         .permitAll()
                         .anyRequest().authenticated()
                 )

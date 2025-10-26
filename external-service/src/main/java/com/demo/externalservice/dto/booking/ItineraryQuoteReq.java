@@ -19,7 +19,10 @@ public record ItineraryQuoteReq(
         @NotNull
         @NotEmpty
         @Valid
-        List<ItineraryQuoteReqItem> items
+        List<ItineraryQuoteReqItem> items,
+
+        @JsonProperty("trip_id")
+        Long tripId
 ) {
     public ItineraryQuoteReq {
         items = List.copyOf(items);

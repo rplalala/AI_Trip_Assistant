@@ -322,7 +322,7 @@ public class TokenService {
             if (isItinerary()) {
                 throw new UnsupportedOperationException("Itinerary quotes cannot be converted to a single QuoteReq");
             }
-            return new QuoteReq(productType, currency, partySize, params);
+            return new QuoteReq(productType, currency, partySize, params, null, null, null);
         }
 
         public boolean isItinerary() {
@@ -357,7 +357,7 @@ public class TokenService {
         }
 
         public QuoteReq toQuoteReq(String currency) {
-            return new QuoteReq(productType, currency, partySize, params);
+            return new QuoteReq(productType, currency, partySize, params, null, null, reference);
         }
     }
 

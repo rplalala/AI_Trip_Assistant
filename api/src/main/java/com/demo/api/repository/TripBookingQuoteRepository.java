@@ -13,7 +13,6 @@ public interface TripBookingQuoteRepository extends JpaRepository<TripBookingQuo
 
     Optional<TripBookingQuote> findByTripIdAndEntityId(Long tripId, Long entityId);
 
-    Optional<TripBookingQuote> findByQuoteTokenAndItemReference(String quoteToken, String itemReference);
+    Optional<TripBookingQuote> findByTripIdAndEntityIdAndProductType(Long tripId, Long entityId, String productType);
 
-    List<TripBookingQuote> findByQuoteToken(String quoteToken);
 }

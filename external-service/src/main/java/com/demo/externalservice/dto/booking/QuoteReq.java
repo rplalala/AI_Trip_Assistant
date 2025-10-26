@@ -21,6 +21,15 @@ public record QuoteReq(
         Integer partySize,
 
         @NotNull
-        Map<String, Object> params
+        Map<String, Object> params,
+
+        @JsonProperty("trip_id")
+        Long tripId,
+
+        @JsonProperty("entity_id")
+        Long entityId,
+
+        @JsonProperty("item_reference")
+        String itemReference
 ) {
 }

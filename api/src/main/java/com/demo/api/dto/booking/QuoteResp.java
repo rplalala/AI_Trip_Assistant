@@ -5,17 +5,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 
 public record QuoteResp(
         @NotBlank
-        @JsonProperty("quote_token")
-        String quoteToken,
+        @JsonProperty("voucher_code")
+        String voucherCode,
 
-        @NotNull
-        @JsonProperty("expires_at")
-        OffsetDateTime expiresAt,
+        @NotBlank
+        @JsonProperty("invoice_id")
+        String invoiceId,
 
         @NotNull
         @NotEmpty

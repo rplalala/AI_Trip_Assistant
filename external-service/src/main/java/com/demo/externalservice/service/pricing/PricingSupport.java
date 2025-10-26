@@ -4,10 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 
 final class PricingSupport {
 
@@ -60,15 +58,20 @@ final class PricingSupport {
         }
     }
 
-    static BigDecimal bd(long value) {
-        return BigDecimal.valueOf(value).setScale(0, RoundingMode.HALF_UP);
-    }
-
-    static BigDecimal adjust(BigDecimal base, double multiplier) {
-        return base.multiply(BigDecimal.valueOf(multiplier)).setScale(0, RoundingMode.HALF_UP);
-    }
-
-    static Random seededRandom(String seedSource) {
-        return new Random(seedSource.toLowerCase(Locale.ROOT).hashCode());
+    static BigDecimal decimalParam(Map<String, Object> params, String key) {
+        Object value = params.get(key);
+        if (value instanceof BigDecimal bigDecimal) {
+            return bigDecimal.setScale(0, RoundingMode.HALF_UP);
+        }
+        if (value instanceof Number number) {
+            return BigDecimal.valueOf(number.doubleValue()).setScale(0, RoundingMode.HALF_UP);
+        }
+        if (value instanceof String s && !s.isBlank()) {
+            try {
+                return new BigDecimal(s).setScale(0, RoundingMode.HALF_UP);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return null;
     }
 }
