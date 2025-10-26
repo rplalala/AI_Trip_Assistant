@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -84,23 +83,23 @@ class BookingServiceIntegrationTest {
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(150),
                 "AUD",
-                999,
                 Map.of("hotel_name", "Harbour Hotel"),
                 "Free cancellation up to 24h"
         );
         QuoteResp quoteResp = new QuoteResp(
-                "qt_hotel_123",
-                OffsetDateTime.now().plusHours(1),
+                "VCH-1234-ABCD",
+                "INV_9876",
                 List.of(quoteItem)
         );
         when(bookingApiClient.postQuote(any())).thenReturn(quoteResp);
 
         TripBookingQuote result = bookingService.quoteSingleItem(preference.getId(), "hotel", hotel.getId());
 
-        assertThat(result.getQuoteToken()).isEqualTo("qt_hotel_123");
+        assertThat(result.getVoucherCode()).isEqualTo("VCH-1234-ABCD");
+        assertThat(result.getInvoiceId()).isEqualTo("INV_9876");
         assertThat(result.getTripId()).isEqualTo(preference.getId());
         assertThat(result.getEntityId()).isEqualTo(hotel.getId());
-        assertThat(result.getStatus()).isEqualTo("quoted");
+        assertThat(result.getStatus()).isEqualTo("confirm");
         assertThat(result.getTotalAmount()).isEqualTo(150);
         assertThat(result.getItemReference()).isEqualTo("hotel_" + hotel.getId());
 
@@ -135,7 +134,6 @@ class BookingServiceIntegrationTest {
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(300),
                 "AUD",
-                50,
                 Map.of("provider", "Qantas Airways"),
                 null
         );
@@ -154,7 +152,6 @@ class BookingServiceIntegrationTest {
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(120),
                 "AUD",
-                75,
                 Map.of("location", "Sydney"),
                 null
         );
@@ -168,8 +165,8 @@ class BookingServiceIntegrationTest {
         );
 
         ItineraryQuoteResp itineraryQuoteResp = new ItineraryQuoteResp(
-                "iti_qt_456",
-                OffsetDateTime.now().plusHours(2),
+                "VCH-ITI-456",
+                "INV_5555",
                 "AUD",
                 List.of(transportItem, attractionItem),
                 BigDecimal.valueOf(420),
@@ -179,11 +176,11 @@ class BookingServiceIntegrationTest {
 
         ItineraryQuoteResp response = bookingService.quoteItinerary(preference.getId());
 
-        assertThat(response.quoteToken()).isEqualTo("iti_qt_456");
+        assertThat(response.voucherCode()).isEqualTo("VCH-ITI-456");
 
         List<TripBookingQuote> quotes = tripBookingQuoteRepository.findByTripId(preference.getId());
         assertThat(quotes).hasSize(2);
-        assertThat(quotes).allMatch(quote -> "quoted".equals(quote.getStatus()));
+        assertThat(quotes).allMatch(quote -> "confirm".equals(quote.getStatus()));
         assertThat(quotes)
                 .extracting(TripBookingQuote::getItemReference)
                 .containsExactlyInAnyOrder(
@@ -194,67 +191,4 @@ class BookingServiceIntegrationTest {
         verify(bookingApiClient, times(1)).postItineraryQuote(any());
     }
 
-    @Test
-    void confirmBookingUpdatesStatus() {
-        // Seed quotes via itinerary call
-        TripTransportation transport = tripTransportationRepository.save(TripTransportation.builder()
-                .tripId(preference.getId())
-                .date(LocalDate.now().plusDays(3))
-                .from("SYD")
-                .to("MEL")
-                .provider("Qantas Airways")
-                .reservationRequired(true)
-                .status("pending")
-                .build());
-
-        QuoteItem transportLineItem = new QuoteItem(
-                "SKU_FLIGHT",
-                BigDecimal.valueOf(150),
-                2,
-                BigDecimal.ZERO,
-                BigDecimal.valueOf(300),
-                "AUD",
-                50,
-                Map.of("provider", "Qantas Airways"),
-                null
-        );
-        ItineraryQuoteItem transportItem = new ItineraryQuoteItem(
-                "transport_" + transport.getId(),
-                "transportation",
-                2,
-                BigDecimal.valueOf(300),
-                BigDecimal.ZERO,
-                List.of(transportLineItem)
-        );
-        ItineraryQuoteResp itineraryQuoteResp = new ItineraryQuoteResp(
-                "iti_qt_789",
-                OffsetDateTime.now().plusHours(2),
-                "AUD",
-                List.of(transportItem),
-                BigDecimal.valueOf(300),
-                BigDecimal.ZERO
-        );
-        when(bookingApiClient.postItineraryQuote(any())).thenReturn(itineraryQuoteResp);
-        bookingService.quoteItinerary(preference.getId());
-
-        ConfirmResp confirmResponse = new ConfirmResp(
-                "CONFIRMED",
-                "voucher123",
-                "inv456"
-        );
-        when(bookingApiClient.postConfirm(any(), any())).thenReturn(confirmResponse);
-
-        ConfirmResp confirmResp = bookingService.confirmBooking("iti_qt_789", List.of("transport_" + transport.getId()));
-
-        assertThat(confirmResp.status()).isEqualTo("CONFIRMED");
-
-        TripBookingQuote quote = tripBookingQuoteRepository.findByQuoteTokenAndItemReference("iti_qt_789", "transport_" + transport.getId())
-                .orElseThrow();
-        assertThat(quote.getStatus()).isEqualTo("confirmed");
-
-        TripTransportation updatedTransport = tripTransportationRepository.findById(transport.getId()).orElseThrow();
-        assertThat(updatedTransport.getStatus()).isEqualTo("confirmed");
-
-        verify(bookingApiClient, times(1)).postConfirm(any(), any());
-    }
 }

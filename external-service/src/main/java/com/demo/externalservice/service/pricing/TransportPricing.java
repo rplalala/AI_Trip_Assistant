@@ -3,6 +3,7 @@ package com.demo.externalservice.service.pricing;
 import com.demo.externalservice.dto.booking.QuoteItem;
 import com.demo.externalservice.dto.booking.QuoteReq;
 import com.demo.externalservice.service.PricingResult;
+import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -10,7 +11,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.Optional;
 
 import static com.demo.externalservice.service.pricing.PricingSupport.*;
 
@@ -21,55 +22,49 @@ public class TransportPricing implements PricingCalculator {
     public PricingResult calculate(QuoteReq request) {
         Map<String, Object> params = request.params();
 
-        String mode = stringParam(params, "mode", "train").toLowerCase();
-        String from = stringParam(params, "from", "NRT").toUpperCase();
-        String to = stringParam(params, "to", "HND").toUpperCase();
+        String mode = stringParam(params, "mode", "transport").toLowerCase();
+        String from = stringParam(params, "from", "").toUpperCase();
+        String to = stringParam(params, "to", "").toUpperCase();
         LocalDate travelDate = dateParam(params, "date", LocalDate.now());
-        String travelClass = stringParam(params, "class", "economy").toLowerCase();
+        String provider = stringParam(params, "provider", "");
+        String ticketType = Optional.ofNullable(stringParam(params, "ticket_type", null))
+                .orElse(stringParam(params, "class", "standard")).toLowerCase();
+        String departureTime = Optional.ofNullable(stringParam(params, "time", null))
+                .orElse(stringParam(params, "departure_time", "00:00"));
 
-        Random rng = seededRandom(mode + from + to + travelDate + travelClass + request.partySize());
+        BigDecimal overrideTotal = decimalParam(params, "price");
+        if (overrideTotal == null) {
+            throw new ValidationException("Transport quote requires price parameter");
+        }
 
-        int base = mode.equals("flight") ? 15000 : 7000;
-        int distanceBand = Math.abs((from + to).hashCode()) % 6; // 0-5
-        base += distanceBand * 1200;
+        BigDecimal total = overrideTotal.setScale(0, RoundingMode.HALF_UP);
+        BigDecimal unitPrice = total;
+        int quantity = 1;
+        BigDecimal fees = Optional.ofNullable(decimalParam(params, "fees")).orElse(BigDecimal.ZERO);
 
-        double classMultiplier = switch (travelClass) {
-            case "business" -> 1.45;
-            case "first" -> 1.9;
-            case "premium" -> 1.25;
-            default -> 1.0;
-        };
-        double randomness = 0.9 + (rng.nextDouble() * 0.25); // +/- ~15%
-        double distanceMultiplier = 1.0 + (distanceBand * 0.12);
+        String fromKey = from.isBlank() ? "GEN" : from.replaceAll("\\s+", "_");
+        String toKey = to.isBlank() ? "GEN" : to.replaceAll("\\s+", "_");
+        String routeKey = "%s_%s".formatted(fromKey, toKey);
+        String sku = "TP_%s_%s".formatted(routeKey, travelDate);
 
-        BigDecimal basePrice = BigDecimal.valueOf(base);
-        BigDecimal unitPrice = basePrice
-                .multiply(BigDecimal.valueOf(classMultiplier))
-                .multiply(BigDecimal.valueOf(distanceMultiplier))
-                .multiply(BigDecimal.valueOf(randomness))
-                .setScale(0, RoundingMode.HALF_UP);
-
-        int quantity = Math.max(1, request.partySize());
-        BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
-        BigDecimal fees = subtotal
-                .multiply(BigDecimal.valueOf(0.03 + (rng.nextInt(5) * 0.01)))
-                .setScale(0, RoundingMode.HALF_UP);
-        BigDecimal total = subtotal.add(fees);
-
-        String skuPrefix = mode.equals("flight") ? "FLT" : "TRN";
-        String sku = "%s_%s_%s_%s".formatted(
-                skuPrefix,
-                from,
-                to,
-                travelDate
-        );
+        Object reservationRequired = params.get("reservation_required");
+        if (reservationRequired == null) {
+            reservationRequired = Boolean.TRUE;
+        }
+        String status = stringParam(params, "status", "pending");
+        int travellers = Math.max(1, intParam(params, "people", Math.max(1, request.partySize())));
 
         Map<String, Object> meta = Map.of(
-                "mode", mode,
                 "from", from,
                 "to", to,
-                "travel_date", travelDate.toString(),
-                "travel_class", travelClass
+                "date", travelDate.toString(),
+                "time", departureTime,
+                "provider", provider,
+                "ticket_type", ticketType,
+                "mode", mode,
+                "status", status,
+                "reservation_required", reservationRequired,
+                "people", travellers
         );
 
         QuoteItem item = new QuoteItem(
@@ -79,7 +74,6 @@ public class TransportPricing implements PricingCalculator {
                 fees,
                 total,
                 request.currency(),
-                999,
                 meta,
                 "No charge until 7 days prior; 25% after."
         );

@@ -17,15 +17,13 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Service implementation for handling booking logic via external Booking API.
- * Supports quoting individual items, full itineraries, and confirming bookings.
+ * Supports quoting individual items and bundled itineraries.
  */
 @Service
 @Transactional
@@ -33,10 +31,9 @@ public class BookingServiceImpl implements BookingService {
 
     private static final Logger log = LoggerFactory.getLogger(BookingServiceImpl.class);
 
-    private static final String STATUS_CONFIRMED = "confirmed";
+    private static final String STATUS_CONFIRMED = "confirm";
     private static final String STATUS_FAILED = "failed";
     private static final String DEFAULT_CURRENCY = "AUD";
-    private static final String DEFAULT_PAYMENT_TOKEN = "pm_mock_4242";
 
     private final BookingApiClient bookingApiClient;
     private final TripTransportationRepository tripTransportationRepository;
@@ -80,7 +77,10 @@ public class BookingServiceImpl implements BookingService {
                 normalizedType,
                 payload.currency(),
                 resolvePartySize(preference),
-                payload.params()
+                payload.params(),
+                tripId,
+                entityId,
+                payload.reference()
         );
 
         try {
@@ -89,15 +89,16 @@ public class BookingServiceImpl implements BookingService {
                     tripId,
                     normalizedType,
                     entityId,
-                    response.quoteToken(),
+                    response.voucherCode(),
+                    response.invoiceId(),
                     payload.currency(),
                     computeTotalAmount(response.items()),
-                    toInstant(response.expiresAt()),
                     serializeSafely(response),
-                    "quoted"
+                    STATUS_CONFIRMED
             );
-            log.info("Stored booking quote for tripId={}, reference={}, token={}",
-                    tripId, saved.getItemReference(), response.quoteToken());
+            markEntityConfirmed(saved);
+            log.info("Stored booking quote for tripId={}, reference={}, voucher={}",
+                    tripId, saved.getItemReference(), response.voucherCode());
             return saved;
         } catch (BookingApiException ex) {
             persistFailure(tripId, normalizedType, entityId, ex.getResponseBody() != null ? ex.getResponseBody() : ex.getMessage());
@@ -126,10 +127,16 @@ public class BookingServiceImpl implements BookingService {
 
         String requestCurrency = preference.getCurrency() != null ? preference.getCurrency() : DEFAULT_CURRENCY;
         List<ItineraryQuoteReqItem> requestItems = contexts.stream()
-                .map(ctx -> new ItineraryQuoteReqItem(ctx.reference(), ctx.productType(), resolvePartySize(preference), ctx.params()))
+                .map(ctx -> new ItineraryQuoteReqItem(
+                        ctx.reference(),
+                        ctx.productType(),
+                        resolvePartySize(preference),
+                        ctx.params(),
+                        ctx.entityId()
+                ))
                 .collect(Collectors.toList());
 
-        ItineraryQuoteReq request = new ItineraryQuoteReq("iti_" + tripId, requestCurrency, requestItems);
+        ItineraryQuoteReq request = new ItineraryQuoteReq("iti_" + tripId, requestCurrency, requestItems, tripId);
 
         try {
             ItineraryQuoteResp response = bookingApiClient.postItineraryQuote(request);
@@ -142,19 +149,20 @@ public class BookingServiceImpl implements BookingService {
                         .orElseThrow(() -> new IllegalStateException("Unexpected itinerary item reference: " + itemReference));
                 String itemCurrency = resolveItemCurrency(item, ctx, response.currency());
 
-                upsertQuoteRecord(
+                TripBookingQuote saved = upsertQuoteRecord(
                         tripId,
                         ctx.productType(),
                         ctx.entityId(),
-                        response.quoteToken(),
+                        response.voucherCode(),
+                        response.invoiceId(),
                         itemCurrency,
                         toIntegerAmount(item.total()),
-                        toInstant(response.expiresAt()),
                         rawResponse,
-                        "quoted"
+                        STATUS_CONFIRMED
                 );
+                markEntityConfirmed(saved);
             }
-            log.info("Stored itinerary quote for tripId={}, token={}", tripId, response.quoteToken());
+            log.info("Stored itinerary quote for tripId={}, voucher={}", tripId, response.voucherCode());
             return response;
         } catch (BookingApiException ex) {
             String errorPayload = ex.getResponseBody() != null ? ex.getResponseBody() : ex.getMessage();
@@ -162,43 +170,6 @@ public class BookingServiceImpl implements BookingService {
             throw ex;
         } catch (RuntimeException ex) {
             contexts.forEach(ctx -> persistFailure(tripId, ctx.productType(), ctx.entityId(), ex.getMessage()));
-            throw ex;
-        }
-    }
-
-    /**
-     * Confirms a booking using a previously issued quoteToken.
-     * Updates the quote status and raw response; marks corresponding trip entities as 'confirmed'.
-     */
-    @Override
-    public ConfirmResp confirmBooking(String quoteToken, List<String> itemRefs) {
-        Assert.hasText(quoteToken, "quoteToken must not be empty");
-
-        List<String> requestedRefs = itemRefs == null ? List.of() : List.copyOf(itemRefs);
-        List<TripBookingQuote> quotesToUpdate = resolveQuotesForConfirmation(quoteToken, requestedRefs);
-        if (quotesToUpdate.isEmpty()) {
-            throw new IllegalArgumentException("No booking quotes found for token " + quoteToken);
-        }
-
-        ConfirmReq confirmReq = new ConfirmReq(quoteToken, DEFAULT_PAYMENT_TOKEN, requestedRefs);
-        String idempotencyKey = UUID.randomUUID().toString();
-
-        try {
-            ConfirmResp response = bookingApiClient.postConfirm(confirmReq, idempotencyKey);
-            String rawResponse = serializeSafely(response);
-            quotesToUpdate.forEach(quote -> {
-                quote.setStatus(STATUS_CONFIRMED);
-                quote.setRawResponse(rawResponse);
-            });
-            tripBookingQuoteRepository.saveAll(quotesToUpdate);
-            quotesToUpdate.forEach(this::markEntityConfirmed);
-            log.info("Booking confirmed for token={}, updated {} items", quoteToken, quotesToUpdate.size());
-            return response;
-        } catch (BookingApiException ex) {
-            markQuotesFailed(quotesToUpdate, ex.getResponseBody() != null ? ex.getResponseBody() : ex.getMessage());
-            throw ex;
-        } catch (RuntimeException ex) {
-            markQuotesFailed(quotesToUpdate, ex.getMessage());
             throw ex;
         }
     }
@@ -242,7 +213,16 @@ public class BookingServiceImpl implements BookingService {
         if (StringUtils.hasText(entity.getProvider())) {
             params.put("provider", entity.getProvider());
         }
-        return new QuotePayload("transportation", entity.getId(), params, resolveCurrency(entity.getCurrency(), preference));
+        if (entity.getPrice() != null) {
+            params.put("price", entity.getPrice());
+        }
+        return new QuotePayload(
+                "transportation",
+                entity.getId(),
+                params,
+                resolveCurrency(entity.getCurrency(), preference),
+                buildReference("transportation", entity.getId())
+        );
     }
 
     /**
@@ -267,7 +247,20 @@ public class BookingServiceImpl implements BookingService {
         if (StringUtils.hasText(entity.getHotelName())) {
             params.put("hotelName", entity.getHotelName());
         }
-        return new QuotePayload("hotel", entity.getId(), params, resolveCurrency(entity.getCurrency(), preference));
+        params.put("nights", nights);
+        if (entity.getPeople() != null) {
+            params.put("people", entity.getPeople());
+        }
+        if (entity.getPrice() != null) {
+            params.put("price", entity.getPrice());
+        }
+        return new QuotePayload(
+                "hotel",
+                entity.getId(),
+                params,
+                resolveCurrency(entity.getCurrency(), preference),
+                buildReference("hotel", entity.getId())
+        );
     }
 
     /**
@@ -291,7 +284,21 @@ public class BookingServiceImpl implements BookingService {
         if (entity.getTicketPrice() != null) {
             params.put("ticketPrice", entity.getTicketPrice());
         }
-        return new QuotePayload("attraction", entity.getId(), params, resolveCurrency(entity.getCurrency(), preference));
+        if (entity.getPeople() != null) {
+            params.put("people", entity.getPeople());
+        }
+        if (entity.getTicketPrice() != null && entity.getPeople() != null) {
+            params.put("price", entity.getTicketPrice() * Math.max(1, entity.getPeople()));
+        } else if (entity.getTicketPrice() != null) {
+            params.put("price", entity.getTicketPrice());
+        }
+        return new QuotePayload(
+                "attraction",
+                entity.getId(),
+                params,
+                resolveCurrency(entity.getCurrency(), preference),
+                buildReference("attraction", entity.getId())
+        );
     }
 
     /**
@@ -330,55 +337,16 @@ public class BookingServiceImpl implements BookingService {
         return contexts;
     }
 
-    /**
-     * Marks the corresponding entity (hotel/transportation/attraction) as confirmed in DB.
-     */
-    private void markEntityConfirmed(TripBookingQuote quote) {
-        switch (quote.getProductType()) {
-            case "transportation" -> tripTransportationRepository.findById(quote.getEntityId()).ifPresent(entity -> {
-                entity.setStatus(STATUS_CONFIRMED);
-                tripTransportationRepository.save(entity);
-            });
-            case "hotel" -> tripHotelRepository.findById(quote.getEntityId()).ifPresent(entity -> {
-                entity.setStatus(STATUS_CONFIRMED);
-                tripHotelRepository.save(entity);
-            });
-            case "attraction" -> tripAttractionRepository.findById(quote.getEntityId()).ifPresent(entity -> {
-                entity.setStatus(STATUS_CONFIRMED);
-                tripAttractionRepository.save(entity);
-            });
-            default -> log.warn("Unknown product type {} for confirmation", quote.getProductType());
-        }
-    }
-
-    /**
-     * Resolves and returns all booking quotes for a given quoteToken and optional itemRefs.
-     * If itemRefs is empty, returns all quotes with the given token.
-     */
-    private List<TripBookingQuote> resolveQuotesForConfirmation(String quoteToken, List<String> itemRefs) {
-        if (itemRefs.isEmpty()) {
-            return tripBookingQuoteRepository.findByQuoteToken(quoteToken);
-        }
-        return itemRefs.stream()
-                .map(ref -> tripBookingQuoteRepository.findByQuoteTokenAndItemReference(quoteToken, ref)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Quote not found for token " + quoteToken + " and reference " + ref)))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Inserts or updates a TripBookingQuote record based on quoteToken + item info.
-     */
     private TripBookingQuote upsertQuoteRecord(Long tripId,
                                                String productType,
                                                Long entityId,
-                                               String quoteToken,
+                                               String voucherCode,
+                                               String invoiceId,
                                                String currency,
                                                Integer totalAmount,
-                                               Instant expiresAt,
                                                String rawResponse,
                                                String status) {
-        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityId(tripId, entityId)
+        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityIdAndProductType(tripId, entityId, productType)
                 .orElseGet(() -> TripBookingQuote.builder()
                         .tripId(tripId)
                         .productType(productType)
@@ -388,21 +356,42 @@ public class BookingServiceImpl implements BookingService {
 
         quote.setProductType(productType);
         quote.setItemReference(buildReference(productType, entityId));
-        quote.setQuoteToken(quoteToken);
+        quote.setVoucherCode(voucherCode);
+        quote.setInvoiceId(invoiceId);
         quote.setCurrency(currency);
         quote.setTotalAmount(totalAmount);
-        quote.setExpiresAt(expiresAt);
         quote.setRawResponse(rawResponse);
         quote.setStatus(status);
         return tripBookingQuoteRepository.save(quote);
     }
 
+    private void markEntityConfirmed(TripBookingQuote quote) {
+        switch (quote.getProductType()) {
+            case "transportation", "transport" -> tripTransportationRepository.findById(quote.getEntityId())
+                    .ifPresent(entity -> {
+                        entity.setStatus(STATUS_CONFIRMED);
+                        tripTransportationRepository.save(entity);
+                    });
+            case "hotel" -> tripHotelRepository.findById(quote.getEntityId())
+                    .ifPresent(entity -> {
+                        entity.setStatus(STATUS_CONFIRMED);
+                        tripHotelRepository.save(entity);
+                    });
+            case "attraction" -> tripAttractionRepository.findById(quote.getEntityId())
+                    .ifPresent(entity -> {
+                        entity.setStatus(STATUS_CONFIRMED);
+                        tripAttractionRepository.save(entity);
+                    });
+            default -> log.debug("No status update applied for productType={}", quote.getProductType());
+        }
+    }
+
     /**
-     * Persists a failure record when quoting or confirmation fails.
+     * Persists a failure record when quoting fails.
      */
     private void persistFailure(Long tripId, String productType, Long entityId, String details) {
         String errorDetails = details != null ? details : "Booking request failed";
-        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityId(tripId, entityId)
+        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityIdAndProductType(tripId, entityId, productType)
                 .orElse(TripBookingQuote.builder()
                         .tripId(tripId)
                         .productType(productType)
@@ -410,25 +399,12 @@ public class BookingServiceImpl implements BookingService {
                         .itemReference(buildReference(productType, entityId))
                         .build());
         quote.setStatus(STATUS_FAILED);
+        quote.setVoucherCode(null);
+        quote.setInvoiceId(null);
         quote.setRawResponse(errorDetails);
         tripBookingQuoteRepository.save(quote);
         log.warn("Stored failed booking quote for tripId={}, reference={}, reason={}",
                 tripId, quote.getItemReference(), errorDetails);
-    }
-
-    /**
-     * Updates the status of all provided quotes to 'failed' with the given reason.
-     */
-    private void markQuotesFailed(List<TripBookingQuote> quotes, String details) {
-        if (quotes.isEmpty()) {
-            return;
-        }
-        String failure = details != null ? details : "Booking confirmation failed";
-        quotes.forEach(quote -> {
-            quote.setStatus(STATUS_FAILED);
-            quote.setRawResponse(failure);
-        });
-        tripBookingQuoteRepository.saveAll(quotes);
     }
 
     /**
@@ -483,10 +459,6 @@ public class BookingServiceImpl implements BookingService {
     /**
      * Converts OffsetDateTime to Instant safely.
      */
-    private Instant toInstant(OffsetDateTime dateTime) {
-        return dateTime != null ? dateTime.toInstant() : null;
-    }
-
     /**
      * Computes the total amount from all quote items, if present.
      */
@@ -572,7 +544,8 @@ public class BookingServiceImpl implements BookingService {
     private record QuotePayload(String productType,
                                 Long entityId,
                                 Map<String, Object> params,
-                                String currency) {
+                                String currency,
+                                String reference) {
     }
 
     record ItineraryItemContext(String productType,

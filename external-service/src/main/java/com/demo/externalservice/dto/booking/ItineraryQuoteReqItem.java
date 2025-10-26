@@ -21,6 +21,9 @@ public record ItineraryQuoteReqItem(
         Integer partySize,
 
         @NotNull
-        Map<String, Object> params
+        Map<String, Object> params,
+
+        @JsonProperty("entity_id")
+        Long entityId
 ) {
 }

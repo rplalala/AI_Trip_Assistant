@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "2a3a41ea-bcaa-4b42-9fc8-6b8a8bb52df8",
     "name": "AI Trip Assistant Booking Workflow",
-    "description": "Collection covering BFF and booking service endpoints for itinerary quotes and confirmations.",
+    "description": "Collection covering BFF and booking service endpoints for single-item and itinerary quotes.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -74,122 +74,7 @@
                 "quote"
               ]
             },
-            "description": "Generates a bundle quote for an itinerary. Response bundle token can be confirmed fully or partially."
-          },
-          "response": []
-        },
-        {
-          "name": "Confirm Single Product",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{idempotency_key}}",
-                "description": "Optional: ensure safe retries."
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quote_token\": \"{{single_quote_token}}\",\n  \"payment_token\": \"pm_mock_4242\"\n}"
-            },
-            "url": {
-              "raw": "{{bff_base_url}}/api/booking/confirm",
-              "host": [
-                "{{bff_base_url}}"
-              ],
-              "path": [
-                "api",
-                "booking",
-                "confirm"
-              ]
-            },
-            "description": "Confirms a single-product quote. Paste the token returned by the quote request into the `single_quote_token` variable."
-          },
-          "response": []
-        },
-        {
-          "name": "Confirm Itinerary (Full Bundle)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{idempotency_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quote_token\": \"{{itinerary_quote_token}}\",\n  \"payment_token\": \"pm_mock_4242\"\n}"
-            },
-            "url": {
-              "raw": "{{bff_base_url}}/api/booking/confirm",
-              "host": [
-                "{{bff_base_url}}"
-              ],
-              "path": [
-                "api",
-                "booking",
-                "confirm"
-              ]
-            },
-            "description": "Confirms every item in the itinerary quote. Leave `item_refs` out (or empty array) to book everything."
-          },
-          "response": []
-        },
-        {
-          "name": "Confirm Itinerary (Subset)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{idempotency_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quote_token\": \"{{itinerary_quote_token}}\",\n  \"payment_token\": \"pm_mock_4242\",\n  \"item_refs\": [\n    \"hotel_tokyo_nov02\"\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{bff_base_url}}/api/booking/confirm",
-              "host": [
-                "{{bff_base_url}}"
-              ],
-              "path": [
-                "api",
-                "booking",
-                "confirm"
-              ]
-            },
-            "description": "Confirms only selected itinerary items. Adjust `item_refs` to match references from the quote response."
+            "description": "Generates a bundle quote for an itinerary using the AI-composed trip plan."
           },
           "response": []
         }
@@ -256,39 +141,6 @@
             "description": "Direct itinerary quote on the booking service."
           },
           "response": []
-        },
-        {
-          "name": "Service Confirm",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{idempotency_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quote_token\": \"{{service_quote_token}}\",\n  \"payment_token\": \"pm_mock_4242\",\n  \"item_refs\": []\n}"
-            },
-            "url": {
-              "raw": "{{booking_service_base_url}}/api/booking/confirm",
-              "host": [
-                "{{booking_service_base_url}}"
-              ],
-              "path": [
-                "api",
-                "booking",
-                "confirm"
-              ]
-            },
-            "description": "Confirm a quote directly against the booking service. Provide `item_refs` only for itinerary tokens."
-          },
-          "response": []
         }
       ]
     }
@@ -307,27 +159,6 @@
     },
     {
       "key": "jwt_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "idempotency_key",
-      "value": "",
-      "type": "string",
-      "description": "Optional UUID for safe retries (leave blank or set per request)."
-    },
-    {
-      "key": "single_quote_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "itinerary_quote_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "service_quote_token",
       "value": "",
       "type": "string"
     }

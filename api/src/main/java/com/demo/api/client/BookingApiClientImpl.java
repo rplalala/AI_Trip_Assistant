@@ -13,8 +13,6 @@ import org.springframework.util.Assert;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
-import com.demo.api.dto.booking.ConfirmReq;
-import com.demo.api.dto.booking.ConfirmResp;
 import com.demo.api.dto.booking.ItineraryQuoteReq;
 import com.demo.api.dto.booking.ItineraryQuoteResp;
 import com.demo.api.dto.booking.QuoteReq;
@@ -52,13 +50,6 @@ public class BookingApiClientImpl implements BookingApiClient {
         Assert.notNull(request, "Itinerary quote request must not be null");
         log.debug("Sending itinerary quote request itineraryId={}", request.itineraryId());
         return executePost("/itinerary/quote", request, ItineraryQuoteResp.class, null);
-    }
-
-    @Override
-    public ConfirmResp postConfirm(ConfirmReq request, String idempotencyKey) {
-        Assert.notNull(request, "Confirm request must not be null");
-        log.debug("Sending booking confirm request for quoteToken={}", request.quoteToken());
-        return executePost("/confirm", request, ConfirmResp.class, idempotencyKey);
     }
 
     private <T> T executePost(String path, Object payload, Class<T> responseType, String idempotencyKey) {

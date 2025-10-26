@@ -33,10 +33,6 @@ public record QuoteItem(
         @NotBlank
         String currency,
 
-        @NotNull
-        @PositiveOrZero
-        Integer availability,
-
         Map<String, Object> meta,
 
         @JsonProperty("cancellation_policy")

@@ -1,6 +1,5 @@
 package com.demo.api.model;
 
-import java.time.Instant;
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
@@ -42,16 +41,16 @@ public class TripBookingQuote {
     @Column(name = "entity_id", nullable = false)
     private Long entityId;
 
-    @Column(name = "quote_token")
-    private String quoteToken;
+    @Column(name = "voucher_code")
+    private String voucherCode;
+
+    @Column(name = "invoice_id")
+    private String invoiceId;
 
     private String currency;
 
     @Column(name = "total_amount")
     private Integer totalAmount;
-
-    @Column(name = "expires_at")
-    private Instant expiresAt;
 
     @Column(name = "raw_response", length = 8192)
     private String rawResponse;
@@ -60,7 +59,7 @@ public class TripBookingQuote {
     private LocalDate createdAt;
 
     @Builder.Default
-    private String status = "quoted";
+    private String status = "confirm";
 
     @PrePersist
     void onCreate() {
@@ -68,7 +67,7 @@ public class TripBookingQuote {
             createdAt = LocalDate.now();
         }
         if (status == null || status.isBlank()) {
-            status = "quoted";
+            status = "confirm";
         }
     }
 }

@@ -30,12 +30,4 @@ public class BookingController {
         return ApiRespond.success(bookingFacade.prepareItinerary(request, authentication.getName()));
     }
 
-    @PostMapping("/confirm")
-    public ApiRespond<ConfirmResp> confirm(
-            @Valid @RequestBody ConfirmReq request,
-            Authentication authentication,
-            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
-    ) {
-        return ApiRespond.success(bookingFacade.confirm(request, authentication.getName(), idempotencyKey));
-    }
 }
