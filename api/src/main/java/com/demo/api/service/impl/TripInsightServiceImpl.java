@@ -4,8 +4,12 @@ import com.demo.api.client.OpenAiClient;
 import com.demo.api.dto.InsightResponseDTO;
 import com.demo.api.dto.TripInsightDTO;
 import com.demo.api.mapper.TripInsightMapper;
+import com.demo.api.model.Trip;
+import com.demo.api.model.TripAttraction;
 import com.demo.api.model.TripInsight;
+import com.demo.api.repository.TripAttractionRepository;
 import com.demo.api.repository.TripInsightRepository;
+import com.demo.api.repository.TripRepository;
 import com.demo.api.service.TripInsightService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -32,11 +36,17 @@ public class TripInsightServiceImpl implements TripInsightService {
 
     private final TripInsightRepository insightRepository;
 
+    private final TripRepository tripRepository;
+
+    private final TripAttractionRepository tripAttractionRepository;
+
     private final ObjectProvider<OpenAiClient> openAiClientProvider;
 
-    public TripInsightServiceImpl(TripInsightMapper tripInsightMapper, TripInsightRepository insightRepository, ObjectProvider<OpenAiClient> openAiClientProvider) {
+    public TripInsightServiceImpl(TripInsightMapper tripInsightMapper, TripInsightRepository insightRepository, TripRepository tripRepository, TripAttractionRepository tripAttractionRepository, ObjectProvider<OpenAiClient> openAiClientProvider) {
         this.tripInsightMapper = tripInsightMapper;
         this.insightRepository = insightRepository;
+        this.tripRepository = tripRepository;
+        this.tripAttractionRepository = tripAttractionRepository;
         this.openAiClientProvider = openAiClientProvider;
     }
 
@@ -44,23 +54,16 @@ public class TripInsightServiceImpl implements TripInsightService {
     @Override
     @Transactional
     public List<TripInsight> generateAndStoreInsights(Long tripId) {
-//        Trip trip = tripRepository.findById(tripId)
-//                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
-//        String user = buildUserPrompt(trip, pois);
-        SimpleTrip trip = new SimpleTrip();
-        trip.setId(1L);
-        trip.setStartDate(LocalDate.of(2025, 12, 1));
-        trip.setEndDate(LocalDate.of(2025, 12, 7));
-        trip.setToCity("Sydney");
-        trip.setToCountry("Australia");
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+        List<TripAttraction> tripAttractions = tripAttractionRepository.findByTripId(tripId);
+        if (tripAttractions.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        List<String> pois =  new ArrayList<>();
-        pois.add("Sydney Opera House");
-        pois.add("Darling Harbour");
-        pois.add("Royal Botanic Garden");
-        pois.add("Taronga Zoo");
+        List<String> locations = tripAttractions.stream().map(TripAttraction::getLocation).toList();
+        String userPrompt = buildUserPrompt(trip, locations);
 
-        String userPrompt = buildUserPrompt(trip, pois);
         OpenAiClient openAiClient = Optional.ofNullable(openAiClientProvider.getIfAvailable())
                 .orElseThrow(() -> new IllegalStateException("OpenAiClient bean is not configured"));
         String InsightsJson = openAiClient.requestTripPlan(userPrompt);
@@ -97,7 +100,7 @@ public class TripInsightServiceImpl implements TripInsightService {
         return tripInsightMapper.toDtoList(insights);
     }
 
-    private String buildUserPrompt(SimpleTrip trip, List<String> pois) {
+    private String buildUserPrompt(Trip trip, List<String> pois) {
         return """
         Produce short, concrete destination insights tied to the user's itinerary.
         Each item: title, content (2–3 sentences), theme, and an emoji icon representing the theme.
@@ -123,19 +126,5 @@ public class TripInsightServiceImpl implements TripInsightService {
                 trip.getStartDate(), trip.getEndDate(),
                 pois.toString()
         );
-    }
-
-    // TODO: delete after creating Trip Domain
-    @Data
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class SimpleTrip {
-        private Long id;
-        private String toCity;
-        private String toCountry;
-        private LocalDate startDate;
-        private LocalDate endDate;
     }
 }

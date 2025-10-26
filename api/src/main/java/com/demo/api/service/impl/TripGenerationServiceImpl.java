@@ -6,7 +6,7 @@ import com.demo.api.dto.ItineraryDTO;
 import com.demo.api.dto.TripPreferenceRequestDTO;
 import com.demo.api.model.Trip;
 import com.demo.api.model.TripWeather;
-import com.demo.api.repository.TripPreferenceRepository;
+import com.demo.api.repository.TripRepository;
 import com.demo.api.repository.TripWeatherRepository;
 import com.demo.api.service.TripGenerationService;
 import com.demo.api.service.TripStorageService;
@@ -50,7 +50,7 @@ public class TripGenerationServiceImpl implements TripGenerationService {
     private final TripPlanPromptBuilder tripPlanPromptBuilder;
     private final ObjectProvider<OpenAiClient> openAiClientProvider;
     private final ObjectProvider<TripStorageService> tripStorageServiceProvider;
-    private final TripPreferenceRepository tripPreferenceRepository;
+    private final TripRepository tripRepository;
 
     // @Override
     // public void generateTripFromPreference(TripPreferenceRequestDTO dto) {
@@ -113,7 +113,7 @@ public class TripGenerationServiceImpl implements TripGenerationService {
         // 1. Convert the request DTO into a TripPreference entity
         Trip preference = modelMapper.map(dto, Trip.class);
         preference.setUserId(Long.valueOf(userId));
-        tripPreferenceRepository.save(preference);
+        tripRepository.save(preference);
         log.debug("Mapped trip preference request to entity: {}", preference);
 
         // 2. Check if weather data is needed (only if trip starts within 5 days from today)

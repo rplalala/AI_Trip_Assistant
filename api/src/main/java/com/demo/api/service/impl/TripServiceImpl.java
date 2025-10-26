@@ -2,7 +2,7 @@ package com.demo.api.service.impl;
 
 import com.demo.api.dto.TripDetailDTO;
 import com.demo.api.model.Trip;
-import com.demo.api.repository.TripPreferenceRepository;
+import com.demo.api.repository.TripRepository;
 import com.demo.api.service.TripService;
 import com.demo.api.utils.UnsplashImgUtils;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +15,12 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class TripServiceImpl implements TripService {
-    private final TripPreferenceRepository tripPreferenceRepository;
+    private final TripRepository tripRepository;
     private final UnsplashImgUtils unsplashImgUtils;
 
     @Override
     public List<TripDetailDTO> getTripDetails(Long userId) {
-        List<Trip> userTrips = tripPreferenceRepository.findByUserId(userId);
+        List<Trip> userTrips = tripRepository.findByUserId(userId);
         return userTrips.stream().map(trip -> {
             return TripDetailDTO.builder()
                     .tripId(trip.getId())
