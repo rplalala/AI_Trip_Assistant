@@ -20,7 +20,6 @@ import {
   message,
 } from "antd";
 import type { BreadcrumbProps, MenuProps, TabsProps } from "antd";
-import type { FormInstance } from "antd/es/form";
 import {
   SettingOutlined,
   FileOutlined,
@@ -47,10 +46,8 @@ type PasswordFormValues = {
   confirmPassword: string;
 };
 
-type LeftMenuKey = "plan" | "itinerary" | "collaborate" | "budget" | "documents";
-
 // ---------- 组件 ----------
-export default function UserProfile(): JSX.Element {
+export default function UserProfile(): React.ReactElement {
   const navigate = useNavigate();
   const formRef = useRef<any>(null);
   const { tripId } = useParams<RouteParams>();

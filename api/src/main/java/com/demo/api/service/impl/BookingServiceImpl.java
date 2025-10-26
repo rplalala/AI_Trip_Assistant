@@ -68,7 +68,7 @@ public class BookingServiceImpl implements BookingService {
     public TripBookingQuote quoteSingleItem(Long tripId, String productType, Long entityId) {
         Assert.notNull(tripId, "tripId must not be null");
         Assert.notNull(entityId, "entityId must not be null");
-        TripPreference preference = fetchPreference(tripId);
+        Trip preference = fetchPreference(tripId);
         String normalizedType = normalizeProductType(productType);
         log.debug("Preparing single quote for tripId={}, productType={}, entityId={}", tripId, normalizedType, entityId);
 
@@ -118,7 +118,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ItineraryQuoteResp quoteItinerary(Long tripId) {
         Assert.notNull(tripId, "tripId must not be null");
-        TripPreference preference = fetchPreference(tripId);
+        Trip preference = fetchPreference(tripId);
 
         List<ItineraryItemContext> contexts = collectPendingItems(tripId, preference);
         if (contexts.isEmpty()) {
@@ -174,7 +174,7 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private TripPreference fetchPreference(Long tripId) {
+    private Trip fetchPreference(Long tripId) {
         return tripPreferenceRepository.findById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("Trip preference not found for tripId " + tripId));
     }
@@ -183,7 +183,7 @@ public class BookingServiceImpl implements BookingService {
      * Builds QuotePayload for a given productType (transportation/hotel/attraction),
      * including fallback logic from TripPreference when required.
      */
-    private QuotePayload buildQuotePayload(String productType, Long entityId, TripPreference preference, boolean validateTrip) {
+    private QuotePayload buildQuotePayload(String productType, Long entityId, Trip preference, boolean validateTrip) {
         return switch (productType) {
             case "transportation" -> buildTransportationPayload(entityId, preference, validateTrip);
             case "hotel" -> buildHotelPayload(entityId, preference, validateTrip);
@@ -196,7 +196,7 @@ public class BookingServiceImpl implements BookingService {
      * Builds the 'params' map for transportation quote based on TripTransportation entity.
      * Includes fields like mode, from, to, class, date, provider.
      */
-    private QuotePayload buildTransportationPayload(Long entityId, TripPreference preference, boolean validateTrip) {
+    private QuotePayload buildTransportationPayload(Long entityId, Trip preference, boolean validateTrip) {
         TripTransportation entity = tripTransportationRepository.findById(entityId)
                 .orElseThrow(() -> new IllegalArgumentException("Transportation not found: " + entityId));
         if (validateTrip) {
@@ -229,7 +229,7 @@ public class BookingServiceImpl implements BookingService {
      * Builds the 'params' map for hotel quote based on TripHotel entity.
      * Includes fields like hotelName, checkIn, checkOut, roomType, stars.
      */
-    private QuotePayload buildHotelPayload(Long entityId, TripPreference preference, boolean validateTrip) {
+    private QuotePayload buildHotelPayload(Long entityId, Trip preference, boolean validateTrip) {
         TripHotel entity = tripHotelRepository.findById(entityId)
                 .orElseThrow(() -> new IllegalArgumentException("Hotel not found: " + entityId));
         if (validateTrip) {
@@ -267,7 +267,7 @@ public class BookingServiceImpl implements BookingService {
      * Builds the 'params' map for attraction quote based on TripAttraction entity.
      * Includes fields like name, city, date, session, ticketPrice.
      */
-    private QuotePayload buildAttractionPayload(Long entityId, TripPreference preference, boolean validateTrip) {
+    private QuotePayload buildAttractionPayload(Long entityId, Trip preference, boolean validateTrip) {
         TripAttraction entity = tripAttractionRepository.findById(entityId)
                 .orElseThrow(() -> new IllegalArgumentException("Attraction not found: " + entityId));
         if (validateTrip) {
@@ -305,7 +305,7 @@ public class BookingServiceImpl implements BookingService {
      * Collects all reservation-required items that are still pending confirmation.
      * Builds a context list used to generate itinerary quotes.
      */
-    private List<ItineraryItemContext> collectPendingItems(Long tripId, TripPreference preference) {
+    private List<ItineraryItemContext> collectPendingItems(Long tripId, Trip preference) {
         List<ItineraryItemContext> contexts = new ArrayList<>();
         tripTransportationRepository.findByTripId(tripId).stream()
                 .filter(item -> shouldQuote(item.getReservationRequired(), item.getStatus()))
@@ -430,7 +430,7 @@ public class BookingServiceImpl implements BookingService {
     /**
      * Determines party size, defaulting to 1 if not specified.
      */
-    private Integer resolvePartySize(TripPreference preference) {
+    private Integer resolvePartySize(Trip preference) {
         Integer people = preference.getPeople();
         return (people != null && people > 0) ? people : 1;
     }
@@ -438,7 +438,7 @@ public class BookingServiceImpl implements BookingService {
     /**
      * Chooses the correct currency for quote, falling back to preference default.
      */
-    private String resolveCurrency(String entityCurrency, TripPreference preference) {
+    private String resolveCurrency(String entityCurrency, Trip preference) {
         if (StringUtils.hasText(entityCurrency)) {
             return entityCurrency;
         }

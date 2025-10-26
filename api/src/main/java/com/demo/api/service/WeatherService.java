@@ -1,9 +1,9 @@
 package com.demo.api.service;
 
-import com.demo.api.model.TripPreference;
+import com.demo.api.model.Trip;
 
 public interface WeatherService {
 
-    void fetchAndStoreWeather(TripPreference preference);
+    void fetchAndStoreWeather(Trip preference);
 }
 

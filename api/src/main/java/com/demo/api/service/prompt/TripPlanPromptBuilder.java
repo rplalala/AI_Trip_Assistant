@@ -1,7 +1,7 @@
 package com.demo.api.service.prompt;
 
 import com.demo.api.dto.DailyWeatherDTO;
-import com.demo.api.model.TripPreference;
+import com.demo.api.model.Trip;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -25,7 +25,7 @@ public class TripPlanPromptBuilder {
      * @param weatherList optional list of daily weather summaries for the trip window
      * @return formatted prompt string
      */
-    public String build(TripPreference preference, List<DailyWeatherDTO> weatherList) {
+    public String build(Trip preference, List<DailyWeatherDTO> weatherList) {
         Assert.notNull(preference, "Trip preference must not be null");
 
         StringBuilder prompt = new StringBuilder();
@@ -43,7 +43,7 @@ public class TripPlanPromptBuilder {
         return prompt.toString();
     }
 
-    private void appendTripOverview(StringBuilder prompt, TripPreference preference) {
+    private void appendTripOverview(StringBuilder prompt, Trip preference) {
         String fromCity = defaultString(preference.getFromCity(), "Unknown city");
         String fromCountry = defaultString(preference.getFromCountry(), "Unknown country");
         String toCity = defaultString(preference.getToCity(), "Unknown city");
@@ -75,7 +75,7 @@ public class TripPlanPromptBuilder {
         prompt.append(String.format("- Travelers: %s%n", people != null ? people + " people" : "Not specified"));
     }
 
-    private void appendPreferences(StringBuilder prompt, TripPreference preference) {
+    private void appendPreferences(StringBuilder prompt, Trip preference) {
         prompt.append("\nTraveler Preferences:\n");
         prompt.append(String.format("- Notes: %s%n", defaultString(preference.getPreferences(), "No additional preferences")));
     }

@@ -46,7 +46,7 @@ class BookingServiceIntegrationTest {
     @MockBean
     private BookingApiClient bookingApiClient;
 
-    private TripPreference preference;
+    private Trip preference;
 
     @BeforeEach
     void setUpPreference() {
@@ -56,7 +56,7 @@ class BookingServiceIntegrationTest {
         tripHotelRepository.deleteAll();
         tripPreferenceRepository.deleteAll();
 
-        preference = tripPreferenceRepository.save(TripPreference.builder()
+        preference = tripPreferenceRepository.save(Trip.builder()
                 .currency("AUD")
                 .people(2)
                 .toCity("Sydney")

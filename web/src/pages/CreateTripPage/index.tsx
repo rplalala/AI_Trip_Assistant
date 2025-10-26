@@ -14,6 +14,7 @@ import { LocationAutoComplete, type Location } from '../../components/LocationAu
 import { generateTrip, type generateTripPayload } from '../../api/trip';
 import dayjs from 'dayjs';
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const { RangePicker } = DatePicker;
 
@@ -62,6 +63,7 @@ export default function CreateTripPage() {
     const { message } = AntdApp.useApp();
     const [form] = Form.useForm<CreateTripFieldType>();
     const [ submitLoading, setSubmitLoading ] = useState(false)
+    const navigate = useNavigate();
 
     const onFinish = async (values: CreateTripFieldType) => {
         setSubmitLoading(true)
@@ -88,6 +90,7 @@ export default function CreateTripPage() {
         generateTrip(payload)
             .then(() => {
                 message.success('Trip generation started');
+                navigate('/trips', { replace: true });
             })
             .catch((err) => {
                 message.error(err?.message || 'Failed to start trip generation');

@@ -1,9 +1,9 @@
 package com.demo.api.service;
 
-import com.demo.api.model.TripPreference;
+import com.demo.api.model.Trip;
 
 public interface TripStorageService {
 
-    void storeTripPlan(TripPreference preference, String tripPlanJson);
+    void storeTripPlan(Trip preference, String tripPlanJson);
 }
 

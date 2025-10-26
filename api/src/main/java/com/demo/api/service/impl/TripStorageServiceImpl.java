@@ -3,7 +3,7 @@ package com.demo.api.service.impl;
 import com.demo.api.model.TripAttraction;
 import com.demo.api.model.TripDailySummary;
 import com.demo.api.model.TripHotel;
-import com.demo.api.model.TripPreference;
+import com.demo.api.model.Trip;
 import com.demo.api.model.TripTransportation;
 import com.demo.api.repository.TripAttractionRepository;
 import com.demo.api.repository.TripDailySummaryRepository;
@@ -48,7 +48,7 @@ public class TripStorageServiceImpl implements TripStorageService {
 
     @Override
     @Transactional
-    public void storeTripPlan(TripPreference preference, String tripPlanJson) {
+    public void storeTripPlan(Trip preference, String tripPlanJson) {
         if (preference == null || preference.getId() == null) {
             throw new IllegalArgumentException("Trip preference with persistent tripId is required");
         }
@@ -100,7 +100,7 @@ public class TripStorageServiceImpl implements TripStorageService {
 
     // ----- other ------
 
-    private List<TripDailySummary> readDailySummaries(JsonNode node, TripPreference preference) {
+    private List<TripDailySummary> readDailySummaries(JsonNode node, Trip preference) {
         List<TripDailySummary> result = new ArrayList<>();
         if (node != null && node.isArray()) {
             for (JsonNode summaryNode : node) {
@@ -121,7 +121,7 @@ public class TripStorageServiceImpl implements TripStorageService {
         return result;
     }
 
-    private TripTransportation mapTransportation(JsonNode node, TripPreference preference) {
+    private TripTransportation mapTransportation(JsonNode node, Trip preference) {
         TripTransportation transport = new TripTransportation();
         populateCommonActivityFields(transport, node, preference);
         transport.setFrom(optionalText(node, "from").orElse(null));
@@ -133,7 +133,7 @@ public class TripStorageServiceImpl implements TripStorageService {
         return transport;
     }
 
-    private TripHotel mapHotel(JsonNode node, TripPreference preference) {
+    private TripHotel mapHotel(JsonNode node, Trip preference) {
         TripHotel hotel = new TripHotel();
         populateCommonActivityFields(hotel, node, preference);
         hotel.setHotelName(optionalText(node, "hotel_name").orElse(null));
@@ -145,7 +145,7 @@ public class TripStorageServiceImpl implements TripStorageService {
         return hotel;
     }
 
-    private TripAttraction mapAttraction(JsonNode node, TripPreference preference) {
+    private TripAttraction mapAttraction(JsonNode node, Trip preference) {
         TripAttraction attraction = new TripAttraction();
         populateCommonActivityFields(attraction, node, preference);
         attraction.setLocation(optionalText(node, "location").orElse(null));
@@ -155,7 +155,7 @@ public class TripStorageServiceImpl implements TripStorageService {
         return attraction;
     }
 
-    private void populateCommonActivityFields(Object target, JsonNode node, TripPreference preference) {
+    private void populateCommonActivityFields(Object target, JsonNode node, Trip preference) {
         LocalDate date = parseDate(optionalText(node, "date"));
         String time = optionalText(node, "time").orElse(null);
         String title = optionalText(node, "title").orElse(null);
@@ -233,7 +233,7 @@ public class TripStorageServiceImpl implements TripStorageService {
         }
     }
 
-    private String defaultCurrency(TripPreference preference) {
+    private String defaultCurrency(Trip preference) {
         return StringUtils.hasText(preference.getCurrency()) ? preference.getCurrency() : "AUD";
     }
 }
