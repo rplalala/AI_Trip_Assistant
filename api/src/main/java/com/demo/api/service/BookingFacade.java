@@ -101,6 +101,7 @@ public class BookingFacade {
         quote.setRawResponse(serialize(response));
         quote.setStatus(STATUS_CONFIRMED);
         tripBookingQuoteRepository.save(quote);
+        markEntityConfirmed(productType, entityId);
     }
 
     private void persistItineraryQuotes(ItineraryQuoteReq request, ItineraryQuoteResp response) {
@@ -138,6 +139,31 @@ public class BookingFacade {
             quote.setRawResponse(serialize(response));
             quote.setStatus(STATUS_CONFIRMED);
             tripBookingQuoteRepository.save(quote);
+            markEntityConfirmed(productType, entityId);
+        }
+    }
+
+    private void markEntityConfirmed(String productType, Long entityId) {
+        if (entityId == null) {
+            return;
+        }
+        switch (normalizeProductType(productType)) {
+            case "hotel" -> tripHotelRepository.findById(entityId)
+                    .ifPresent(hotel -> {
+                        hotel.setStatus(STATUS_CONFIRMED);
+                        tripHotelRepository.save(hotel);
+                    });
+            case "transportation", "transport" -> tripTransportationRepository.findById(entityId)
+                    .ifPresent(transport -> {
+                        transport.setStatus(STATUS_CONFIRMED);
+                        tripTransportationRepository.save(transport);
+                    });
+            case "attraction" -> tripAttractionRepository.findById(entityId)
+                    .ifPresent(attraction -> {
+                        attraction.setStatus(STATUS_CONFIRMED);
+                        tripAttractionRepository.save(attraction);
+                    });
+            default -> log.debug("Skipping status update, unsupported productType={} for entityId={}", productType, entityId);
         }
     }
 
