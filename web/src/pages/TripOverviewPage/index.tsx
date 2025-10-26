@@ -109,19 +109,18 @@ const bookingColumns: TableProps<BookingRow>["columns"] = [
 
 export default function TripOverview() {
   const { tripId } = useParams<{ tripId?: string }>();
-  const effectiveTripId = tripId ?? "tokyo-spring";
+  const effectiveTripId = tripId ?? "1";
   const trip = mockTrip(effectiveTripId);
   const [tripInsights, setTripInsights] = useState<TripInsightsResponse[]>([]);
 
   useEffect(() => {
-    const tripId = '1'; // TODO
     if (!tripId) return;
 
     getTripInsights(tripId)
         .then((res) => {
           setTripInsights(res);
         })
-  }, []);
+  }, [tripId]);
 
   const tabsItems: TabsProps["items"] = [
     { key: "timeline", label: "Timeline", children: null },

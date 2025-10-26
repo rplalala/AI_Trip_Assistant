@@ -29,7 +29,7 @@ class BookingServiceIntegrationTest {
     private BookingServiceImpl bookingService;
 
     @Autowired
-    private TripPreferenceRepository tripPreferenceRepository;
+    private TripRepository tripRepository;
 
     @Autowired
     private TripHotelRepository tripHotelRepository;
@@ -54,9 +54,9 @@ class BookingServiceIntegrationTest {
         tripAttractionRepository.deleteAll();
         tripTransportationRepository.deleteAll();
         tripHotelRepository.deleteAll();
-        tripPreferenceRepository.deleteAll();
+        tripRepository.deleteAll();
 
-        preference = tripPreferenceRepository.save(Trip.builder()
+        preference = tripRepository.save(Trip.builder()
                 .currency("AUD")
                 .people(2)
                 .toCity("Sydney")

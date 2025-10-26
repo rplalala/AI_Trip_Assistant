@@ -30,7 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const refreshProfile = async () => {
         const user = await getUserProfile();
-        console.log('user' + user);
         setUser(user);
         setStatus('authenticated');
     }

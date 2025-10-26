@@ -40,7 +40,7 @@ public class BookingServiceImpl implements BookingService {
     private final TripHotelRepository tripHotelRepository;
     private final TripAttractionRepository tripAttractionRepository;
     private final TripBookingQuoteRepository tripBookingQuoteRepository;
-    private final TripPreferenceRepository tripPreferenceRepository;
+    private final TripRepository tripRepository;
     private final ObjectMapper objectMapper;
 
     public BookingServiceImpl(BookingApiClient bookingApiClient,
@@ -48,14 +48,14 @@ public class BookingServiceImpl implements BookingService {
                               TripHotelRepository tripHotelRepository,
                               TripAttractionRepository tripAttractionRepository,
                               TripBookingQuoteRepository tripBookingQuoteRepository,
-                              TripPreferenceRepository tripPreferenceRepository,
+                              TripRepository tripRepository,
                               ObjectMapper objectMapper) {
         this.bookingApiClient = bookingApiClient;
         this.tripTransportationRepository = tripTransportationRepository;
         this.tripHotelRepository = tripHotelRepository;
         this.tripAttractionRepository = tripAttractionRepository;
         this.tripBookingQuoteRepository = tripBookingQuoteRepository;
-        this.tripPreferenceRepository = tripPreferenceRepository;
+        this.tripRepository = tripRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -175,7 +175,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private Trip fetchPreference(Long tripId) {
-        return tripPreferenceRepository.findById(tripId)
+        return tripRepository.findById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("Trip preference not found for tripId " + tripId));
     }
 
