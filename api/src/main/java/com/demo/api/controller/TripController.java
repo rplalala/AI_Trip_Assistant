@@ -1,10 +1,13 @@
 package com.demo.api.controller;
 
 import com.demo.api.ApiRespond;
+import com.demo.api.dto.TripDetailDTO;
 import com.demo.api.dto.TripInsightDTO;
 import com.demo.api.dto.TripPreferenceRequestDTO;
 import com.demo.api.service.TripGenerationService;
 import com.demo.api.service.TripInsightService;
+import com.demo.api.service.TripService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/trip")
+@RequiredArgsConstructor
 public class TripController {
 
     private static final Logger log = LoggerFactory.getLogger(TripController.class);
@@ -22,10 +26,7 @@ public class TripController {
 
     private final TripInsightService tripInsightService;
 
-    public TripController(TripGenerationService tripGenerationService, TripInsightService tripInsightService) {
-        this.tripGenerationService = tripGenerationService;
-        this.tripInsightService = tripInsightService;
-    }
+    private final TripService tripServiceImpl;
 
     @PostMapping("/generate-plan")
     public ApiRespond<Void> generatePlan(@RequestBody TripPreferenceRequestDTO dto,
@@ -37,6 +38,17 @@ public class TripController {
 
         // return the generated JSON as the response body
         return ApiRespond.success();
+    }
+
+    /**
+     * Get the all trips details for the authenticated user
+     * @param userId
+     * @return
+     */
+    @GetMapping("/details")
+    public ApiRespond<List<TripDetailDTO>> getTripDetails(@AuthenticationPrincipal String userId){
+        log.info("Current User: {}", userId);
+        return ApiRespond.success(tripServiceImpl.getTripDetails(Long.valueOf(userId)));
     }
 
     @GetMapping("/insights")
