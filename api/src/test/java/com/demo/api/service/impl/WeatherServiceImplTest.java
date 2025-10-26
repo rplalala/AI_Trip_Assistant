@@ -1,6 +1,6 @@
 package com.demo.api.service.impl;
 
-import com.demo.api.model.TripPreference;
+import com.demo.api.model.Trip;
 import com.demo.api.model.TripWeather;
 import com.demo.api.repository.TripWeatherRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +39,7 @@ class WeatherServiceImplTest {
 
     @Test
     void fetchAndStoreWeather_filtersToTripWindow_andUpsertsPerDay() {
-        TripPreference preference = TripPreference.builder()
+        Trip preference = Trip.builder()
                 .id(42L)
                 .toCity("Sydney")
                 .toCountry("AU")

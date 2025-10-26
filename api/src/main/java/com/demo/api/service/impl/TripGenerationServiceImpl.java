@@ -4,7 +4,7 @@ import com.demo.api.client.OpenAiClient;
 import com.demo.api.dto.DailyWeatherDTO;
 import com.demo.api.dto.ItineraryDTO;
 import com.demo.api.dto.TripPreferenceRequestDTO;
-import com.demo.api.model.TripPreference;
+import com.demo.api.model.Trip;
 import com.demo.api.model.TripWeather;
 import com.demo.api.repository.TripPreferenceRepository;
 import com.demo.api.repository.TripWeatherRepository;
@@ -111,7 +111,7 @@ public class TripGenerationServiceImpl implements TripGenerationService {
         Assert.notNull(dto, "Trip preference DTO must not be null");
 
         // 1. Convert the request DTO into a TripPreference entity
-        TripPreference preference = modelMapper.map(dto, TripPreference.class);
+        Trip preference = modelMapper.map(dto, Trip.class);
         preference.setUserId(Long.valueOf(userId));
         tripPreferenceRepository.save(preference);
         log.debug("Mapped trip preference request to entity: {}", preference);

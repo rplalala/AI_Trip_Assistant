@@ -1,7 +1,7 @@
 package com.demo.api.service.impl;
 
 import com.demo.api.dto.DailyWeatherDTO;
-import com.demo.api.model.TripPreference;
+import com.demo.api.model.Trip;
 import com.demo.api.model.TripWeather;
 import com.demo.api.repository.TripWeatherRepository;
 import com.demo.api.service.WeatherService;
@@ -66,7 +66,7 @@ public class WeatherServiceImpl implements WeatherService {
      */
     @Override
     @Transactional
-    public void fetchAndStoreWeather(TripPreference preference) {
+    public void fetchAndStoreWeather(Trip preference) {
         validatePreference(preference);  // Check tripId and city presence
 
         // 1. Build API URL based on trip city and country
@@ -142,7 +142,7 @@ public class WeatherServiceImpl implements WeatherService {
     /**
      * Validates the trip preference input before API call.
      */
-    private void validatePreference(TripPreference preference) {
+    private void validatePreference(Trip preference) {
         if (preference == null) {
             throw new IllegalArgumentException("Trip preference is required");
         }
@@ -154,7 +154,7 @@ public class WeatherServiceImpl implements WeatherService {
         }
     }
 
-    private boolean isWithinTripWindow(LocalDate date, TripPreference preference) {
+    private boolean isWithinTripWindow(LocalDate date, Trip preference) {
         LocalDate start = preference.getStartDate();
         LocalDate end = preference.getEndDate();
         if (start != null && date.isBefore(start)) {
@@ -169,7 +169,7 @@ public class WeatherServiceImpl implements WeatherService {
     /**
      * Constructs the full URI for OpenWeatherMap forecast API.
      */
-    private URI buildForecastUri(TripPreference preference) {
+    private URI buildForecastUri(Trip preference) {
         String location = Stream.of(preference.getToCity(), preference.getToCountry())
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining(","));

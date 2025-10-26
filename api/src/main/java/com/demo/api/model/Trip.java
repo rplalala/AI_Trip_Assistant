@@ -12,12 +12,14 @@ import java.time.LocalDate;
  * Trip preference details captured from users to drive trip generation workflows.
  */
 @Entity
-@Table(name = "trip_preference")
+@Table(name = "trip", indexes = {
+        @Index(name = "idx_trip_user_id", columnList = "user_id"),
+})
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripPreference extends BaseModel{
+public class Trip extends BaseModel{
 
     /** Unique identifier for the saved trip preference record. */
     @Id
