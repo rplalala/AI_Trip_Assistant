@@ -10,7 +10,7 @@ All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwi
 
 ### Backend flow (server → booking API)
 - Incoming requests hit `BookingController`, which delegates to `BookingFacade` (and other service-entry points such as `BookingServiceImpl`) for validation and enrichment.
-- `BookingServiceImpl` isn’t wired into any REST controller today—BookingController uses `BookingServiceImpl`.  It backs the integration tests in BookingServiceIntegrationTest.java, which exercise the full quote workflow (price enrichment, persistence, status updates). Dropping the service would mean rewriting or losing those tests.
+- `BookingServiceImpl` isn’t wired into any REST controller today—BookingController uses `BookingFacade`.  It backs the integration tests in BookingServiceIntegrationTest.java, which exercise the full quote workflow (price enrichment, persistence, status updates). Dropping the service would mean rewriting or losing those tests.
 If anything else in the code wants to orchestrate booking without going through the controller façade (batch jobs, scheduled retries, future features), the service provides that reusable entry point.
 - All server-side booking workflows call the shared Feign `BookingClient`, which issues HTTP POST requests to the external booking service (`external-service` module).
 - Before calling the external API, the facade loads pricing and metadata from JPA repositories (`TripHotelRepository`, `TripTransportationRepository`, `TripAttractionRepository`) using the supplied `trip_id` and `entity_id`, then injects the data into the outbound payload.
