@@ -1,14 +1,15 @@
 package com.demo.api.task;
 
 import cn.hutool.core.util.ObjectUtil;
-import com.demo.api.repository.EmailTokenRepository;
-import com.demo.api.repository.UserRepository;
+import com.demo.api.model.EmailToken;
+import com.demo.api.repository.*;
 import com.demo.api.utils.AwsS3Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,17 +26,24 @@ public class CleanTask {
     private final AwsS3Utils awsS3Utils;
     private final UserRepository userRepository;
     private final EmailTokenRepository emailTokenRepository;
+    private final TripRepository tripRepository;
+    private final TripAttractionRepository tripAttractionRepository;
+    private final TripHotelRepository tripHotelRepository;
+    private final TripTransportationRepository tripTransportationRepository;
+    private final TripDailySummaryRepository tripDailySummaryRepository;
+    private final TripBookingQuoteRepository tripBookingQuoteRepository;
+    private final TripInsightRepository insightRepository;
+    private final TripWeatherRepository tripWeatherRepository;
 
     @Value("${aws.s3.dir-name}")
     private String dirName;
 
     /**
-     * Clean redundant files in AWS S3 (exist in S3 but not in the database) at 2:00 AM every day.
+     * Clean redundant files in AWS S3 (exist in S3 but not in the database) every 5 minutes.
      * Temporarily only clean avatars.
      * TODO: Clean all redundant image files (including user avatars and trip images).
      */
-    // @Scheduled(cron = "10/10 * * * * *") // test every 10 seconds
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 0 */1 * * *")
     public void fileClean() throws Exception {
         log.info("File clean task started...");
         // Get all user avatar URLs from the database
@@ -71,11 +79,43 @@ public class CleanTask {
     }
 
     /**
-     * Clean expired email tokens every day at 2:00 AM.
+     * Clean expired email tokens every 5 minutes
      */
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 */5 * * * *")
+    @Transactional
     public void cleanup() {
-        long n = emailTokenRepository.deleteByExpireTimeBefore(Instant.now());
-        log.info("cleaned {} tokens", n);
+        List<EmailToken> deleted = emailTokenRepository.deleteAllByExpireTimeBefore(Instant.now());
+        log.info("cleaned {} tokens", deleted.size());
     }
+
+    /**
+     * Clean redundant data every 5 minutes
+     */
+    @Scheduled(cron = "0 */5 * * * *")
+    @Transactional
+    public void cleanRedundantData(){
+        List<Long> redundantUserIds = tripRepository.findRedundantUserIds();
+        log.info("Number of redundant user ids: {}", redundantUserIds.size());
+        if(ObjectUtil.isNotEmpty(redundantUserIds)){
+            List<Long> tripIds = tripRepository.findIdsByUserIdIn(redundantUserIds);
+            log.info("Number of redundant trip ids: {}", tripIds.size());
+            if (ObjectUtil.isNotEmpty(tripIds)) {
+                tripWeatherRepository.deleteByTripIdIn(tripIds);
+                insightRepository.deleteByTripIdIn(tripIds);
+                tripBookingQuoteRepository.deleteByTripIdIn(tripIds);
+                tripDailySummaryRepository.deleteByTripIdIn(tripIds);
+                tripTransportationRepository.deleteByTripIdIn(tripIds);
+                tripHotelRepository.deleteByTripIdIn(tripIds);
+                tripAttractionRepository.deleteByTripIdIn(tripIds);
+                tripRepository.deleteByUserIdIn(redundantUserIds);
+            } else {
+                log.info("No redundant trip ids");
+            }
+
+        } else {
+            log.info("No redundant user ids");
+        }
+        log.info("Clean finished");
+    }
+
 }

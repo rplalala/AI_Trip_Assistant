@@ -22,8 +22,8 @@ public class DataInitializerConfig {
                         .tokenVersion(1)
                         .build();
                 userRepository.save(admin);
-                System.out.println("Admin user created: email=admin@admin.com, password=admin@admin.com");
             }
+            System.out.println("Admin user created: email=admin@admin.com, password=admin@admin.com");
         };
     }
 }

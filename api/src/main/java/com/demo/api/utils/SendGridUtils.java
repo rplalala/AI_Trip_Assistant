@@ -100,4 +100,23 @@ public class SendGridUtils {
         """.formatted(resetLink, resetLink);
         sendHtml(to, subject, html);
     }
+
+    /**
+     * Send change email verification email.
+     * @param to
+     * @param changeLink
+     */
+    public void sendChangeEmail(String to, String changeLink) {
+        String subject = "Change your email";
+        String html = """
+          <div style="font-family:sans-serif">
+            <h2>Change your email</h2>
+            <p>Click the button below to change your email address:</p>
+            <p><a href="%s">Change Email</a></p>
+            <p>If the button doesn't work, copy this URL:<br/>%s</p>
+            <p>This link expires in 30 minutes.</p>
+          </div>
+        """.formatted(changeLink, changeLink);
+        sendHtml(to, subject, html);
+    }
 }

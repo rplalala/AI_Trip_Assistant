@@ -12,7 +12,9 @@ import java.time.LocalDate;
  * Daily overview for generated trip itineraries.
  */
 @Entity
-@Table(name = "trip_daily_summary")
+@Table(name = "trip_daily_summary", indexes = {
+        @Index(name = "idx_trip_daily_summary_trip_id", columnList = "trip_id"),
+})
 @Data
 @Builder
 @NoArgsConstructor

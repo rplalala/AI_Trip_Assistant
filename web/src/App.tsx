@@ -12,6 +12,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import VerifyEmailPendingPage from './pages/VerifyEmailPendingPage';
+import ChangeEmailPage from './pages/ChangeEmailPage';
+import ConfirmChangeEmailPage from './pages/ConfirmChangeEmailPage';
 
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
                         <Route path='/reset-password' element={<ResetPasswordPage />} />
                         <Route path='/verify-email' element={<VerifyEmailPage />} />
                         <Route path='/verify-email-pending' element={<VerifyEmailPendingPage />} />
+                        <Route path='/change-email' element={<ChangeEmailPage />} />
+                        <Route path='/confirm-change-email' element={<ConfirmChangeEmailPage />} />
                         <Route path='/profile' element={
                             <RequireAuth>
                                 <UserProfilePage />

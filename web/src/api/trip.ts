@@ -48,3 +48,10 @@ export async function getTripInsights(tripId: string) {
 export async function getTripDetails() {
     return apiRequest<TripDetail[]>('/api/trip/details');
 }
+
+export async function deleteTrips(tripIds: number[]) {
+    const params = new URLSearchParams();
+    for (const id of tripIds) params.append('tripIds', String(id));
+    const qs = params.toString();
+    return apiRequest<void>(`/api/trip${qs ? `?${qs}` : ''}` , { method: 'DELETE' });
+}

@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface TripService {
     List<TripDetailDTO> getTripDetails(Long userId);
+
+    void deleteTripByIds(List<Long> tripIds);
 }

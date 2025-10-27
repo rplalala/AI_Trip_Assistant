@@ -1,24 +1,20 @@
 package com.demo.api.model;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 /**
  * Stores booking quotes returned by the external booking service for each trip item.
  */
 @Entity
-@Table(name = "trip_booking_quote")
+@Table(name = "trip_booking_quote", indexes = {
+        @Index(name = "idx_trip_booking_quote_trip_id", columnList = "trip_id"),
+})
 @Data
 @Builder
 @NoArgsConstructor

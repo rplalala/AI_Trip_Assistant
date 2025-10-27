@@ -12,7 +12,9 @@ import java.time.LocalDate;
  * Attraction or activity recommendation for the trip itinerary.
  */
 @Entity
-@Table(name = "trip_attraction")
+@Table(name = "trip_attraction", indexes = {
+        @Index(name = "idx_trip_attraction_trip_id", columnList = "trip_id"),
+})
 @Data
 @Builder
 @NoArgsConstructor

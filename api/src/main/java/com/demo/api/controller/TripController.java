@@ -55,5 +55,16 @@ public class TripController {
     public ApiRespond<List<TripInsightDTO>> getInsights(@RequestParam("tripId") Long tripId) {
         return ApiRespond.success(tripInsightService.getOrGenerateInsights(tripId));
     }
+
+    /**
+     * Delete trips in batch
+     * @param tripIds
+     * @return
+     */
+    @DeleteMapping
+    public ApiRespond<Void> deleteTrips(@RequestParam("tripIds") List<Long> tripIds){
+        tripServiceImpl.deleteTripByIds(tripIds);
+        return ApiRespond.success();
+    }
 }
 

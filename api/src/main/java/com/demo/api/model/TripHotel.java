@@ -12,7 +12,9 @@ import java.time.LocalDate;
  * Lodging recommendations associated with the trip itinerary.
  */
 @Entity
-@Table(name = "trip_hotel")
+@Table(name = "trip_hotel", indexes = {
+        @Index(name = "idx_trip_hotel_trip_id", columnList = "trip_id"),
+})
 @Data
 @Builder
 @NoArgsConstructor
