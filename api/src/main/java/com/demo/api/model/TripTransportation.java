@@ -12,7 +12,9 @@ import java.time.LocalDate;
  * Transportation details produced for each day of the trip plan.
  */
 @Entity
-@Table(name = "trip_transportation")
+@Table(name = "trip_transportation", indexes = {
+        @Index(name = "idx_trip_transportation_trip_id", columnList = "trip_id"),
+})
 @Data
 @Builder
 @NoArgsConstructor

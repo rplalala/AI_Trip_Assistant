@@ -12,7 +12,9 @@ import java.time.LocalDate;
  * Daily weather summary persisted for each generated trip.
  */
 @Entity
-@Table(name = "trip_weather")
+@Table(name = "trip_weather", indexes = {
+        @Index(name = "idx_trip_weather_trip_id", columnList = "trip_id"),
+})
 @Data
 @Builder
 @NoArgsConstructor

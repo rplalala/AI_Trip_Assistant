@@ -7,8 +7,7 @@ import com.demo.api.dto.UpdatePasswordDTO;
 import com.demo.api.exception.BusinessException;
 import com.demo.api.model.EmailToken;
 import com.demo.api.model.User;
-import com.demo.api.repository.EmailTokenRepository;
-import com.demo.api.repository.UserRepository;
+import com.demo.api.repository.*;
 import com.demo.api.service.UserService;
 import com.demo.api.utils.SendGridUtils;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +31,15 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TripRepository tripRepository;
+    private final TripAttractionRepository tripAttractionRepository;
+    private final TripHotelRepository tripHotelRepository;
+    private final TripTransportationRepository tripTransportationRepository;
+    private final TripDailySummaryRepository tripDailySummaryRepository;
+    private final TripBookingQuoteRepository tripBookingQuoteRepository;
+    private final TripInsightRepository insightRepository;
+    private final TripWeatherRepository tripWeatherRepository;
+
 
     private final SendGridUtils sendGridUtils;
     private final EmailTokenRepository emailTokenRepository;
@@ -129,6 +138,21 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(deleteAccountDTO.getVerifyPassword(), user.getPassword())){
             throw new BusinessException("password is incorrect");
         }
+
+        // delete user related trip data
+        List<Long> tripIds = tripRepository.findIdsByUserIdIn(List.of(userId));
+        if (!tripIds.isEmpty()) {
+            tripWeatherRepository.deleteByTripIdIn(tripIds);
+            insightRepository.deleteByTripIdIn(tripIds);
+            tripBookingQuoteRepository.deleteByTripIdIn(tripIds);
+            tripDailySummaryRepository.deleteByTripIdIn(tripIds);
+            tripTransportationRepository.deleteByTripIdIn(tripIds);
+            tripHotelRepository.deleteByTripIdIn(tripIds);
+            tripAttractionRepository.deleteByTripIdIn(tripIds);
+            tripRepository.deleteByUserIdIn(List.of(userId));
+        }
+
+        // delete user
         userRepository.deleteById(userId);
     }
 

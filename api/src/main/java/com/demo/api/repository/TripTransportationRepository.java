@@ -1,13 +1,15 @@
 package com.demo.api.repository;
 
-import java.util.List;
-
+import com.demo.api.model.TripTransportation;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.demo.api.model.TripTransportation;
+import java.util.Collection;
+import java.util.List;
 
 public interface TripTransportationRepository extends JpaRepository<TripTransportation, Long> {
 
     List<TripTransportation> findByTripId(Long tripId);
+
+    void deleteByTripIdIn(Collection<Long> tripIds);
 }
 

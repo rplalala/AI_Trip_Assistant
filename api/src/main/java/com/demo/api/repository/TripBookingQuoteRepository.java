@@ -1,11 +1,11 @@
 package com.demo.api.repository;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.demo.api.model.TripBookingQuote;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.demo.api.model.TripBookingQuote;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 public interface TripBookingQuoteRepository extends JpaRepository<TripBookingQuote, Long> {
 
@@ -15,4 +15,5 @@ public interface TripBookingQuoteRepository extends JpaRepository<TripBookingQuo
 
     Optional<TripBookingQuote> findByTripIdAndEntityIdAndProductType(Long tripId, Long entityId, String productType);
 
+    void deleteByTripIdIn(Collection<Long> tripIds);
 }
