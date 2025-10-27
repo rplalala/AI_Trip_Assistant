@@ -131,8 +131,6 @@ public class BookingFacade {
     public ItineraryQuoteResp prepareItinerary(ItineraryQuoteReq request, String userId) {
         log.info("Preparing itinerary quote for user={}, itineraryId={}, items={}",
                 userId, request.itineraryId(), request.items().size());
-
-        // Let BookingServiceImpl handle the logic: find quote-needed items, call third-party API, persist results
         return bookingService.quoteItinerary(request.tripId());
     }
 }

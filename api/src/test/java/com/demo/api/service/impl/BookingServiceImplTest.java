@@ -9,6 +9,7 @@ import com.demo.api.dto.booking.QuoteItem;
 import com.demo.api.dto.booking.QuoteReq;
 import com.demo.api.dto.booking.QuoteResp;
 import com.demo.api.exception.BookingApiException;
+import com.demo.api.exception.ConflictException;
 import com.demo.api.model.Trip;
 import com.demo.api.model.TripAttraction;
 import com.demo.api.model.TripBookingQuote;
@@ -442,5 +443,34 @@ class BookingServiceImplTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> bookingService.quoteSingleItem(tripId, "hotel", hotelId));
+    }
+
+    @Test
+    void quoteSingleItem_alreadyConfirmed_throwsConflictException() {
+        Long tripId = 7L;
+        Long attractionId = 70L;
+
+        Trip trip = Trip.builder()
+                .id(tripId)
+                .currency("AUD")
+                .people(2)
+                .build();
+        TripAttraction attraction = TripAttraction.builder()
+                .id(attractionId)
+                .tripId(tripId)
+                .date(LocalDate.now())
+                .status("confirm")
+                .reservationRequired(true)
+                .build();
+
+        when(tripRepository.findById(tripId)).thenReturn(Optional.of(trip));
+        when(tripAttractionRepository.findById(attractionId)).thenReturn(Optional.of(attraction));
+
+        ConflictException thrown = assertThrows(ConflictException.class,
+                () -> bookingService.quoteSingleItem(tripId, "attraction", attractionId));
+        assertTrue(thrown.getMessage().contains("Booking already confirmed"));
+
+        verifyNoInteractions(bookingClient);
+        verify(tripBookingQuoteRepository, never()).save(any());
     }
 }

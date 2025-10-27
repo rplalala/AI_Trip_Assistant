@@ -65,18 +65,11 @@ public class BookingFacade {
         return toQuoteResp(quote);
     }
 
-    /**
-     * Converts the DB entity (TripBookingQuote) into the API response (QuoteResp).
-     * If raw JSON is available (stored from third-party API), it tries to parse it.
-     * If not, fallback to manually building a QuoteResp object from known fields.
-     */
     private QuoteResp toQuoteResp(TripBookingQuote quote) {
         if (quote == null) {
             throw new IllegalStateException("Booking quote result is missing after delegation to BookingService");
         }
         String rawResponse = quote.getRawResponse();
-
-        // Prefer deserializing the saved JSON response from Booking API
         if (StringUtils.hasText(rawResponse)) {
             try {
                 return objectMapper.readValue(rawResponse, QuoteResp.class);
@@ -84,14 +77,10 @@ public class BookingFacade {
                 log.warn("Failed to deserialize stored quote response for reference {}", quote.getItemReference(), ex);
             }
         }
-
-        // Prefer deserializing the saved JSON response from Booking API
         BigDecimal total = quote.getTotalAmount() != null
                 ? BigDecimal.valueOf(quote.getTotalAmount())
                 : BigDecimal.ZERO;
         String currency = StringUtils.hasText(quote.getCurrency()) ? quote.getCurrency() : "AUD";
-
-        // Optional meta fields to help frontend rendering
         Map<String, Object> meta = new LinkedHashMap<>();
         if (StringUtils.hasText(quote.getProductType())) {
             meta.put("product_type", quote.getProductType());
@@ -99,8 +88,6 @@ public class BookingFacade {
         if (StringUtils.hasText(quote.getStatus())) {
             meta.put("status", quote.getStatus());
         }
-
-        // Build a single item quote from DB record
         QuoteItem fallbackItem = new QuoteItem(
                 StringUtils.hasText(quote.getItemReference()) ? quote.getItemReference() : "item",
                 total,
@@ -111,28 +98,18 @@ public class BookingFacade {
                 meta.isEmpty() ? null : meta,
                 "Refer to booking details"
         );
-
-        // Use stored voucher/invoice or default to fallback string
         String voucher = StringUtils.hasText(quote.getVoucherCode()) ? quote.getVoucherCode() : "UNKNOWN_VOUCHER";
         String invoice = StringUtils.hasText(quote.getInvoiceId()) ? quote.getInvoiceId() : "UNKNOWN_INVOICE";
         return new QuoteResp(voucher, invoice, List.of(fallbackItem));
     }
 
     /**
-     * Handles itinerary-level quote request (multi-item).
-     * Delegates the full business logic to BookingServiceImpl.
-     * 
-     * 🧱 Flow:
-     * 1. Receives ItineraryQuoteReq (from controller)
-     * 2. Calls BookingServiceImpl.quoteItinerary() to handle filtering, API calls, DB write
-     * 3. Returns ItineraryQuoteResp DTO to frontend
+     * Delegates itinerary-level quoting to BookingService for full business logic execution.
      */
     @Transactional
     public ItineraryQuoteResp prepareItinerary(ItineraryQuoteReq request, String userId) {
         log.info("Preparing itinerary quote for user={}, itineraryId={}, items={}",
                 userId, request.itineraryId(), request.items().size());
-
-        // Let BookingServiceImpl handle the logic: find quote-needed items, call third-party API, persist results
         return bookingService.quoteItinerary(request.tripId());
     }
 }

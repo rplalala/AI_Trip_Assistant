@@ -119,20 +119,12 @@ public class BookingFacade {
     }
 
     /**
-     * Handles itinerary-level quote request (multi-item).
-     * Delegates the full business logic to BookingServiceImpl.
-     * 
-     * 🧱 Flow:
-     * 1. Receives ItineraryQuoteReq (from controller)
-     * 2. Calls BookingServiceImpl.quoteItinerary() to handle filtering, API calls, DB write
-     * 3. Returns ItineraryQuoteResp DTO to frontend
+     * Delegates itinerary-level quoting to BookingService for full business logic execution.
      */
     @Transactional
     public ItineraryQuoteResp prepareItinerary(ItineraryQuoteReq request, String userId) {
         log.info("Preparing itinerary quote for user={}, itineraryId={}, items={}",
                 userId, request.itineraryId(), request.items().size());
-
-        // Let BookingServiceImpl handle the logic: find quote-needed items, call third-party API, persist results
         return bookingService.quoteItinerary(request.tripId());
     }
 }
