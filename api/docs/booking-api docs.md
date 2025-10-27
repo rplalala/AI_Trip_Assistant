@@ -5,6 +5,28 @@
 All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwise.
 
 ---
+
+## Integration Notes
+
+### Backend flow (server → booking API)
+- Incoming requests hit `BookingController`, which delegates to `BookingFacade` (and other service-entry points such as `BookingServiceImpl`) for validation and enrichment.
+- `BookingServiceImpl` isn’t wired into any REST controller today—BookingController uses `BookingFacade`.  It backs the integration tests in BookingServiceIntegrationTest.java, which exercise the full quote workflow (price enrichment, persistence, status updates). Dropping the service would mean rewriting or losing those tests.
+If anything else in the code wants to orchestrate booking without going through the controller façade (batch jobs, scheduled retries, future features), the service provides that reusable entry point.
+- All server-side booking workflows call the shared Feign `BookingClient`, which issues HTTP POST requests to the external booking service (`external-service` module).
+- Before calling the external API, the facade loads pricing and metadata from JPA repositories (`TripHotelRepository`, `TripTransportationRepository`, `TripAttractionRepository`) using the supplied `trip_id` and `entity_id`, then injects the data into the outbound payload.
+- Successful responses are persisted through `TripBookingQuoteRepository`, and the associated trip entities have their `status` updated to `confirm`.
+
+### Frontend flow (web → server)
+- The web client invokes `/api/booking/quote` or `/api/booking/itinerary/quote` with the identifiers returned from itinerary generation.
+- The frontend must pass `trip_id`, `entity_id`, and `item_reference` so the backend can hydrate the payload from the database and map results back to itinerary cards.
+- The UI consumes the returned voucher, invoice, and pricing information and refreshes itinerary items to reflect the confirmed status.
+
+### Database interaction
+- Pricing and metadata are sourced from `trip_transportation`, `trip_hotel`, and `trip_attraction` tables via the repositories noted above.
+- Quote history is stored in `trip_booking_quote`, linking booking vouchers/invoices back to the underlying trip entities.
+- Status transitions (for example, to `confirm`) are written back to the original trip tables so itinerary views display the confirmed state.
+
+---
 ## 1. Create Quote
 
 > BASIC
@@ -30,28 +52,29 @@ All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwi
 | currency | string | Currency code (e.g. `JPY`) |
 | party_size | integer | Travellers in the party |
 | params | object | Product-specific parameters |
-| trip_id | number | *(optional)* Trip identifier used for persistence; when present with `entity_id`, pricing is loaded from the itinerary record instead of simulated values |
-| entity_id | number | *(optional)* Trip entity identifier (e.g. hotel ID) used to source stored pricing |
-| item_reference | string | *(optional)* Stable reference used to link itinerary pricing |
+| trip_id | number | Trip identifier used for persistence and status updates; required in current workflow when quoting stored itinerary items |
+| entity_id | number | Trip entity identifier (e.g. hotel ID) used to source stored pricing; required when `trip_id` is supplied |
+| item_reference | string | Stable reference used to link itinerary pricing and booking quotes; required when persisting quotes for existing trip items |
 
 **Request Example (hotel)**
 
 ```json
 {
   "product_type": "hotel",
-  "currency": "JPY",
-  "party_size": 2,
+  "currency": "AUD",
+  "party_size": 3,
   "params": {
-    "city": "Tokyo",
-    "check_in": "2025-11-02",
-    "check_out": "2025-11-05",
-    "stars": 3,
-    "room_type": "twin",
-    "breakfast": false
+    "city": "Beijin",
+    "check_in": "2025-10-30",
+    "nights": 4,
+    "time": "15:00",
+    "status": "pending",
+    "room_type": "Triple room",
+    "price": 800
   },
-  "trip_id": 4821,
-  "entity_id": 73,
-  "item_reference": "hotel_73"
+  "trip_id": 2,
+  "entity_id": 4,
+  "item_reference": "hotel_4"
 }
 ```
 
@@ -86,38 +109,37 @@ All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwi
 
 ```json
 {
-  "code": 1,
-  "msg": "success",
-  "data": {
-    "voucher_code": "VCH-DF21-BA34",
-    "invoice_id": "INV_4330",
-    "items": [
-      {
-        "sku": "HTL_BEIJING_CENTRAL_HOTEL_TRIPLE_ROOM_2025-10-30",
-        "unit_price": 800,
-        "quantity": 1,
-        "fees": 0,
-        "total": 800,
-        "currency": "AUD",
-        "meta": {
-          "hotel_name": "Beijing Central Hotel",
-          "reservation_required": true,
-          "title": "Check into Beijing Hotel",
-          "time": "15:00",
-          "room_type": "Triple room",
-          "date": "2025-10-30",
-          "nights": 4,
-          "status": "confirmed",
-          "people": 3
-        },
-        "cancellation_policy": "48h prior: full refund"
-      }
-    ]
-  }
+    "code": 1,
+    "msg": "success",
+    "data": {
+        "voucher_code": "VCH-0137-0E0E",
+        "invoice_id": "INV_8487",
+        "items": [
+            {
+                "sku": "HTL_BEIJING_CENTRAL_HOTEL_TRIPLE_ROOM_2025-10-30",
+                "unit_price": 800,
+                "quantity": 1,
+                "fees": 0,
+                "total": 800,
+                "currency": "AUD",
+                "meta": {
+                    "nights": 4,
+                    "date": "2025-10-30",
+                    "room_type": "Triple room",
+                    "time": "15:00",
+                    "title": "Check into Beijing Hotel",
+                    "reservation_required": true,
+                    "hotel_name": "Beijing Central Hotel",
+                    "people": 3,
+                    "status": "confirm"
+                },
+                "cancellation_policy": "48h prior: full refund"
+            }
+        ]
+    }
 }
 ```
 
----
 ## 2. Prepare Itinerary Quote
 
 > BASIC
@@ -146,43 +168,53 @@ All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwi
 | └─ product_type | string | `transport` \| `hotel` \| `attraction` |
 | └─ party_size | integer | Travellers for this item |
 | └─ params | object | Product-specific parameters |
-| └─ entity_id | number | *(optional)* Trip entity identifier associated with the reference; enables price lookup from the itinerary database |
-| trip_id | number | *(optional)* Trip identifier applied to all items; required when the service should load pricing for each entity |
+| └─ entity_id | number | Trip entity identifier associated with the reference; required so the service can load pricing/status from the itinerary database |
+| trip_id | number | Trip identifier applied to all items; required to persist pricing and update itinerary item statuses |
 
 **Request Example**
 
 ```json
 {
-  "itinerary_id": "iti_tokyo_2025",
+  "itinerary_id": "iti_tokyo",
   "currency": "JPY",
+  "trip_id": 1,
   "items": [
     {
-      "reference": "hotel_tokyo_nov02",
+    "reference": "transport_narita_transfer",
       "product_type": "hotel",
       "party_size": 2,
+      "entity_id": 2,
       "params": {
-        "city": "Tokyo",
-        "check_in": "2025-11-02",
-        "check_out": "2025-11-05",
-        "room_type": "twin"
-      },
-      "entity_id": 73
+        "date": "2025-10-28",
+        "time": "15:00",
+        "title": "Check-in at Tokyo Hotel",
+        "hotel_name": "Tokyo City Hotel",
+        "room_type": "Double room",
+        "nights": 6,
+        "people": 2,
+        "price": 54000,
+        "fees": 0
+      }
     },
     {
-      "reference": "narita_transfer",
+      "reference": "transport_back_to_sydney",
       "product_type": "transport",
       "party_size": 2,
+      "entity_id": 3,
       "params": {
-        "mode": "train",
-        "from": "NRT",
-        "to": "Shinjuku",
-        "date": "2025-11-02"
-      },
-      "entity_id": 91
+        "from": "Tokyo, Japan",
+        "to": "Sydney, Australia",
+        "date": "2025-11-04",
+        "time": "12:00",
+        "provider": "Quantas",
+        "ticket_type": "economy",
+        "people": 2,
+        "price": 1000
+      }
     }
-  ],
-  "trip_id": 4821
+  ]
 }
+
 ```
 
 > RESPONSE
@@ -213,3 +245,80 @@ All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwi
 | --- | --- | --- |
 | 400 | ERR_VALIDATION | Request validation failed |
 | 500 | ERR_INTERNAL | Unexpected server error |
+
+**Response Example**
+
+```json
+{
+    "code": 1,
+    "msg": "success",
+    "data": {
+        "voucher_code": "VCH-C7D2-9A3E",
+        "invoice_id": "INV_2847",
+        "currency": "JPY",
+        "items": [
+            {
+                "reference": "transport_narita_transfer",
+                "product_type": "hotel",
+                "party_size": 2,
+                "total": 1200,
+                "fees": 0,
+                "quote_items": [
+                    {
+                        "sku": "HTL_TOKYO_CITY_HOTEL_DOUBLE_ROOM_2025-10-28",
+                        "unit_price": 1200,
+                        "quantity": 1,
+                        "fees": 0,
+                        "total": 1200,
+                        "currency": "JPY",
+                        "meta": {
+                            "nights": 6,
+                            "date": "2025-10-28",
+                            "room_type": "Double room",
+                            "time": "15:00",
+                            "title": "Check-in at Tokyo Hotel",
+                            "reservation_required": true,
+                            "hotel_name": "Tokyo City Hotel",
+                            "people": 2,
+                            "status": "pending"
+                        },
+                        "cancellation_policy": "48h prior: full refund"
+                    }
+                ]
+            },
+            {
+                "reference": "transport_back_to_sydney",
+                "product_type": "transport",
+                "party_size": 2,
+                "total": 1000,
+                "fees": 0,
+                "quote_items": [
+                    {
+                        "sku": "TP_TOKYO,_JAPAN_SYDNEY,_AUSTRALIA_2025-11-04",
+                        "unit_price": 1000,
+                        "quantity": 1,
+                        "fees": 0,
+                        "total": 1000,
+                        "currency": "JPY",
+                        "meta": {
+                            "date": "2025-11-04",
+                            "provider": "Qantas",
+                            "mode": "transport",
+                            "status": "pending",
+                            "to": "SYDNEY, AUSTRALIA",
+                            "from": "TOKYO, JAPAN",
+                            "reservation_required": true,
+                            "ticket_type": "economy",
+                            "time": "12:00",
+                            "people": 2
+                        },
+                        "cancellation_policy": "No charge until 7 days prior; 25% after."
+                    }
+                ]
+            }
+        ],
+        "bundle_total": 2200,
+        "bundle_fees": 0
+    }
+}
+```
