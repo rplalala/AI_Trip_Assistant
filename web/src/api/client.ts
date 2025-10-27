@@ -17,13 +17,14 @@ export async function apiRequest<T>(url: string, options: RequestOptions = {}): 
     const token = localStorage.getItem('token');
     if (token) headers.Authorization = `Bearer ${token}`;
 
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
     const response = await fetch(url, {
         method,
         headers: {
-            'Content-Type': 'application/json',
+            ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
             ...headers,
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
         credentials: 'include',
         ...rest,
     });
@@ -48,7 +49,7 @@ export async function apiRequest<T>(url: string, options: RequestOptions = {}): 
         throw new Error(json.msg || 'API error');
     }
 
-    return await response.json() as Promise<T>;
+    return json as T;
 }
 
 function isApiResp<T>(v: any): v is ApiResp<T> {

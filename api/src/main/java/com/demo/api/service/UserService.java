@@ -3,6 +3,7 @@ package com.demo.api.service;
 import com.demo.api.dto.DeleteAccountDTO;
 import com.demo.api.dto.ProfileDTO;
 import com.demo.api.dto.UpdatePasswordDTO;
+import com.demo.api.model.EmailToken;
 
 public interface UserService {
 
@@ -19,4 +20,6 @@ public interface UserService {
     void sendChangeEmailLink(Long userId);
     void changeEmail(String token, String newEmail);
     void confirmChangeEmail(String token);
+
+    EmailToken verifyChangeEmailByToken(String token);
 }

@@ -1,6 +1,7 @@
 package com.demo.api.task;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.demo.api.model.EmailToken;
 import com.demo.api.repository.EmailTokenRepository;
 import com.demo.api.repository.UserRepository;
 import com.demo.api.utils.AwsS3Utils;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,7 +36,7 @@ public class CleanTask {
      * Temporarily only clean avatars.
      * TODO: Clean all redundant image files (including user avatars and trip images).
      */
-    @Scheduled(cron = "0 */5 * * * *")
+    @Scheduled(cron = "0 0 */1 * * *")
     public void fileClean() throws Exception {
         log.info("File clean task started...");
         // Get all user avatar URLs from the database
@@ -73,8 +75,9 @@ public class CleanTask {
      * Clean expired email tokens every 5 minutes
      */
     @Scheduled(cron = "0 */5 * * * *")
+    @Transactional
     public void cleanup() {
-        long n = emailTokenRepository.deleteByExpireTimeBefore(Instant.now());
-        log.info("cleaned {} tokens", n);
+        List<EmailToken> deleted = emailTokenRepository.deleteAllByExpireTimeBefore(Instant.now());
+        log.info("cleaned {} tokens", deleted.size());
     }
 }

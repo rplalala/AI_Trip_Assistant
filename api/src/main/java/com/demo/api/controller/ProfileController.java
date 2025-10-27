@@ -103,6 +103,12 @@ public class ProfileController {
         return ApiRespond.success();
     }
 
+    @GetMapping("/verify-change-email-token")
+    public ApiRespond<Void> verifyChangeEmailByToken(@RequestParam String token) {
+        userService.verifyChangeEmailByToken(token);
+        return ApiRespond.success();
+    }
+
     /**
      * Confirm change email address
      * trigger: user clicks the link in the new email to confirm email address change

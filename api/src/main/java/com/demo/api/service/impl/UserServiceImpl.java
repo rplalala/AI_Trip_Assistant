@@ -123,6 +123,7 @@ public class UserServiceImpl implements UserService {
      * @param userId
      */
     @Override
+    @Transactional
     public void deleteUser(Long userId, DeleteAccountDTO deleteAccountDTO) {
         User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException("user not found"));
         if (!passwordEncoder.matches(deleteAccountDTO.getVerifyPassword(), user.getPassword())){
@@ -171,9 +172,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changeEmail(String token, String newEmail) {
-        EmailToken emailToken = emailTokenRepository
-                .findByChangeEmailTokenAndUsedIsFalseAndExpireTimeAfter(token, Instant.now())
-                .orElseThrow(() -> new BusinessException("Invalid or expired token"));
+        EmailToken emailToken = verifyChangeEmailByToken(token);
 
         if (userRepository.existsByEmail(newEmail)) {
             throw new BusinessException("email exists");
@@ -193,6 +192,14 @@ public class UserServiceImpl implements UserService {
                 sendGridUtils.sendChangeEmail(newEmail, link);
             }
         });
+    }
+
+    @Override
+    public EmailToken verifyChangeEmailByToken(String token) {
+        return emailTokenRepository
+                .findByChangeEmailTokenAndUsedIsFalseAndExpireTimeAfter(token, Instant.now())
+                .orElseThrow(() -> new BusinessException("Invalid or expired token"));
+
     }
 
     /**

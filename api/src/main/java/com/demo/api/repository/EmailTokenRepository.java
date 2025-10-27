@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -23,6 +24,6 @@ public interface EmailTokenRepository extends JpaRepository<EmailToken, Long> {
     void deleteByUserIdAndResetPasswordTokenIsNotNullAndUsedIsFalse(Long userId);
     void deleteByUserIdAndChangeEmailTokenIsNotNullAndUsedIsFalse(Long userId);
     void deleteByUserIdAndConfirmChangeEmailTokenIsNotNullAndUsedIsFalse(Long userId);
-    long deleteByExpireTimeBefore(Instant now);
+    List<EmailToken> deleteAllByExpireTimeBefore(Instant now);
 
 }
