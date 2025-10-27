@@ -4,6 +4,7 @@ import com.demo.api.ApiRespond;
 import com.demo.api.dto.DeleteAccountDTO;
 import com.demo.api.dto.ProfileDTO;
 import com.demo.api.dto.UpdatePasswordDTO;
+import com.demo.api.exception.BusinessException;
 import com.demo.api.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +60,7 @@ public class ProfileController {
     public ApiRespond<Void> updatePassword (@AuthenticationPrincipal String userId,
                                             @Valid @RequestBody UpdatePasswordDTO passwordDTO){
         if(passwordDTO.getOldPassword().equals(passwordDTO.getNewPassword())){
-            return ApiRespond.error("New password cannot be the same as old password");
+            throw new BusinessException("New password cannot be the same as old password");
         }
         userService.updatePassword(Long.valueOf(userId), passwordDTO);
         return ApiRespond.success();
@@ -75,6 +76,42 @@ public class ProfileController {
     public ApiRespond<Void> deleteUser(@AuthenticationPrincipal String userId,
                                        @RequestBody DeleteAccountDTO deleteAccountDTO){
         userService.deleteUser(Long.valueOf(userId), deleteAccountDTO);
+        return ApiRespond.success();
+    }
+
+    /**
+     * Send change-email link to current user email
+     * @param userId
+     * @return
+     */
+    @PostMapping("/change-email-link")
+    public ApiRespond<Void> sendChangeEmailLink(@AuthenticationPrincipal String userId) {
+        userService.sendChangeEmailLink(Long.valueOf(userId));
+        return ApiRespond.success();
+    }
+
+    /**
+     * Change user email address
+     * trigger: user clicks the link in the old email to fill in the new email address
+     * @param token
+     * @param newEmail
+     * @return
+     */
+    @PostMapping("/change-email")
+    public ApiRespond<Void> changeEmail(@RequestParam String token, @RequestParam String newEmail) {
+        userService.changeEmail(token, newEmail);
+        return ApiRespond.success();
+    }
+
+    /**
+     * Confirm change email address
+     * trigger: user clicks the link in the new email to confirm email address change
+     * @param token
+     * @return
+     */
+    @GetMapping("/confirm-change-email")
+    public ApiRespond<Void> confirmChangeEmail(@RequestParam String token) {
+        userService.confirmChangeEmail(token);
         return ApiRespond.success();
     }
 

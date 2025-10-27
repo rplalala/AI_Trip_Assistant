@@ -111,7 +111,8 @@ public class AwsS3Utils {
      * @param imageUrl external URL
      * @return Return URL (https://{cdn}/{dir/yyyy/MM/xxx.png})
      */
-    public String uploadFromUrl(String imageUrl) throws Exception {
+    public String uploadFromUrl(String imageUrl, boolean isAvatar) throws Exception {
+
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(10))
@@ -171,7 +172,7 @@ public class AwsS3Utils {
                 }
                 bos.write(buf, 0, n);
             }
-            String s3Url = upload(new ByteArrayInputStream(bos.toByteArray()), "temp" + suffix, false);
+            String s3Url = upload(new ByteArrayInputStream(bos.toByteArray()), "temp" + suffix, isAvatar);
             log.info("Upload from {} to {}", imageUrl, s3Url);
             return s3Url;
         }

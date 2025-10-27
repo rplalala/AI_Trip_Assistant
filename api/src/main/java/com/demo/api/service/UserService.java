@@ -15,4 +15,8 @@ public interface UserService {
     void updateAvatar(Long userId, String newAvatarUrl);
 
     void deleteUser(Long userId, DeleteAccountDTO deleteAccountDTO);
+
+    void sendChangeEmailLink(Long userId);
+    void changeEmail(String token, String newEmail);
+    void confirmChangeEmail(String token);
 }

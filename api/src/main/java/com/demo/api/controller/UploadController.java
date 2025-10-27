@@ -2,6 +2,7 @@ package com.demo.api.controller;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.demo.api.ApiRespond;
+import com.demo.api.exception.BusinessException;
 import com.demo.api.service.UserService;
 import com.demo.api.utils.AwsS3Utils;
 import lombok.RequiredArgsConstructor;
@@ -35,15 +36,29 @@ public class UploadController {
     public ApiRespond<String> upload(@RequestParam("file") MultipartFile file) throws Exception{
         log.info("Upload Img File：{}", file.getOriginalFilename());
         if(file.isEmpty()){
-            return ApiRespond.error("File dose not exist");
+            throw new BusinessException("File dose not exist");
         }
         // 10 MB limit
         long maxSize = 10 * 1024 * 1024L;
         if (file.getSize() > maxSize) {
-            return ApiRespond.error("File too large, max size is 10 MB");
+            throw new BusinessException("File too large, max size is 10 MB");
         }
 
         return ApiRespond.success(awsS3Utils.upload(file.getInputStream(), file.getOriginalFilename(), false));
+    }
+
+    /**
+     * Single file upload via external link
+     * @param url External image URL
+     * @return ASW S3 image URL
+     */
+    @PostMapping("/link")
+    public ApiRespond<String> uploadByUrl(@RequestParam("url") String url) throws Exception {
+        if (ObjectUtil.isEmpty(url)) {
+            throw new BusinessException("URL cannot be empty");
+        }
+        log.info("Upload Img Url：{}", url);
+        return ApiRespond.success(awsS3Utils.uploadFromUrl(url, false));
     }
 
     /**
@@ -56,12 +71,12 @@ public class UploadController {
             , @AuthenticationPrincipal String userId) throws Exception{
         log.info("Upload avatar：{}", file.getOriginalFilename());
         if(file.isEmpty()){
-            return ApiRespond.error("File dose not exist");
+            throw new BusinessException("File dose not exist");
         }
         // 10 MB limit
         long maxSize = 10 * 1024 * 1024L;
         if (file.getSize() > maxSize) {
-            return ApiRespond.error("File too large, max size is 10 MB");
+            throw new BusinessException("File too large, max size is 10 MB");
         }
 
         String newAvatarUrl = awsS3Utils.upload(file.getInputStream(), file.getOriginalFilename(), true);
@@ -69,18 +84,20 @@ public class UploadController {
         userService.updateAvatar(Long.valueOf(userId), newAvatarUrl);
         return ApiRespond.success(newAvatarUrl);
     }
-
     /**
-     * Single file upload via external link
+     * Upload and update user avatar via external link
      * @param url External image URL
-     * @return ASW S3 image URL
+     * @return ASW S3 new avatar URL elec5620-stage2/avatars
      */
-    @PostMapping("/link")
-    public ApiRespond<String> uploadByUrl(@RequestParam("url") String url) throws Exception {
+    @PostMapping("/avatar/link")
+    public ApiRespond<String> uploadAvatarFrmUrl(@RequestParam("url") String url
+            , @AuthenticationPrincipal String userId) throws Exception{
+        log.info("Upload avatar from url：{}", url);
         if (ObjectUtil.isEmpty(url)) {
-            return ApiRespond.error("URL cannot be empty");
+            throw new BusinessException("URL cannot be empty");
         }
-        log.info("Upload Img Url：{}", url);
-        return ApiRespond.success(awsS3Utils.uploadFromUrl(url));
+        String newAvatarUrl = awsS3Utils.uploadFromUrl(url, true);
+        userService.updateAvatar(Long.valueOf(userId), newAvatarUrl);
+        return ApiRespond.success(newAvatarUrl);
     }
 }

@@ -1,6 +1,5 @@
 package com.demo.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,11 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdatePasswordDTO {
 
-    @NotBlank
     @Size(min=6,max=64)
     private String oldPassword; // Old password, 6-64 chars
 
-    @NotBlank
     @Size(min=6,max=64)
     private String newPassword; // New password, 6-64 chars
 }

@@ -30,12 +30,11 @@ public class CleanTask {
     private String dirName;
 
     /**
-     * Clean redundant files in AWS S3 (exist in S3 but not in the database) at 2:00 AM every day.
+     * Clean redundant files in AWS S3 (exist in S3 but not in the database) every 5 minutes.
      * Temporarily only clean avatars.
      * TODO: Clean all redundant image files (including user avatars and trip images).
      */
-    // @Scheduled(cron = "10/10 * * * * *") // test every 10 seconds
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 */5 * * * *")
     public void fileClean() throws Exception {
         log.info("File clean task started...");
         // Get all user avatar URLs from the database
@@ -71,9 +70,9 @@ public class CleanTask {
     }
 
     /**
-     * Clean expired email tokens every day at 2:00 AM.
+     * Clean expired email tokens every 5 minutes
      */
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 */5 * * * *")
     public void cleanup() {
         long n = emailTokenRepository.deleteByExpireTimeBefore(Instant.now());
         log.info("cleaned {} tokens", n);
