@@ -30,9 +30,9 @@ All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwi
 | currency | string | Currency code (e.g. `JPY`) |
 | party_size | integer | Travellers in the party |
 | params | object | Product-specific parameters |
-| trip_id | number | *(optional)* Trip identifier used for persistence; when present with `entity_id`, pricing is loaded from the itinerary record instead of simulated values |
-| entity_id | number | *(optional)* Trip entity identifier (e.g. hotel ID) used to source stored pricing |
-| item_reference | string | *(optional)* Stable reference used to link itinerary pricing |
+| trip_id | number | Trip identifier used for persistence and status updates; required in current workflow when quoting stored itinerary items |
+| entity_id | number | Trip entity identifier (e.g. hotel ID) used to source stored pricing; required when `trip_id` is supplied |
+| item_reference | string | Stable reference used to link itinerary pricing and booking quotes; required when persisting quotes for existing trip items |
 
 **Request Example (hotel)**
 
@@ -146,8 +146,8 @@ All booking endpoints require `Authorization: Bearer <JWT>` unless noted otherwi
 | └─ product_type | string | `transport` \| `hotel` \| `attraction` |
 | └─ party_size | integer | Travellers for this item |
 | └─ params | object | Product-specific parameters |
-| └─ entity_id | number | *(optional)* Trip entity identifier associated with the reference; enables price lookup from the itinerary database |
-| trip_id | number | *(optional)* Trip identifier applied to all items; required when the service should load pricing for each entity |
+| └─ entity_id | number | Trip entity identifier associated with the reference; required so the service can load pricing/status from the itinerary database |
+| trip_id | number | Trip identifier applied to all items; required to persist pricing and update itinerary item statuses |
 
 **Request Example**
 

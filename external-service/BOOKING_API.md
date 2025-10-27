@@ -32,9 +32,9 @@ Generate a booking quote. The response immediately returns voucher + invoice ref
 | `currency` | string | ISO currency code (JPY in MVP) |
 | `party_size` | integer | Number of travellers |
 | `params` | object | Product-specific parameters (examples below) |
-| `trip_id` | number | *(optional)* Upstream trip identifier; when paired with `entity_id` the caller can inject stored pricing |
-| `entity_id` | number | *(optional)* Upstream entity identifier used for persistence + pricing lookup |
-| `item_reference` | string | *(optional)* External reference for downstream reconciliation |
+| `trip_id` | number | Upstream trip identifier used to persist quotes and update itinerary status |
+| `entity_id` | number | Upstream entity identifier required for persistence + pricing lookup |
+| `item_reference` | string | External reference for downstream reconciliation; required when quoting stored itinerary items |
 
 #### Param Examples
 - **Transport**: `{"mode":"train|flight","from":"NRT","to":"Shinjuku","date":"2025-11-02","class":"economy","price":18000}`  
@@ -121,8 +121,8 @@ Bundle multiple products into a single itinerary quote. The response lists each 
 | └─ `product_type` | enum | Same as single quote |
 | └─ `party_size` | integer | Travellers for this item |
 | └─ `params` | object | Same schema as single quote for the given product type |
-| └─ `entity_id` | number | *(optional)* Upstream entity identifier used to resolve stored pricing |
-| `trip_id` | number | *(optional)* Upstream trip identifier that enables price lookup when paired with `entity_id` |
+| └─ `entity_id` | number | Upstream entity identifier required so the service can resolve stored pricing |
+| `trip_id` | number | Upstream trip identifier that must accompany each request so pricing and statuses persist correctly |
 
 ### Success Response
 
