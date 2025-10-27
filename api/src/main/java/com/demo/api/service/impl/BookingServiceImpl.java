@@ -1,6 +1,6 @@
 package com.demo.api.service.impl;
 
-import com.demo.api.client.BookingApiClient;
+import com.demo.api.client.BookingClient;
 import com.demo.api.dto.booking.*;
 import com.demo.api.exception.BookingApiException;
 import com.demo.api.model.*;
@@ -8,8 +8,10 @@ import com.demo.api.repository.*;
 import com.demo.api.service.BookingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -35,7 +37,7 @@ public class BookingServiceImpl implements BookingService {
     private static final String STATUS_FAILED = "failed";
     private static final String DEFAULT_CURRENCY = "AUD";
 
-    private final BookingApiClient bookingApiClient;
+    private final BookingClient bookingClient;
     private final TripTransportationRepository tripTransportationRepository;
     private final TripHotelRepository tripHotelRepository;
     private final TripAttractionRepository tripAttractionRepository;
@@ -43,14 +45,14 @@ public class BookingServiceImpl implements BookingService {
     private final TripPreferenceRepository tripPreferenceRepository;
     private final ObjectMapper objectMapper;
 
-    public BookingServiceImpl(BookingApiClient bookingApiClient,
+    public BookingServiceImpl(BookingClient bookingClient,
                               TripTransportationRepository tripTransportationRepository,
                               TripHotelRepository tripHotelRepository,
                               TripAttractionRepository tripAttractionRepository,
                               TripBookingQuoteRepository tripBookingQuoteRepository,
                               TripPreferenceRepository tripPreferenceRepository,
                               ObjectMapper objectMapper) {
-        this.bookingApiClient = bookingApiClient;
+        this.bookingClient = bookingClient;
         this.tripTransportationRepository = tripTransportationRepository;
         this.tripHotelRepository = tripHotelRepository;
         this.tripAttractionRepository = tripAttractionRepository;
@@ -84,7 +86,7 @@ public class BookingServiceImpl implements BookingService {
         );
 
         try {
-            QuoteResp response = bookingApiClient.postQuote(request);
+            QuoteResp response = bookingClient.quote(request);
             TripBookingQuote saved = upsertQuoteRecord(
                     tripId,
                     normalizedType,
@@ -103,6 +105,10 @@ public class BookingServiceImpl implements BookingService {
         } catch (BookingApiException ex) {
             persistFailure(tripId, normalizedType, entityId, ex.getResponseBody() != null ? ex.getResponseBody() : ex.getMessage());
             throw ex;
+        } catch (FeignException ex) {
+            BookingApiException wrapped = wrapFeignException("/quote", ex);
+            persistFailure(tripId, normalizedType, entityId, wrapped.getResponseBody() != null ? wrapped.getResponseBody() : wrapped.getMessage());
+            throw wrapped;
         } catch (RuntimeException ex) {
             persistFailure(tripId, normalizedType, entityId, ex.getMessage());
             throw ex;
@@ -139,7 +145,7 @@ public class BookingServiceImpl implements BookingService {
         ItineraryQuoteReq request = new ItineraryQuoteReq("iti_" + tripId, requestCurrency, requestItems, tripId);
 
         try {
-            ItineraryQuoteResp response = bookingApiClient.postItineraryQuote(request);
+            ItineraryQuoteResp response = bookingClient.itineraryQuote(request);
             String rawResponse = serializeSafely(response);
             for (ItineraryQuoteItem item : response.items()) {
                 String itemReference = item.reference();
@@ -168,10 +174,27 @@ public class BookingServiceImpl implements BookingService {
             String errorPayload = ex.getResponseBody() != null ? ex.getResponseBody() : ex.getMessage();
             contexts.forEach(ctx -> persistFailure(tripId, ctx.productType(), ctx.entityId(), errorPayload));
             throw ex;
+        } catch (FeignException ex) {
+            BookingApiException wrapped = wrapFeignException("/itinerary/quote", ex);
+            String errorPayload = wrapped.getResponseBody() != null ? wrapped.getResponseBody() : wrapped.getMessage();
+            contexts.forEach(ctx -> persistFailure(tripId, ctx.productType(), ctx.entityId(), errorPayload));
+            throw wrapped;
         } catch (RuntimeException ex) {
             contexts.forEach(ctx -> persistFailure(tripId, ctx.productType(), ctx.entityId(), ex.getMessage()));
             throw ex;
         }
+    }
+
+    private BookingApiException wrapFeignException(String path, FeignException ex) {
+        HttpStatus status = HttpStatus.resolve(ex.status());
+        String body;
+        try {
+            body = ex.contentUTF8();
+        } catch (RuntimeException ignored) {
+            body = null;
+        }
+        String message = String.format("Booking API call to %s failed with status %s", path, status != null ? status : ex.status());
+        return new BookingApiException(message, status, body, ex);
     }
 
     private Trip fetchPreference(Long tripId) {
