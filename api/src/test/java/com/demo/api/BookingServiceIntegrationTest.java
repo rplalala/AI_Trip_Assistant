@@ -1,6 +1,6 @@
 package com.demo.api;
 
-import com.demo.api.client.BookingApiClient;
+import com.demo.api.client.BookingClient;
 import com.demo.api.dto.booking.*;
 import com.demo.api.model.*;
 import com.demo.api.repository.*;
@@ -44,7 +44,7 @@ class BookingServiceIntegrationTest {
     private TripBookingQuoteRepository tripBookingQuoteRepository;
 
     @MockBean
-    private BookingApiClient bookingApiClient;
+    private BookingClient bookingClient;
 
     private Trip preference;
 
@@ -91,7 +91,7 @@ class BookingServiceIntegrationTest {
                 "INV_9876",
                 List.of(quoteItem)
         );
-        when(bookingApiClient.postQuote(any())).thenReturn(quoteResp);
+        when(bookingClient.quote(any())).thenReturn(quoteResp);
 
         TripBookingQuote result = bookingService.quoteSingleItem(preference.getId(), "hotel", hotel.getId());
 
@@ -103,7 +103,7 @@ class BookingServiceIntegrationTest {
         assertThat(result.getTotalAmount()).isEqualTo(150);
         assertThat(result.getItemReference()).isEqualTo("hotel_" + hotel.getId());
 
-        verify(bookingApiClient, times(1)).postQuote(any());
+        verify(bookingClient, times(1)).quote(any());
     }
 
     @Test
@@ -172,7 +172,7 @@ class BookingServiceIntegrationTest {
                 BigDecimal.valueOf(420),
                 BigDecimal.ZERO
         );
-        when(bookingApiClient.postItineraryQuote(any())).thenReturn(itineraryQuoteResp);
+        when(bookingClient.itineraryQuote(any())).thenReturn(itineraryQuoteResp);
 
         ItineraryQuoteResp response = bookingService.quoteItinerary(preference.getId());
 
@@ -188,7 +188,7 @@ class BookingServiceIntegrationTest {
                         "attraction_" + attraction.getId()
                 );
 
-        verify(bookingApiClient, times(1)).postItineraryQuote(any());
+        verify(bookingClient, times(1)).itineraryQuote(any());
     }
 
 }

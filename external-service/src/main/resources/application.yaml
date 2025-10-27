@@ -16,8 +16,3 @@ spring:
 logging:
   level:
     org.springframework.jdbc.support.JdbcTransactionManager: debug
-
-booking:
-  token-secret: ${BOOKING_TOKEN_SECRET:dev-secret-change-me-please-rotate-2024}
-  token-ttl: 15m
-  idempotency-ttl: 30m

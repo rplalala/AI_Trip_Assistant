@@ -1,11 +1,6 @@
 package com.demo.externalservice.controller;
 
 import com.demo.externalservice.dto.booking.ErrorResp;
-import com.demo.externalservice.exception.IdempotencyMismatchException;
-import com.demo.externalservice.exception.PaymentFailedException;
-import com.demo.externalservice.exception.PaymentTokenException;
-import com.demo.externalservice.exception.QuoteExpiredException;
-import com.demo.externalservice.exception.QuoteTokenInvalidException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,41 +27,6 @@ public class BookingExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResp("ERR_VALIDATION", ex.getMessage()));
-    }
-
-    @ExceptionHandler(QuoteExpiredException.class)
-    public ResponseEntity<ErrorResp> handleQuoteExpired(QuoteExpiredException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ErrorResp("ERR_QUOTE_EXPIRED", ex.getMessage()));
-    }
-
-    @ExceptionHandler(QuoteTokenInvalidException.class)
-    public ResponseEntity<ErrorResp> handleInvalidToken(QuoteTokenInvalidException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ErrorResp("ERR_INVALID_QUOTE_TOKEN", ex.getMessage()));
-    }
-
-    @ExceptionHandler(PaymentFailedException.class)
-    public ResponseEntity<ErrorResp> handlePaymentFailed(PaymentFailedException ex) {
-        return ResponseEntity
-                .status(HttpStatus.PAYMENT_REQUIRED)
-                .body(new ErrorResp("ERR_PAYMENT_FAILED", ex.getMessage()));
-    }
-
-    @ExceptionHandler(PaymentTokenException.class)
-    public ResponseEntity<ErrorResp> handlePaymentToken(PaymentTokenException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResp("ERR_PAYMENT_TOKEN", ex.getMessage()));
-    }
-
-    @ExceptionHandler(IdempotencyMismatchException.class)
-    public ResponseEntity<ErrorResp> handleIdempotencyMismatch(IdempotencyMismatchException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ErrorResp("ERR_IDEMPOTENCY_MISMATCH", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
