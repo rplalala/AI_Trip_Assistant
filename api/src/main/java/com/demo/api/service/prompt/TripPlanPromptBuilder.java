@@ -78,12 +78,25 @@ public class TripPlanPromptBuilder {
         prompt.append(String.format("- Travelers: %s%n", people != null ? people + " people" : "Not specified"));
         prompt.append('\n');
         prompt.append(String.format(
-            """
-                Hard routing constraints:
+        """
+        Hard constraints:
+            Routing:
                 - The traveler STARTS in "%s, %s" (Departure) and ENDS in "%s, %s" (Destination). Do not swap them.
                 - On day 1, depart from "%s" to "%s".
+                - On Day 1, the FIRST item in "activities" MUST be a transportation event: { "type":"transportation", "from":"%s", "to":"%s" }.
                 - On the final day, return from "%s" to "%s".
-            """, fromCity, fromCountry, toCity, toCountry, fromCity, toCity, toCity, fromCity)
+                - On the FINAL day, the LAST item in "activities" MUST be a transportation event: { "type":"transportation", "from":"%s", "to":"%s" }.
+            Hotels:
+                - Day 1 MUST include one hotel check-in in "%s".
+                - If the trip lasts over 3 days, aim to add 1–2 additional hotel check-ins beyond Day 1 in "%s".
+            Attractions per day:
+                - Multiple "attraction" items are allowed per day; NEVER more than 5.
+                - Prefer 3–4 attractions per full sightseeing day (2–3 acceptable on light or travel-heavy days).
+            Transportation on non-first/last days:
+                - You MAY add transportation only within "%s"; both "from" and "to" MUST be within "%s".
+                - Prefer public transit: "bus", "subway"/"metro", "train". Avoid flights on these days.
+        """, fromCity, fromCountry, toCity, toCountry, fromCity, toCity, fromCity, toCity, toCity, fromCity, toCity, fromCity,
+                        toCity, toCity, toCity, toCity)
         );
     }
 
@@ -129,7 +142,7 @@ public class TripPlanPromptBuilder {
                     Instructions for the itinerary generation:
 
                     You must return **ONLY** a JSON object with two keys: "daily_summaries" and "activities".
-                    Note: during the travel dates (inclusive), "daily_summaries" MUST contain exactly one entry per calendar day. For example, If travel dates are 2025-11-01 to 2025-11-12, then "daily_summaries" must have 12 entries dated.
+                    During the travel dates, "daily_summaries" MUST contain exactly one entry per calendar day. For example, If travel dates are 2025-11-01 to 2025-11-12, then "daily_summaries" must have 12 entries dated.
 
                     "daily_summaries" is a list of objects, each with (in order):
                         - "date": travel date in yyyy-MM-dd format
