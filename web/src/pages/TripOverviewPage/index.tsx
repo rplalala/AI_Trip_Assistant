@@ -1,277 +1,327 @@
 // src/pages/Trips/Overview/index.tsx
-import React, { useEffect, useState } from 'react'
-import { Link, useParams } from "react-router-dom";
-import { getTripInsights, type TripInsightsResponse } from '../../api/trip';
+import React, {useEffect, useMemo, useState} from 'react';
+import {Link, useParams} from 'react-router-dom';
 import {
-  Breadcrumb,
-  Typography,
-  Row,
-  Col,
-  Card,
-  Tabs,
-  List,
-  Tag,
-  Table,
-  Space,
-} from "antd";
-import type { BreadcrumbProps, TabsProps, TableProps } from "antd";
+    getTripDetails,
+    getTripInsights,
+    getTripTimeline,
+    type TripDetail,
+    type TripInsightsResponse,
+    type TimeLineDTO,
+    type AttractionTimeLineDTO,
+    type HotelTimeLineDTO,
+    type TransportationTimeLineDTO,
+} from '../../api/trip';
 import {
-  HomeOutlined,
-  CoffeeOutlined,
-  ShopOutlined,
-  RocketOutlined,
-} from "@ant-design/icons";
+    Breadcrumb,
+    Typography,
+    Row,
+    Col,
+    Card,
+    Tabs,
+    List,
+    Tag,
+    Table,
+    Space,
+    Empty,
+    Skeleton,
+    Timeline,
+    Image,
+} from 'antd';
+import type {BreadcrumbProps, TabsProps, TableProps} from 'antd';
+import {HomeOutlined, EnvironmentOutlined, CarOutlined} from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const {Title, Text} = Typography;
 
-// ---------- 类型 ----------
-type Trip = {
-  id: string;
-  title: string;
-  dateRange: string;
-  travelers: number;
-};
-
-type TimelineEvent = {
-  day: string;
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  color: string;
-  warn?: boolean;
-};
-
+// Types for Bookings table (placeholder for now)
 type BookingRow = {
-  key: React.Key;
-  name: string;
-  date: string;
-  status: "Confirmed" | "Pending";
+    key: React.Key;
+    name: string;
+    date: string;
+    status: 'Confirmed' | 'Pending';
 };
 
-// ---- Mock data（后续可换成接口返回）----
-const mockTrip = (tripId: string): Trip => ({
-  id: tripId,
-  title: "Tokyo Spring",
-  dateRange: "Mar 20, 2025 – Mar 23, 2025",
-  travelers: 4,
-});
-
-const timelineEvents: TimelineEvent[] = [
-  {
-    day: "Mar 20",
-    icon: <RocketOutlined />,
-    title: "Flight to Tokyo",
-    subtitle: "Hotel Check-in",
-    color: "#1677ff",
-  },
-  {
-    day: "Mar 21",
-    icon: <CoffeeOutlined />,
-    title: "Shinjuku Gyoen",
-    subtitle: "Sushi Saito",
-    color: "#52c41a",
-  },
-  {
-    day: "Mar 22",
-    icon: <ShopOutlined />,
-    title: "Ghibli Museum",
-    subtitle: "Budget Warning",
-    color: "#faad14",
-    warn: true,
-  },
-  {
-    day: "Mar 23",
-    icon: <HomeOutlined />,
-    title: "Departure",
-    subtitle: "",
-    color: "#1677ff",
-  },
+const bookingColumns: TableProps<BookingRow>['columns'] = [
+    {title: 'Booking', dataIndex: 'name'},
+    {title: 'Date', dataIndex: 'date'},
+    {
+        title: 'Status',
+        dataIndex: 'status',
+        render: (v: BookingRow['status']) =>
+            v === 'Confirmed' ? <Tag color="green">Confirmed</Tag> : <Tag>Pending</Tag>,
+        align: 'right',
+    },
 ];
 
-const bookings: BookingRow[] = [
-  { key: 1, name: "Flight to Tokyo", date: "Mar 20, 2025", status: "Confirmed" },
-  { key: 2, name: "Hotel in Shinjuku", date: "Mar 20–23, 2025", status: "Confirmed" },
-  { key: 3, name: "Dinner at Sushi Saito", date: "Mar 21, 2025", status: "Pending" },
+const mockBookings: BookingRow[] = [
+    {key: 1, name: 'Flight', date: 'Mar 20, 2025', status: 'Confirmed'},
+    {key: 2, name: 'Hotel', date: 'Mar 21, 2025', status: 'Confirmed'},
 ];
 
-// Table 列（强类型）
-const bookingColumns: TableProps<BookingRow>["columns"] = [
-  { title: "Booking", dataIndex: "name" },
-  { title: "Date", dataIndex: "date" },
-  {
-    title: "Status",
-    dataIndex: "status",
-    render: (v: BookingRow["status"]) =>
-      v === "Confirmed" ? <Tag color="green">Confirmed</Tag> : <Tag>Pending</Tag>,
-    align: "right",
-  },
-];
+function parseTimeToMinutes(time?: string | null): number {
+    if (!time) return Number.MAX_SAFE_INTEGER;
+    const m = time.match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return Number.MAX_SAFE_INTEGER;
+    const hh = parseInt(m[1]!, 10);
+    const mm = parseInt(m[2]!, 10);
+    return hh * 60 + mm;
+}
+
+function sortByTime<T extends { time?: string | null }>(arr?: T[] | null): T[] {
+    return [...(arr ?? [])].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+}
+
+function DayTimeline({day}: { day: TimeLineDTO }) {
+    const attractions = sortByTime<AttractionTimeLineDTO>(day.attraction);
+    const hotels = sortByTime<HotelTimeLineDTO>(day.hotel);
+    const transports = sortByTime<TransportationTimeLineDTO>(day.transportation);
+
+    type Item = { time?: string | null; label: string; type: 'hotel' | 'attraction' | 'transportation' };
+    const items: Item[] = [
+        ...hotels.map((h) => ({
+            time: h.time,
+            type: 'hotel' as const,
+            label: `${h.time ? `${h.time} ` : ''}${h.title || h.hotelName || 'Hotel'}`,
+        })),
+        ...attractions.map((a) => ({
+            time: a.time,
+            type: 'attraction' as const,
+            label: `${a.time ? `${a.time} ` : ''}${a.title || a.location || 'Attraction'}`,
+        })),
+        ...transports.map((t) => ({
+            time: t.time,
+            type: 'transportation' as const,
+            label: `${t.time ? `${t.time} ` : ''}${t.title || 'Transportation'}`,
+        })),
+    ].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+
+    const dotFor = (type: Item['type'], size = 14) => {
+        if (type === 'hotel') return <HomeOutlined style={{color: '#fa8c16', fontSize: size}}/>;
+        if (type === 'transportation') return <CarOutlined style={{color: '#1677ff', fontSize: size}}/>;
+        return <EnvironmentOutlined style={{color: '#52c41a', fontSize: size}}/>;
+    };
+
+    const IMAGE_W = 160;
+
+    const weatherIconMap: Record<string, React.ReactNode> = {
+        clouds: '☁️',
+        rain: '🌧️',
+        thunderstorm: '⛈️',
+        drizzle: '🌦️',
+        snow: '❄️',
+        clear: '☀️',
+    };
+
+    const weatherNode = (() => {
+        const cond = day.weatherCondition?.trim();
+        const condKey = cond?.toLowerCase() ?? '';
+        const icon = weatherIconMap[condKey];
+        const tempText = (day.minTemperature != null || day.maxTemperature != null)
+            ? `${day.minTemperature ?? ''}${day.minTemperature != null ? '°' : ''}${day.maxTemperature != null ? ` – ${day.maxTemperature}°` : ''}`
+            : '';
+        if (!cond && !tempText) return null;
+        return (
+            <div style={{marginTop: 4, color: 'rgba(0,0,0,0.45)', fontWeight: 400, display: 'flex', alignItems: 'center', gap: 6}}>
+                {icon ? (
+                    <span style={{fontSize: 16, lineHeight: 1}}>{icon}</span>
+                ) : cond ? (
+                    <span>{cond}</span>
+                ) : null}
+                {tempText ? <span>{tempText}</span> : null}
+            </div>
+        );
+    })();
+
+    return (
+        <div style={{position: 'relative', paddingRight: IMAGE_W + 24}}>
+            {/* Scoped style to remove any horizontal connector lines inside this timeline */}
+            <style>{`
+        .day-timeline .ant-timeline-item-content::before { display: none !important; }
+        .day-timeline .ant-timeline-item-head-custom { top: 6px; width: 18px; height: 18px; line-height: 18px; }
+      `}</style>
+
+            {day.imageUrl ? (
+                <div style={{position: 'absolute', right: 0, top: 0}}>
+                    <Image
+                        src={day.imageUrl}
+                        alt={day.summary || day.date}
+                        width={IMAGE_W}
+                        height={110}
+                        style={{
+                            objectFit: 'cover',
+                            borderRadius: 8,
+                            border: '1px solid rgba(0,0,0,0.06)'
+                        }}
+                        preview={{
+                            mask: null,
+                        }}
+                    />
+                </div>
+            ) : null}
+
+            <Timeline
+                className="day-timeline"
+                items={[
+                    {
+                        color: 'red',
+                        children: (
+                            <div>
+                                <div style={{fontWeight: 600}}>
+                                    {day.date}
+                                    {day.summary ? <span> · {day.summary}</span> : null}
+                                </div>
+                                {weatherNode}
+                            </div>
+                        ),
+                    },
+                    // Render each activity as its own timeline item with a dot icon
+                    ...items.map((it, idx) => ({
+                        dot: dotFor(it.type, 16),
+                        children: (
+                            <div
+                                key={idx}
+                                style={{
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    padding: '6px 0',
+                                    lineHeight: '22px',
+                                }}
+                            >
+                                {it.label}
+                            </div>
+                        ),
+                    })),
+                ]}
+            />
+        </div>
+    );
+}
 
 export default function TripOverview() {
-  const { tripId } = useParams<{ tripId?: string }>();
-  const effectiveTripId = tripId ?? "1";
-  const trip = mockTrip(effectiveTripId);
-  const [tripInsights, setTripInsights] = useState<TripInsightsResponse[]>([]);
+    const {tripId} = useParams<{ tripId?: string }>();
+    const [trip, setTrip] = useState<TripDetail | null>(null);
+    const [timeline, setTimeline] = useState<TimeLineDTO[]>([]);
+    const [loadingTimeline, setLoadingTimeline] = useState<boolean>(false);
+    const [tripInsights, setTripInsights] = useState<TripInsightsResponse[]>([]);
+    const [activeTab, setActiveTab] = useState<'timeline' | 'book'>('timeline');
 
-  useEffect(() => {
-    if (!tripId) return;
+    useEffect(() => {
+        let mounted = true;
+        if (!tripId) return;
 
-    getTripInsights(tripId)
-        .then((res) => {
-          setTripInsights(res);
-        })
-  }, [tripId]);
+        getTripDetails()
+            .then((list) => {
+                if (!mounted) return;
+                const found = (list ?? []).find((t) => String(t.tripId) === String(tripId));
+                setTrip(found ?? null);
+            });
 
-  const tabsItems: TabsProps["items"] = [
-    { key: "timeline", label: "Timeline", children: null },
-    { key: "plan", label: "Plan", children: null },
-    { key: "book", label: "Book", children: null },
-    { key: "budget", label: "Budget", children: null },
-    { key: "members", label: "Members", children: null },
-  ];
+        getTripInsights(tripId).then((res) => {
+            if (!mounted) return;
+            setTripInsights(res ?? []);
+        });
 
-  const breadcrumbItems: BreadcrumbProps["items"] = [
-    { title: <Link to="/dashboard">Home</Link> },
-    { title: "Trips" },
-    { title: trip.title },
-  ];
+        setLoadingTimeline(true);
+        getTripTimeline(tripId)
+            .then((res) => {
+                if (!mounted) return;
+                setTimeline(res ?? []);
+            })
+            .finally(() => mounted && setLoadingTimeline(false));
 
-  return (
-    <Space direction="vertical" size="large" style={{ width: "100%" }}>
-      {/* 顶部面包屑 */}
-      <Breadcrumb items={breadcrumbItems} />
+        return () => {
+            mounted = false;
+        };
+    }, [tripId]);
 
-      {/* 标题区 */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <Title level={2} style={{ margin: 0 }}>
-            {trip.title}
-          </Title>
-          <Text type="secondary">
-            {trip.dateRange} · {trip.travelers} travelers
-          </Text>
-        </div>
-      </div>
+    const tabsItems: TabsProps['items'] = [
+        {key: 'timeline', label: 'Timeline', children: null},
+        {key: 'book', label: 'Book', children: null},
+    ];
 
-      {/* Tabs */}
-      <Tabs defaultActiveKey="timeline" items={tabsItems} />
+    const breadcrumbItems: BreadcrumbProps['items'] = [
+        {title: <Link to="/">Home</Link>},
+        {title: <Link to="/trips">Trips</Link>},
+        {title: trip ? (trip.toCity || trip.toCountry || 'Trip') : 'Trip'},
+    ];
 
-      {/* 主体两栏 */}
-      <Row gutter={[24, 24]}>
-        {/* 左侧：时间轴 + 预订列表 */}
-        <Col xs={24} lg={16}>
-          <Card title="Trip Timeline">
-            {/* 自定义横向时间轴 */}
-            <div style={{ padding: "16px 8px" }}>
-              <div
-                style={{
-                  position: "relative",
-                  height: 120,
-                  borderTop: "2px solid rgba(0,0,0,0.08)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                {timelineEvents.map((e, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      textAlign: "center",
-                      width: "25%",
-                      position: "relative",
-                    }}
-                  >
-                    {/* 节点 */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 40,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        background: "#fff",
-                        border: `2px solid ${e.color}`,
-                        color: e.color,
-                        width: 36,
-                        height: 36,
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 16,
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                      }}
-                      title={e.title}
-                    >
-                      {e.icon}
-                    </div>
+    const titleText = useMemo(() => {
+        const name = trip ? (trip.toCity || trip.toCountry || 'Trip') : 'Trip';
+        const dateText = trip ? `${trip.startDate} – ${trip.endDate}` : '';
+        const travelers = trip?.people ? `${trip.people} travelers` : '';
+        const budgetText = typeof trip?.budget === 'number' ? `Budget: $${trip.budget.toLocaleString?.() ?? trip.budget}` : '';
+        return {name, dateText, travelers, budgetText};
+    }, [trip]);
 
-                    {/* 日期标注 */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 20,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {e.day}
-                    </div>
+    return (
+        <Space direction="vertical" size="large" style={{width: '100%'}}>
+            <Breadcrumb items={breadcrumbItems}/>
 
-                    {/* 文本 */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 84,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                      }}
-                    >
-                      <div style={{ fontSize: 12 }}>{e.title}</div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: e.warn ? "#fa541c" : "rgba(0,0,0,0.45)",
-                        }}
-                      >
-                        {e.subtitle}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <div>
+                    <Title level={2} style={{margin: 0}}>
+                        {titleText.name}
+                    </Title>
+                    <Text type="secondary">
+                        {[titleText.dateText, titleText.travelers, titleText.budgetText].filter(Boolean).join(' · ')}
+                    </Text>
+                </div>
             </div>
-          </Card>
 
-          <Card title="Next Bookings" style={{ marginTop: 16 }}>
-            <Table<BookingRow>
-              rowKey="key"
-              dataSource={bookings}
-              pagination={false}
-              columns={bookingColumns}
+            <Tabs
+                defaultActiveKey="timeline"
+                items={tabsItems}
+                activeKey={activeTab}
+                onChange={(k) => setActiveTab(k as 'timeline' | 'book')}
             />
-          </Card>
-        </Col>
 
-        {/* 右侧：AI Generated Trip Insights */}
-        <Col xs={24} lg={8}>
-          <Card title="Trip Insights">
-            <List<TripInsightsResponse>
-              itemLayout="horizontal"
-              dataSource={tripInsights}
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<div style={{ fontSize: 18 }}>{item.icon}</div>}
-                    title={<div style={{ fontWeight: 600 }}>{item.title}</div>}
-                    description={<Text>{item.content}</Text>}
-                  />
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
-    </Space>
-  );
+            <Row gutter={[24, 24]}>
+                <Col xs={24} lg={16}>
+                    {activeTab === 'timeline' ? (
+                        <Card title="Trip Timeline">
+                            {loadingTimeline ? (
+                                <Skeleton active paragraph={{rows: 6}}/>
+                            ) : timeline.length === 0 ? (
+                                <Empty description="No timeline"/>
+                            ) : (
+                                <Space direction="vertical" style={{width: '100%'}} size={16}>
+                                    {timeline.map((day, idx) => (
+                                        <DayTimeline key={idx} day={day}/>
+                                    ))}
+                                </Space>
+                            )}
+                        </Card>
+                    ) : (
+                        <Card title="Next Bookings">
+                            <Table<BookingRow>
+                                rowKey="key"
+                                dataSource={mockBookings}
+                                pagination={false}
+                                columns={bookingColumns}
+                            />
+                        </Card>
+                    )}
+                </Col>
+
+                <Col xs={24} lg={8}>
+                    <Card title="Trip Insights">
+                        <List<TripInsightsResponse>
+                            itemLayout="horizontal"
+                            dataSource={tripInsights}
+                            renderItem={(item) => (
+                                <List.Item>
+                                    <List.Item.Meta
+                                        avatar={<div style={{fontSize: 18}}>{item.icon}</div>}
+                                        title={<div style={{fontWeight: 600}}>{item.title}</div>}
+                                        description={<Text>{item.content}</Text>}
+                                    />
+                                </List.Item>
+                            )}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+        </Space>
+    );
 }

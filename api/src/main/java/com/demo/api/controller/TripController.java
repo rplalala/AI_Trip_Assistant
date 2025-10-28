@@ -1,6 +1,7 @@
 package com.demo.api.controller;
 
 import com.demo.api.ApiRespond;
+import com.demo.api.dto.TimeLineDTO;
 import com.demo.api.dto.TripDetailDTO;
 import com.demo.api.dto.TripInsightDTO;
 import com.demo.api.dto.TripPreferenceRequestDTO;
@@ -56,6 +57,15 @@ public class TripController {
         return ApiRespond.success(tripInsightService.getOrGenerateInsights(tripId));
     }
 
+    /**
+     * Get the trip timeline
+     * @param tripId
+     * @return
+     */
+    @GetMapping("/timeline")
+    public ApiRespond<List<TimeLineDTO>> getTimeline(@RequestParam("tripId") Long tripId) {
+        return ApiRespond.success(tripServiceImpl.getTimeLine(tripId));
+    }
     /**
      * Delete trips in batch
      * @param tripIds

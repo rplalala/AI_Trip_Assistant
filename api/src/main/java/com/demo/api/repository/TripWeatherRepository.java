@@ -11,5 +11,7 @@ public interface TripWeatherRepository extends JpaRepository<TripWeather, Long> 
     List<TripWeather> findByTripId(Long tripId);
 
     void deleteByTripIdIn(Collection<Long> tripIds);
+
+    List<TripWeather> findAllByTripId(Long tripId);
 }
 
