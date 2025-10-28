@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "trip_hotel", indexes = {
         @Index(name = "idx_trip_hotel_trip_id", columnList = "trip_id"),
+        @Index(name = "idx_trip_hotel_trip_id_date", columnList = "trip_id,date")
 })
 @Data
 @Builder

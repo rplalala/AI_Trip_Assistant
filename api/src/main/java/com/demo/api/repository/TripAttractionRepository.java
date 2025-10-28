@@ -11,5 +11,7 @@ public interface TripAttractionRepository extends JpaRepository<TripAttraction, 
     List<TripAttraction> findByTripId(Long tripId);
 
     void deleteByTripIdIn(Collection<Long> tripIds);
+
+    List<TripAttraction> findAllByTripId(Long tripId);
 }
 

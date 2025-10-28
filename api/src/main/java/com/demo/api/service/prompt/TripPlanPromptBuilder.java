@@ -2,6 +2,7 @@ package com.demo.api.service.prompt;
 
 import com.demo.api.dto.DailyWeatherDTO;
 import com.demo.api.model.Trip;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -12,6 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 
+@Slf4j
 @Component
 public class TripPlanPromptBuilder {
 
@@ -39,7 +41,7 @@ public class TripPlanPromptBuilder {
         appendPreferences(prompt, preference);
         appendWeather(prompt, weatherList);
         appendInstructions(prompt);
-
+        log.info("generated prompt to ai:{}", prompt);
         return prompt.toString();
     }
 
@@ -52,7 +54,8 @@ public class TripPlanPromptBuilder {
         LocalDate endDate = preference.getEndDate();
         Long duration = calculateDuration(startDate, endDate);
 
-        prompt.append(String.format("- Destination: %s, %s, %s, %s%n", fromCity, fromCountry, toCity, toCountry));
+        prompt.append(String.format("- Departure: %s, %s%n", fromCity, fromCountry));
+        prompt.append(String.format("- Destination: %s, %s%n", toCity, toCountry));
         if (startDate != null && endDate != null) {
             prompt.append(String.format("- Travel dates: %s to %s",
                     startDate.format(DATE_FORMATTER), endDate.format(DATE_FORMATTER)));
@@ -73,6 +76,15 @@ public class TripPlanPromptBuilder {
 
         Integer people = preference.getPeople();
         prompt.append(String.format("- Travelers: %s%n", people != null ? people + " people" : "Not specified"));
+        prompt.append('\n');
+        prompt.append(String.format(
+            """
+                Hard routing constraints:
+                - The traveler STARTS in "%s, %s" (Departure) and ENDS in "%s, %s" (Destination). Do not swap them.
+                - On day 1, depart from "%s" to "%s".
+                - On the final day, return from "%s" to "%s".
+            """, fromCity, fromCountry, toCity, toCountry, fromCity, toCity, toCity, fromCity)
+        );
     }
 
     private void appendPreferences(StringBuilder prompt, Trip preference) {
@@ -117,11 +129,12 @@ public class TripPlanPromptBuilder {
                     Instructions for the itinerary generation:
 
                     You must return **ONLY** a JSON object with two keys: "daily_summaries" and "activities".
+                    Note: during the travel dates (inclusive), "daily_summaries" MUST contain exactly one entry per calendar day. For example, If travel dates are 2025-11-01 to 2025-11-12, then "daily_summaries" must have 12 entries dated.
 
                     "daily_summaries" is a list of objects, each with (in order):
                         - "date": travel date in yyyy-MM-dd format
                         - "summary": a short natural language description of the day
-                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
+                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     "activities" is a list of scheduled activities. Each activity has (in order):
                         - "date": yyyy-MM-dd
@@ -130,7 +143,7 @@ public class TripPlanPromptBuilder {
                         - "title": short title to show on a timeline
                         - "status": always set to "pending"
                         - "reservation_required": true if booking is needed, else false
-                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
+                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     For "transportation" type, include (in order):
                         - "from": starting location
@@ -139,7 +152,7 @@ public class TripPlanPromptBuilder {
                         - "ticket_type": e.g., "economy"
                         - "price": number
                         - "currency": e.g., "JPY" or "AUD"
-                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
+                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     For "hotel" type, include (in order):
                         - "hotel_name": hotel name
@@ -148,14 +161,14 @@ public class TripPlanPromptBuilder {
                         - "nights": how many nights
                         - "price": number
                         - "currency": e.g., "JPY"
-                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
+                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     For "attraction" type (includes restaurants, parks, temples) (in order):
                         - "location": e.g., "Shinjuku, Tokyo"
                         - "ticket_price": number (meal or entry cost)
                         - "people": number of attendees
                         - "currency": e.g., "JPY"
-                        - "image_description: a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
+                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     All fields MUST have a value, cannot be null! Do not invent impossible data.
                     Do NOT return markdown, explanation, or any wrapper text.

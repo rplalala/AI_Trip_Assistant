@@ -94,9 +94,11 @@ public class CleanTask {
     @Scheduled(cron = "0 */5 * * * *")
     @Transactional
     public void cleanRedundantData(){
+        // find all redundant user ids
         List<Long> redundantUserIds = tripRepository.findRedundantUserIds();
         log.info("Number of redundant user ids: {}", redundantUserIds.size());
         if(ObjectUtil.isNotEmpty(redundantUserIds)){
+            // find redundant user ids associated all trip ids
             List<Long> tripIds = tripRepository.findIdsByUserIdIn(redundantUserIds);
             log.info("Number of redundant trip ids: {}", tripIds.size());
             if (ObjectUtil.isNotEmpty(tripIds)) {

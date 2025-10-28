@@ -34,6 +34,35 @@ export interface TripDetail {
     imgUrl?: string | null;
 }
 
+export interface TimeLineDTO {
+    date: string;
+    imageUrl?: string | null;
+    summary?: string | null;
+    maxTemperature?: number | null;
+    minTemperature?: number | null;
+    weatherCondition?: string | null;
+    attraction?: AttractionTimeLineDTO[] | null;
+    hotel?: HotelTimeLineDTO[] | null;
+    transportation?: TransportationTimeLineDTO[] | null;
+}
+
+export interface AttractionTimeLineDTO {
+    location?: string | null;
+    time?: string | null;
+    title?: string | null;
+}
+
+export interface HotelTimeLineDTO {
+    hotelName?: string | null;
+    time?: string | null;
+    title?: string | null;
+}
+
+export interface TransportationTimeLineDTO {
+    time?: string | null;
+    title?: string | null;
+}
+
 export async function generateTrip(payload: generateTripPayload) {
     return apiRequest<void>('/api/trip/generate-plan', {
         method: 'POST',
@@ -54,4 +83,8 @@ export async function deleteTrips(tripIds: number[]) {
     for (const id of tripIds) params.append('tripIds', String(id));
     const qs = params.toString();
     return apiRequest<void>(`/api/trip${qs ? `?${qs}` : ''}` , { method: 'DELETE' });
+}
+
+export async function getTripTimeline(tripId: string) {
+    return apiRequest<TimeLineDTO[]>(`/api/trip/timeline?tripId=${encodeURIComponent(tripId)}`);
 }
