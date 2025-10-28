@@ -3,6 +3,7 @@ package com.demo.api.service.impl;
 import com.demo.api.client.BookingClient;
 import com.demo.api.dto.booking.*;
 import com.demo.api.exception.BookingApiException;
+import com.demo.api.exception.ConflictException;
 import com.demo.api.model.*;
 import com.demo.api.repository.*;
 import com.demo.api.service.BookingService;
@@ -74,9 +75,15 @@ public class BookingServiceImpl implements BookingService {
         String normalizedType = normalizeProductType(productType);
         log.debug("Preparing single quote for tripId={}, productType={}, entityId={}", tripId, normalizedType, entityId);
 
+        // Prevent duplicate booking for already-confirmed item
+        if (isAlreadyConfirmed(normalizedType, entityId)) {
+            throw new ConflictException("Booking already confirmed for tripId=" + tripId + ", entityId=" + entityId);
+        }
+
         QuotePayload payload = buildQuotePayload(normalizedType, entityId, preference, true);
+        String apiProductType = mapToApiProductType(normalizedType);
         QuoteReq request = new QuoteReq(
-                normalizedType,
+                apiProductType,
                 payload.currency(),
                 resolvePartySize(preference),
                 payload.params(),
@@ -86,7 +93,9 @@ public class BookingServiceImpl implements BookingService {
         );
 
         try {
+            // Send booking request to external Booking API via Feign Client
             QuoteResp response = bookingClient.quote(request);
+            // Persist successful quote and mark entity as confirmed
             TripBookingQuote saved = upsertQuoteRecord(
                     tripId,
                     normalizedType,
@@ -135,7 +144,7 @@ public class BookingServiceImpl implements BookingService {
         List<ItineraryQuoteReqItem> requestItems = contexts.stream()
                 .map(ctx -> new ItineraryQuoteReqItem(
                         ctx.reference(),
-                        ctx.productType(),
+                        mapToApiProductType(ctx.productType()),
                         resolvePartySize(preference),
                         ctx.params(),
                         ctx.entityId()
@@ -145,6 +154,7 @@ public class BookingServiceImpl implements BookingService {
         ItineraryQuoteReq request = new ItineraryQuoteReq("iti_" + tripId, requestCurrency, requestItems, tripId);
 
         try {
+            // Send bundled itinerary quote to external Booking API
             ItineraryQuoteResp response = bookingClient.itineraryQuote(request);
             String rawResponse = serializeSafely(response);
             for (ItineraryQuoteItem item : response.items()) {
@@ -155,6 +165,7 @@ public class BookingServiceImpl implements BookingService {
                         .orElseThrow(() -> new IllegalStateException("Unexpected itinerary item reference: " + itemReference));
                 String itemCurrency = resolveItemCurrency(item, ctx, response.currency());
 
+                // Persist successful quote and mark entity as confirmed
                 TripBookingQuote saved = upsertQuoteRecord(
                         tripId,
                         ctx.productType(),
@@ -227,23 +238,36 @@ public class BookingServiceImpl implements BookingService {
                     "Transportation does not belong to trip " + preference.getId());
         }
         LocalDate date = Objects.requireNonNull(entity.getDate(), "Transportation date is required");
+        String currency = resolveCurrency(entity.getCurrency(), preference);
         Map<String, Object> params = new LinkedHashMap<>();
+        String from = defaultString(entity.getFrom(), defaultString(preference.getFromCity(), "Unknown origin"));
+        String to = defaultString(entity.getTo(), defaultString(preference.getToCity(), "Unknown destination"));
+        String ticketType = StringUtils.hasText(entity.getTicketType()) ? entity.getTicketType() : "economy";
         params.put("mode", inferTransportationMode(entity.getProvider()));
-        params.put("from", entity.getFrom());
-        params.put("to", entity.getTo());
+        params.put("from", from);
+        params.put("to", to);
         params.put("date", date.toString());
-        params.put("class", StringUtils.hasText(entity.getTicketType()) ? entity.getTicketType() : "economy");
+        if (StringUtils.hasText(entity.getTime())) {
+            params.put("time", entity.getTime());
+        }
+        params.put("ticket_type", ticketType);
+        params.put("class", ticketType);
         if (StringUtils.hasText(entity.getProvider())) {
             params.put("provider", entity.getProvider());
         }
+        params.put("status", StringUtils.hasText(entity.getStatus()) ? entity.getStatus() : "pending");
+        params.put("reservation_required", entity.getReservationRequired() != null ? entity.getReservationRequired() : Boolean.TRUE);
+        params.put("people", resolvePartySize(preference));
+        params.put("fees", 0);
         if (entity.getPrice() != null) {
             params.put("price", entity.getPrice());
         }
+        params.put("currency", currency);
         return new QuotePayload(
                 "transportation",
                 entity.getId(),
                 params,
-                resolveCurrency(entity.getCurrency(), preference),
+                currency,
                 buildReference("transportation", entity.getId())
         );
     }
@@ -261,27 +285,43 @@ public class BookingServiceImpl implements BookingService {
         }
         LocalDate checkIn = Objects.requireNonNull(entity.getDate(), "Hotel check-in date is required");
         int nights = entity.getNights() != null && entity.getNights() > 0 ? entity.getNights() : 1;
+        String currency = resolveCurrency(entity.getCurrency(), preference);
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("city", defaultString(preference.getToCity(), "Unknown city"));
-        params.put("checkIn", checkIn.toString());
-        params.put("checkOut", checkIn.plusDays(nights).toString());
-        params.put("roomType", entity.getRoomType());
-        params.put("stars", 3);
+        params.put("date", checkIn.toString());
+        params.put("check_in", checkIn.toString());
+        params.put("check_out", checkIn.plusDays(nights).toString());
+        if (StringUtils.hasText(entity.getTime())) {
+            params.put("time", entity.getTime());
+        }
+        if (StringUtils.hasText(entity.getTitle())) {
+            params.put("title", entity.getTitle());
+        }
         if (StringUtils.hasText(entity.getHotelName())) {
+            params.put("hotel_name", entity.getHotelName());
             params.put("hotelName", entity.getHotelName());
         }
         params.put("nights", nights);
-        if (entity.getPeople() != null) {
-            params.put("people", entity.getPeople());
+        if (StringUtils.hasText(entity.getRoomType())) {
+            params.put("room_type", entity.getRoomType());
+            params.put("roomType", entity.getRoomType());
         }
+        params.put("stars", 3);
+        int partySize = Optional.ofNullable(entity.getPeople()).filter(count -> count > 0)
+                .orElse(resolvePartySize(preference));
+        params.put("people", partySize);
         if (entity.getPrice() != null) {
             params.put("price", entity.getPrice());
         }
+        params.put("fees", 0);
+        params.put("status", StringUtils.hasText(entity.getStatus()) ? entity.getStatus() : "pending");
+        params.put("reservation_required", entity.getReservationRequired() != null ? entity.getReservationRequired() : Boolean.TRUE);
+        params.put("currency", currency);
         return new QuotePayload(
                 "hotel",
                 entity.getId(),
                 params,
-                resolveCurrency(entity.getCurrency(), preference),
+                currency,
                 buildReference("hotel", entity.getId())
         );
     }
@@ -298,28 +338,38 @@ public class BookingServiceImpl implements BookingService {
                     "Attraction does not belong to trip " + preference.getId());
         }
         LocalDate date = Objects.requireNonNull(entity.getDate(), "Attraction date is required");
+        String currency = resolveCurrency(entity.getCurrency(), preference);
         Map<String, Object> params = new LinkedHashMap<>();
-        params.put("city", StringUtils.hasText(entity.getLocation()) ? entity.getLocation()
-                : defaultString(preference.getToCity(), "Unknown city"));
-        params.put("name", entity.getTitle());
+        String location = StringUtils.hasText(entity.getLocation()) ? entity.getLocation()
+                : defaultString(preference.getToCity(), "Unknown city");
+        params.put("location", location);
+        params.put("city", location);
+        if (StringUtils.hasText(entity.getTitle())) {
+            params.put("title", entity.getTitle());
+            params.put("name", entity.getTitle());
+        }
         params.put("date", date.toString());
-        params.put("session", entity.getTime());
+        if (StringUtils.hasText(entity.getTime())) {
+            params.put("time", entity.getTime());
+            params.put("session", entity.getTime());
+        }
+        params.put("status", StringUtils.hasText(entity.getStatus()) ? entity.getStatus() : "pending");
+        params.put("reservation_required", entity.getReservationRequired() != null ? entity.getReservationRequired() : Boolean.TRUE);
+        int partySize = Optional.ofNullable(entity.getPeople()).filter(count -> count > 0)
+                .orElse(resolvePartySize(preference));
+        params.put("people", partySize);
         if (entity.getTicketPrice() != null) {
+            params.put("ticket_price", entity.getTicketPrice());
             params.put("ticketPrice", entity.getTicketPrice());
+            params.put("price", entity.getTicketPrice() * Math.max(1, partySize));
         }
-        if (entity.getPeople() != null) {
-            params.put("people", entity.getPeople());
-        }
-        if (entity.getTicketPrice() != null && entity.getPeople() != null) {
-            params.put("price", entity.getTicketPrice() * Math.max(1, entity.getPeople()));
-        } else if (entity.getTicketPrice() != null) {
-            params.put("price", entity.getTicketPrice());
-        }
+        params.put("fees", 0);
+        params.put("currency", currency);
         return new QuotePayload(
                 "attraction",
                 entity.getId(),
                 params,
-                resolveCurrency(entity.getCurrency(), preference),
+                currency,
                 buildReference("attraction", entity.getId())
         );
     }
@@ -335,7 +385,7 @@ public class BookingServiceImpl implements BookingService {
                 .map(item -> {
                     QuotePayload payload = buildTransportationPayload(item.getId(), preference, false);
                     return new ItineraryItemContext(payload.productType(), payload.entityId(),
-                            buildReference(payload.productType(), payload.entityId()), payload.params(), payload.currency());
+                            payload.reference(), payload.params(), payload.currency());
                 })
                 .forEach(contexts::add);
 
@@ -344,7 +394,7 @@ public class BookingServiceImpl implements BookingService {
                 .map(item -> {
                     QuotePayload payload = buildHotelPayload(item.getId(), preference, false);
                     return new ItineraryItemContext(payload.productType(), payload.entityId(),
-                            buildReference(payload.productType(), payload.entityId()), payload.params(), payload.currency());
+                            payload.reference(), payload.params(), payload.currency());
                 })
                 .forEach(contexts::add);
 
@@ -353,7 +403,7 @@ public class BookingServiceImpl implements BookingService {
                 .map(item -> {
                     QuotePayload payload = buildAttractionPayload(item.getId(), preference, false);
                     return new ItineraryItemContext(payload.productType(), payload.entityId(),
-                            buildReference(payload.productType(), payload.entityId()), payload.params(), payload.currency());
+                            payload.reference(), payload.params(), payload.currency());
                 })
                 .forEach(contexts::add);
 
@@ -369,16 +419,17 @@ public class BookingServiceImpl implements BookingService {
                                                Integer totalAmount,
                                                String rawResponse,
                                                String status) {
-        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityIdAndProductType(tripId, entityId, productType)
+        String normalizedType = normalizeProductType(productType);
+        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityIdAndProductType(tripId, entityId, normalizedType)
                 .orElseGet(() -> TripBookingQuote.builder()
                         .tripId(tripId)
-                        .productType(productType)
+                        .productType(normalizedType)
                         .entityId(entityId)
-                        .itemReference(buildReference(productType, entityId))
+                        .itemReference(buildReference(normalizedType, entityId))
                         .build());
 
-        quote.setProductType(productType);
-        quote.setItemReference(buildReference(productType, entityId));
+        quote.setProductType(normalizedType);
+        quote.setItemReference(buildReference(normalizedType, entityId));
         quote.setVoucherCode(voucherCode);
         quote.setInvoiceId(invoiceId);
         quote.setCurrency(currency);
@@ -386,6 +437,22 @@ public class BookingServiceImpl implements BookingService {
         quote.setRawResponse(rawResponse);
         quote.setStatus(status);
         return tripBookingQuoteRepository.save(quote);
+    }
+
+    private boolean isAlreadyConfirmed(String productType, Long entityId) {
+        String normalizedType = normalizeProductType(productType);
+        return switch (normalizedType) {
+            case "transportation" -> tripTransportationRepository.findById(entityId)
+                    .map(entity -> STATUS_CONFIRMED.equalsIgnoreCase(entity.getStatus()))
+                    .orElse(false);
+            case "hotel" -> tripHotelRepository.findById(entityId)
+                    .map(entity -> STATUS_CONFIRMED.equalsIgnoreCase(entity.getStatus()))
+                    .orElse(false);
+            case "attraction" -> tripAttractionRepository.findById(entityId)
+                    .map(entity -> STATUS_CONFIRMED.equalsIgnoreCase(entity.getStatus()))
+                    .orElse(false);
+            default -> false;
+        };
     }
 
     private void markEntityConfirmed(TripBookingQuote quote) {
@@ -414,13 +481,16 @@ public class BookingServiceImpl implements BookingService {
      */
     private void persistFailure(Long tripId, String productType, Long entityId, String details) {
         String errorDetails = details != null ? details : "Booking request failed";
-        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityIdAndProductType(tripId, entityId, productType)
+        String normalizedType = normalizeProductType(productType);
+        TripBookingQuote quote = tripBookingQuoteRepository.findByTripIdAndEntityIdAndProductType(tripId, entityId, normalizedType)
                 .orElse(TripBookingQuote.builder()
                         .tripId(tripId)
-                        .productType(productType)
+                        .productType(normalizedType)
                         .entityId(entityId)
-                        .itemReference(buildReference(productType, entityId))
+                        .itemReference(buildReference(normalizedType, entityId))
                         .build());
+        quote.setProductType(normalizedType);
+        quote.setItemReference(buildReference(normalizedType, entityId));
         quote.setStatus(STATUS_FAILED);
         quote.setVoucherCode(null);
         quote.setInvoiceId(null);
@@ -437,7 +507,23 @@ public class BookingServiceImpl implements BookingService {
         if (!StringUtils.hasText(productType)) {
             throw new IllegalArgumentException("productType must not be empty");
         }
-        return productType.trim().toLowerCase(Locale.ENGLISH);
+        String normalized = productType.trim().toLowerCase(Locale.ENGLISH);
+        return switch (normalized) {
+            case "transport", "transportation" -> "transportation";
+            case "hotel" -> "hotel";
+            case "attraction" -> "attraction";
+            default -> normalized;
+        };
+    }
+
+    private String mapToApiProductType(String productType) {
+        if (!StringUtils.hasText(productType)) {
+            throw new IllegalArgumentException("productType must not be empty");
+        }
+        return switch (productType) {
+            case "transportation" -> "transport";
+            default -> productType;
+        };
     }
 
     /**
