@@ -57,29 +57,34 @@ public class MapServiceImpl implements MapService {
         String origin = request.getOrigin().trim();
         String destination = request.getDestination().trim();
 
-        GoogleDirectionsResponse directions = callDirectionsApi(origin, destination, normalizedMode);
-        Route route = directions.firstRoute()
-                .orElseThrow(() -> new IllegalStateException("No routes returned by Google Maps"));
+        try {
+            GoogleDirectionsResponse directions = callDirectionsApi(origin, destination, normalizedMode);
+            Route route = directions.firstRoute()
+                    .orElseThrow(() -> new IllegalStateException("No routes returned by Google Maps"));
 
-        Leg firstLeg = route.firstLeg()
-                .orElseThrow(() -> new IllegalStateException("Route did not contain any legs"));
+            Leg firstLeg = route.firstLeg()
+                    .orElseThrow(() -> new IllegalStateException("Route did not contain any legs"));
 
-        MapRouteResponse response = MapRouteResponse.builder()
-                .travelMode(normalizedMode)
-                .routeSummary(route.getSummary())
-                .distanceText(Optional.ofNullable(firstLeg.getDistance()).map(TextValue::getText).orElse(null))
-                .distanceMeters(Optional.ofNullable(firstLeg.getDistance()).map(TextValue::getValue).orElse(null))
-                .durationText(Optional.ofNullable(firstLeg.getDuration()).map(TextValue::getText).orElse(null))
-                .durationSeconds(Optional.ofNullable(firstLeg.getDuration()).map(TextValue::getValue).orElse(null))
-                .overviewPolyline(Optional.ofNullable(route.getOverviewPolyline()).map(Polyline::getPoints).orElse(null))
-                .embedUrl(buildEmbedUrl(origin, destination, normalizedMode))
-                .shareUrl(buildShareUrl(origin, destination, normalizedMode))
-                .warnings(collectWarnings(directions, route))
-                .build();
+            MapRouteResponse response = MapRouteResponse.builder()
+                    .travelMode(normalizedMode)
+                    .routeSummary(route.getSummary())
+                    .distanceText(Optional.ofNullable(firstLeg.getDistance()).map(TextValue::getText).orElse(null))
+                    .distanceMeters(Optional.ofNullable(firstLeg.getDistance()).map(TextValue::getValue).orElse(null))
+                    .durationText(Optional.ofNullable(firstLeg.getDuration()).map(TextValue::getText).orElse(null))
+                    .durationSeconds(Optional.ofNullable(firstLeg.getDuration()).map(TextValue::getValue).orElse(null))
+                    .overviewPolyline(Optional.ofNullable(route.getOverviewPolyline()).map(Polyline::getPoints).orElse(null))
+                    .embedUrl(buildEmbedUrl(origin, destination, normalizedMode))
+                    .shareUrl(buildShareUrl(origin, destination, normalizedMode))
+                    .warnings(collectWarnings(directions, route))
+                    .build();
 
-        log.debug("Generated Google Maps route (mode={}, distance={}, duration={})",
-                normalizedMode, response.getDistanceText(), response.getDurationText());
-        return response;
+            log.debug("Generated Google Maps route (mode={}, distance={}, duration={})",
+                    normalizedMode, response.getDistanceText(), response.getDurationText());
+            return response;
+        } catch (IllegalStateException ex) {
+            log.warn("Falling back to share-only route for origin='{}', destination='{}': {}", origin, destination, ex.getMessage());
+            return buildFallbackResponse(origin, destination, normalizedMode, ex.getMessage());
+        }
     }
 
     private void validateRequest(MapRouteRequest request) {
@@ -174,6 +179,23 @@ public class MapServiceImpl implements MapService {
         return Stream.concat(topLevel, routeWarnings)
                 .distinct()
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private MapRouteResponse buildFallbackResponse(String origin,
+                                                   String destination,
+                                                   String mode,
+                                                   String reason) {
+        List<String> warnings = new ArrayList<>();
+        warnings.add("Google Maps could not provide a detailed route for this request. Showing only the share link.");
+        if (StringUtils.hasText(reason)) {
+            warnings.add(reason);
+        }
+        return MapRouteResponse.builder()
+                .travelMode(mode)
+                .embedUrl(null)
+                .shareUrl(buildShareUrl(origin, destination, mode))
+                .warnings(warnings)
+                .build();
     }
 
     // ----------- Internal DTOs for Google Directions response -----------
