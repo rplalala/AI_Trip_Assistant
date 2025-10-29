@@ -1,5 +1,6 @@
 package com.demo.api.service;
 
+import com.demo.api.dto.booking.BookingItemResp;
 import com.demo.api.dto.booking.ItineraryQuoteReq;
 import com.demo.api.dto.booking.ItineraryQuoteResp;
 import com.demo.api.dto.booking.QuoteItem;
@@ -135,5 +136,22 @@ public class BookingFacade {
         // Let BookingServiceImpl handle the logic: find quote-needed items, call third-party API, persist results
         return bookingService.quoteItinerary(request.tripId());
     }
-}
 
+    @Transactional(readOnly = true)
+    public List<BookingItemResp> listBookings(Long tripId, String userId) {
+        Long parsedUserId = parseUserId(userId);
+        return bookingService.listBookingItems(tripId, parsedUserId);
+    }
+
+    private Long parseUserId(String userId) {
+        if (!StringUtils.hasText(userId)) {
+            return null;
+        }
+        try {
+            return Long.valueOf(userId);
+        } catch (NumberFormatException ex) {
+            log.warn("Unable to parse userId '{}' as Long", userId);
+            return null;
+        }
+    }
+}
