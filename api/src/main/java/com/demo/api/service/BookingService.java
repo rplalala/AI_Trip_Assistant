@@ -1,7 +1,10 @@
 package com.demo.api.service;
 
+import com.demo.api.dto.booking.BookingItemResp;
 import com.demo.api.dto.booking.ItineraryQuoteResp;
 import com.demo.api.model.TripBookingQuote;
+
+import java.util.List;
 
 public interface BookingService {
 
@@ -23,6 +26,16 @@ public interface BookingService {
      * @return An ItineraryQuoteResp object containing voucher/invoice references and quoted item details.
      */
     ItineraryQuoteResp quoteItinerary(Long tripId);
+
+    /**
+     * Returns all reservation-capable trip items (transport, hotel, attraction)
+     * with the data required for quoting them.
+     *
+     * @param tripId the trip identifier
+     * @param userId the authenticated user's identifier (nullable)
+     * @return list of booking items enriched with quote payload and status
+     */
+    List<BookingItemResp> listBookingItems(Long tripId, Long userId);
 
 
 }

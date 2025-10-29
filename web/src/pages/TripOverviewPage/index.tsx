@@ -22,8 +22,6 @@ import {
     Card,
     Tabs,
     List,
-    Tag,
-    Table,
     Space,
     Empty,
     Skeleton,
@@ -35,35 +33,11 @@ import {
     Input,
     message,
 } from 'antd';
-import type {BreadcrumbProps, TabsProps, TableProps} from 'antd';
+import type {BreadcrumbProps, TabsProps} from 'antd';
 import {HomeOutlined, EnvironmentOutlined, CarOutlined, ReloadOutlined} from '@ant-design/icons';
+import BookingSection from './BookingSection';
 
 const {Title, Text} = Typography;
-
-// Types for Bookings table (placeholder for now)
-type BookingRow = {
-    key: React.Key;
-    name: string;
-    date: string;
-    status: 'Confirmed' | 'Pending';
-};
-
-const bookingColumns: TableProps<BookingRow>['columns'] = [
-    {title: 'Booking', dataIndex: 'name'},
-    {title: 'Date', dataIndex: 'date'},
-    {
-        title: 'Status',
-        dataIndex: 'status',
-        render: (v: BookingRow['status']) =>
-            v === 'Confirmed' ? <Tag color="green">Confirmed</Tag> : <Tag>Pending</Tag>,
-        align: 'right',
-    },
-];
-
-const mockBookings: BookingRow[] = [
-    {key: 1, name: 'Flight', date: 'Mar 20, 2025', status: 'Confirmed'},
-    {key: 2, name: 'Hotel', date: 'Mar 21, 2025', status: 'Confirmed'},
-];
 
 function parseTimeToMinutes(time?: string | null): number {
     if (!time) return Number.MAX_SAFE_INTEGER;
@@ -346,13 +320,8 @@ export default function TripOverview() {
                             )}
                         </Card>
                     ) : (
-                        <Card title="Next Bookings">
-                            <Table<BookingRow>
-                                rowKey="key"
-                                dataSource={mockBookings}
-                                pagination={false}
-                                columns={bookingColumns}
-                            />
+                        <Card title="Booking Tasks">
+                            <BookingSection tripId={tripId}/>
                         </Card>
                     )}
                 </Col>
