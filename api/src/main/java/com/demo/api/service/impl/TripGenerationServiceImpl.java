@@ -190,6 +190,17 @@ public class TripGenerationServiceImpl implements TripGenerationService {
         Trip trip = tripRepository.findByIdAndUserId(tripId, Long.valueOf(userId))
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found or not owned by user: " + tripId));
 
+        try {
+            tripWeatherRepository.deleteByTripIdIn(List.of(trip.getId()));
+        } catch (Exception e) {
+            log.warn("Failed to clear existing weather for trip {}", tripId, e);
+        }
+        try {
+            weatherService.fetchAndStoreWeather(trip);
+        } catch (Exception e) {
+            log.warn("Failed to fetch/store latest weather for trip {}", tripId, e);
+        }
+
         List<TripWeather> storedWeather = tripWeatherRepository.findByTripId(trip.getId());
         List<DailyWeatherDTO> weatherSummaries = storedWeather.stream()
                 .map(weather -> DailyWeatherDTO.builder()
