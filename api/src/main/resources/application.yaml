@@ -56,7 +56,7 @@ unsplash:
 
 google:
   maps:
-    api-key: "${GOOGLE_MAPS_API_KEY:***REMOVED***}"
+    api-key: "${GOOGLE_MAPS_API_KEY:}"
 
 feign:
   httpclient:
