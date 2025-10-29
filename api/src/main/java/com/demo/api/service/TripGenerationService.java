@@ -1,6 +1,7 @@
 package com.demo.api.service;
 
 import com.demo.api.dto.TripPreferenceRequestDTO;
+import com.demo.api.dto.ModifyPlanDTO;
 
 public interface TripGenerationService {
 
@@ -12,4 +13,6 @@ public interface TripGenerationService {
     // void generateTripFromPreference(TripPreferenceRequestDTO dto);
 
     void generateTripAndReturnJson(TripPreferenceRequestDTO dto, String userId); // for testing purposes !!!
+
+    void regenerateTrip(Long tripId, ModifyPlanDTO modifyPlanDTO, String userId);
 }

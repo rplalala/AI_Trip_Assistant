@@ -1,10 +1,7 @@
 package com.demo.api.controller;
 
 import com.demo.api.ApiRespond;
-import com.demo.api.dto.TimeLineDTO;
-import com.demo.api.dto.TripDetailDTO;
-import com.demo.api.dto.TripInsightDTO;
-import com.demo.api.dto.TripPreferenceRequestDTO;
+import com.demo.api.dto.*;
 import com.demo.api.service.TripGenerationService;
 import com.demo.api.service.TripInsightService;
 import com.demo.api.service.TripService;
@@ -38,6 +35,22 @@ public class TripController {
         tripGenerationService.generateTripAndReturnJson(dto, userId);
 
         // return the generated JSON as the response body
+        return ApiRespond.success();
+    }
+
+    /**
+     * replan a trip based on user new modification
+     * @param tripId
+     * @param modifyPlanDTO
+     * @param userId
+     * @return
+     */
+    @PostMapping("/regenerate-plan")
+    public ApiRespond<Void> regeneratePlan(@RequestParam("tripId") Long tripId,
+                                           @RequestBody ModifyPlanDTO modifyPlanDTO,
+                                           @AuthenticationPrincipal String userId) {
+        log.info("Received trip regeneration request: {}", modifyPlanDTO);
+        tripGenerationService.regenerateTrip(tripId, modifyPlanDTO, userId);
         return ApiRespond.success();
     }
 

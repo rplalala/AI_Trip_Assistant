@@ -1,6 +1,7 @@
 package com.demo.api.service.prompt;
 
 import com.demo.api.dto.DailyWeatherDTO;
+import com.demo.api.dto.ModifyPlanDTO;
 import com.demo.api.model.Trip;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -42,6 +43,41 @@ public class TripPlanPromptBuilder {
         appendWeather(prompt, weatherList);
         appendInstructions(prompt);
         log.info("generated prompt to ai:{}", prompt);
+        return prompt.toString();
+    }
+
+    /**
+     * Builds a stricter prompt for regeneration, and based on the previous trip information.
+     * @param trip
+     * @param weatherList
+     * @param modifyPlanDTO
+     * @return
+     */
+    public String buildForRegeneration(Trip trip, List<DailyWeatherDTO> weatherList, ModifyPlanDTO modifyPlanDTO) {
+        Assert.notNull(trip, "Trip must not be null");
+        Assert.notNull(modifyPlanDTO, "ModifyPlanDTO must not be null");
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("""
+                You are an expert travel planner. Regenerate the itinerary using the existing trip overview below.
+                The user has added NEW STRICT PREFERENCES that MUST be enforced. Treat them as hard constraints.
+
+                Trip Overview:
+                """);
+
+        appendTripOverview(prompt, trip);
+
+        prompt.append("\nExisting Notes (lower priority):\n");
+        prompt.append(String.format("- Notes: %s%n", defaultString(trip.getPreferences(), "No additional preferences")));
+
+        appendWeather(prompt, weatherList);
+
+        prompt.append("\nNEW STRICT PREFERENCES (highest priority, MUST be enforced):\n");
+        String strict = modifyPlanDTO.getSecondPreference();
+        prompt.append(String.format("- %s%n", defaultString(strict, "No new strict preferences provided")));
+
+        prompt.append("\nIf any previous plan conflicts with these strict preferences, you MUST adjust it accordingly.\n");
+        appendInstructions(prompt);
         return prompt.toString();
     }
 
@@ -183,9 +219,11 @@ public class TripPlanPromptBuilder {
                         - "currency": e.g., "JPY"
                         - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
-                    All fields MUST have a value, cannot be null! Do not invent impossible data.
-                    Do NOT return markdown, explanation, or any wrapper text.
-                    Just return pure JSON object, well-formatted.
+                    Scheduling rules:
+                        - All fields MUST have a value, cannot be null! Do not invent impossible data.
+                        - For EVERY calendar date within the travel window, there MUST be AT LEAST ONE item in "activities" whose "date" equals that day. Empty days are NOT allowed.
+
+                    Do NOT return markdown, explanation, or any wrapper text. Just return pure JSON object, well-formatted!
                     """);
     }
 

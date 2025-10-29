@@ -173,15 +173,16 @@ public class TripStorageServiceImpl implements TripStorageService {
         Boolean reservationRequired = node.hasNonNull("reservation_required") ? node.get("reservation_required").asBoolean() : null;
         String imageDescription = optionalText(node, "image_description").orElse(null);
         String imageUrl = "";
-        try {
-            List<String> imgUrls = unsplashImgUtils.getImgUrls(imageDescription, 1, 500, 500);
-            if (imgUrls != null && !imgUrls.isEmpty()) {
-                imageUrl = unsplashImgUtils.getImgUrls(imageDescription, 1, 500, 500).getFirst();
-            }
-        }  catch (Exception e) {
-            log.warn("Failed to load image urls for trip {}", preference.getId(), e);
-            imageUrl = "";
-        }
+
+//        try {
+//            List<String> imgUrls = unsplashImgUtils.getImgUrls(imageDescription, 1, 500, 500);
+//            if (imgUrls != null && !imgUrls.isEmpty()) {
+//                imageUrl = unsplashImgUtils.getImgUrls(imageDescription, 1, 500, 500).getFirst();
+//            }
+//        }  catch (Exception e) {
+//            log.warn("Failed to load image urls for trip {}", preference.getId(), e);
+//            imageUrl = "";
+//        }
 
         if (target instanceof TripTransportation transport) {
             transport.setTripId(preference.getId());

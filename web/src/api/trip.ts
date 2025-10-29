@@ -63,8 +63,20 @@ export interface TransportationTimeLineDTO {
     title?: string | null;
 }
 
+export interface ModifyPlanPayload {
+    secondPreference: string;
+}
+
 export async function generateTrip(payload: generateTripPayload) {
     return apiRequest<void>('/api/trip/generate-plan', {
+        method: 'POST',
+        body: payload,
+    });
+}
+
+export async function regenerateTrip(tripId: string | number, payload: ModifyPlanPayload) {
+    const qs = new URLSearchParams({ tripId: String(tripId) }).toString();
+    return apiRequest<void>(`/api/trip/regenerate-plan?${qs}`, {
         method: 'POST',
         body: payload,
     });
