@@ -141,6 +141,8 @@ public class TripServiceImpl implements TripService {
                                     .map(transport -> TimeLineDTO.TransportationTimeLineDTO.builder()
                                             .title(transport.getTitle())
                                             .time(transport.getTime())
+                                            .from(transport.getFrom())
+                                            .to(transport.getTo())
                                             .build()
                                     ).toList();
 

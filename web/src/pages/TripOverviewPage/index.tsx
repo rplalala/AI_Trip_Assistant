@@ -1,5 +1,5 @@
 // src/pages/Trips/Overview/index.tsx
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {
     getTripDetails,
@@ -32,10 +32,14 @@ import {
     Form,
     Input,
     message,
+    Tooltip,
+    Spin,
+    Alert,
 } from 'antd';
 import type {BreadcrumbProps, TabsProps} from 'antd';
 import {HomeOutlined, EnvironmentOutlined, CarOutlined, ReloadOutlined} from '@ant-design/icons';
 import BookingSection from './BookingSection';
+import {generateRoute, type MapRouteResponse} from '../../api/map';
 
 const {Title, Text} = Typography;
 
@@ -52,31 +56,160 @@ function sortByTime<T extends { time?: string | null }>(arr?: T[] | null): T[] {
     return [...(arr ?? [])].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 }
 
-function DayTimeline({day}: { day: TimeLineDTO }) {
+type TimelineRouteContext = {
+    origin: string;
+    destination: string;
+    destinationLabel?: string | null;
+    label: string;
+    travelMode: string;
+    type: 'hotel' | 'attraction' | 'transportation';
+};
+
+function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null }) {
+    const [routeModalOpen, setRouteModalOpen] = useState(false);
+    const [routeModalLoading, setRouteModalLoading] = useState(false);
+    const [routeModalData, setRouteModalData] = useState<MapRouteResponse | null>(null);
+    const [routeModalTarget, setRouteModalTarget] = useState<TimelineRouteContext | null>(null);
+    const [routeError, setRouteError] = useState<string | null>(null);
+
     const attractions = sortByTime<AttractionTimeLineDTO>(day.attraction);
     const hotels = sortByTime<HotelTimeLineDTO>(day.hotel);
     const transports = sortByTime<TransportationTimeLineDTO>(day.transportation);
 
-    type Item = { time?: string | null; label: string; type: 'hotel' | 'attraction' | 'transportation' };
-    const items: Item[] = [
-        ...hotels.map((h) => ({
-            time: h.time,
-            type: 'hotel' as const,
-            label: `${h.time ? `${h.time} ` : ''}${h.title || h.hotelName || 'Hotel'}`,
-        })),
-        ...attractions.map((a) => ({
-            time: a.time,
-            type: 'attraction' as const,
-            label: `${a.time ? `${a.time} ` : ''}${a.title || a.location || 'Attraction'}`,
-        })),
-        ...transports.map((t) => ({
-            time: t.time,
-            type: 'transportation' as const,
-            label: `${t.time ? `${t.time} ` : ''}${t.title || 'Transportation'}`,
-        })),
-    ].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+    type BaseItem = {
+        order: number;
+        time?: string | null;
+        title: string;
+        subtitle?: string | null;
+        type: 'hotel' | 'attraction' | 'transportation';
+        originHint?: string | null;
+        destinationHint?: string | null;
+    };
 
-    const dotFor = (type: Item['type'], size = 14) => {
+    let orderCounter = 0;
+    const baseItems: BaseItem[] = [];
+
+    hotels.forEach((h) => {
+        const title = h.title || h.hotelName || 'Hotel';
+        const destination = h.hotelName || h.title || title;
+        baseItems.push({
+            order: orderCounter++,
+            time: h.time,
+            title,
+            subtitle: h.hotelName && h.hotelName !== title ? h.hotelName : undefined,
+            type: 'hotel',
+            destinationHint: destination,
+        });
+    });
+
+    attractions.forEach((a) => {
+        const title = a.title || a.location || 'Attraction';
+        const location = a.location || title;
+        baseItems.push({
+            order: orderCounter++,
+            time: a.time,
+            title,
+            subtitle: a.location && a.location !== title ? a.location : undefined,
+            type: 'attraction',
+            destinationHint: location,
+        });
+    });
+
+    transports.forEach((t) => {
+        const title = t.title || 'Transportation';
+        const from = t.from || null;
+        const to = t.to || null;
+        const subtitle = from && to ? `${from} → ${to}` : from || to || undefined;
+        baseItems.push({
+            order: orderCounter++,
+            time: t.time,
+            title,
+            subtitle,
+            type: 'transportation',
+            originHint: from,
+            destinationHint: to || title,
+        });
+    });
+
+    const defaultOrigin = trip?.toCity || trip?.toCountry || trip?.fromCity || undefined;
+    let previousLocation = defaultOrigin;
+
+    const items = baseItems
+        .sort((a, b) => {
+            const diff = parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+            if (diff !== 0) return diff;
+            return a.order - b.order;
+        })
+        .map((item, idx) => {
+            const destinationCandidate = (item.destinationHint ?? item.subtitle ?? item.title)?.trim() || null;
+            const originCandidate = (item.originHint ?? previousLocation)?.trim() || null;
+
+            let route: TimelineRouteContext | null = null;
+            const origin = originCandidate;
+            const destination = destinationCandidate;
+
+            if (origin && destination && origin !== destination) {
+                route = {
+                    origin,
+                    destination,
+                    destinationLabel: destination,
+                    label: item.time ? `${item.time} ${item.title}` : item.title,
+                    travelMode: item.type === 'transportation' ? 'transit' : 'walking',
+                    type: item.type,
+                };
+            }
+
+            if (destination) {
+                previousLocation = destination;
+            } else if (origin) {
+                previousLocation = origin;
+            }
+
+            return {
+                key: `${item.type}-${idx}`,
+                ...item,
+                route,
+            };
+        });
+
+    const handleOpenRoute = useCallback(
+        async (route: TimelineRouteContext) => {
+            if (!route.origin || !route.destination) {
+                message.warning('Route information is incomplete for this activity');
+                return;
+            }
+            setRouteModalTarget(route);
+            setRouteModalOpen(true);
+            setRouteModalLoading(true);
+            setRouteModalData(null);
+            setRouteError(null);
+            try {
+                const data = await generateRoute({
+                    origin: route.origin,
+                    destination: route.destination,
+                    travelMode: route.travelMode,
+                });
+                setRouteModalData(data);
+            } catch (err) {
+                const errMsg = err instanceof Error ? err.message : 'Failed to generate route';
+                setRouteError(errMsg);
+                message.error(errMsg);
+            } finally {
+                setRouteModalLoading(false);
+            }
+        },
+        []
+    );
+
+    const handleCloseRouteModal = useCallback(() => {
+        setRouteModalOpen(false);
+        setRouteModalLoading(false);
+        setRouteModalTarget(null);
+        setRouteModalData(null);
+        setRouteError(null);
+    }, []);
+
+    const dotFor = (type: BaseItem['type'], size = 14) => {
         if (type === 'hotel') return <HomeOutlined style={{color: '#fa8c16', fontSize: size}}/>;
         if (type === 'transportation') return <CarOutlined style={{color: '#1677ff', fontSize: size}}/>;
         return <EnvironmentOutlined style={{color: '#52c41a', fontSize: size}}/>;
@@ -84,9 +217,8 @@ function DayTimeline({day}: { day: TimeLineDTO }) {
 
     const IMAGE_W = 200;
     const IMAGE_H = 150;
-    // Approximate height of one itinerary row (lineHeight 22 + vertical padding ~6)
     const ITEM_ROW_HEIGHT = 50;
-    const MIN_ROW_GAP = 3; // keep at least 3 rows worth of spacing
+    const MIN_ROW_GAP = 3;
     const MIN_CONTAINER_HEIGHT = IMAGE_H + ITEM_ROW_HEIGHT * MIN_ROW_GAP;
 
     const weatherIconMap: Record<string, React.ReactNode> = {
@@ -120,7 +252,6 @@ function DayTimeline({day}: { day: TimeLineDTO }) {
 
     return (
         <div style={{position: 'relative', paddingRight: IMAGE_W + 24, minHeight: MIN_CONTAINER_HEIGHT}}>
-            {/* Scoped style to remove any horizontal connector lines inside this timeline */}
             <style>{`
         .day-timeline .ant-timeline-item-content::before { display: none !important; }
         .day-timeline .ant-timeline-item-head-custom { top: 6px; width: 18px; height: 18px; line-height: 18px; }
@@ -160,26 +291,104 @@ function DayTimeline({day}: { day: TimeLineDTO }) {
                             </div>
                         ),
                     },
-                    // Render each activity as its own timeline item with a dot icon
-                    ...items.map((it, idx) => ({
+                    ...items.map((it) => ({
+                        key: it.key,
                         dot: dotFor(it.type, 16),
                         children: (
                             <div
-                                key={idx}
                                 style={{
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'normal',
                                     padding: '6px 0',
                                     lineHeight: '22px',
                                 }}
                             >
-                                {it.label}
+                                <Space direction="vertical" size={4} style={{width: '100%'}}>
+                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
+                                        <Space size={6} wrap>
+                                            {it.time ? <Text strong>{it.time}</Text> : null}
+                                            <Text style={{fontWeight: 500}}>{it.title}</Text>
+                                        </Space>
+                                        {it.route ? (
+                                            <Tooltip title={it.route.destinationLabel ? `Route to ${it.route.destinationLabel}` : 'Open in Google Maps'}>
+                                                <Button
+                                                    size="small"
+                                                    type="text"
+                                                    icon={<EnvironmentOutlined />}
+                                                    onClick={() => handleOpenRoute(it.route!)}
+                                                />
+                                            </Tooltip>
+                                        ) : null}
+                                    </div>
+                                    {it.subtitle ? (
+                                        <Text type="secondary" style={{fontSize: 12}}>
+                                            {it.subtitle}
+                                        </Text>
+                                    ) : null}
+                                </Space>
                             </div>
                         ),
                     })),
                 ]}
             />
+
+            <Modal
+                open={routeModalOpen}
+                onCancel={handleCloseRouteModal}
+                footer={null}
+                width={720}
+                title={
+                    routeModalTarget
+                        ? `Route: ${routeModalTarget.origin} → ${routeModalTarget.destination}`
+                        : 'Route'
+                }
+            >
+                {routeModalLoading ? (
+                    <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 0'}}>
+                        <Spin size="large"/>
+                    </div>
+                ) : routeError ? (
+                    <Alert type="error" message={routeError} showIcon/>
+                ) : routeModalData ? (
+                    <Space direction="vertical" size="middle" style={{width: '100%'}}>
+                        {routeModalData.embedUrl ? (
+                            <iframe
+                                title={routeModalTarget?.destinationLabel ? `Route to ${routeModalTarget.destinationLabel}` : 'Route preview'}
+                                src={routeModalData.embedUrl ?? undefined}
+                                style={{border: 0, width: '100%', height: 360}}
+                                loading="lazy"
+                                allowFullScreen
+                            />
+                        ) : null}
+                        <Space direction="vertical" size={4}>
+                            {routeModalData.routeSummary ? <Text strong>{routeModalData.routeSummary}</Text> : null}
+                            <Space size={16} wrap>
+                                {routeModalData.distanceText ? <Text>Distance: {routeModalData.distanceText}</Text> : null}
+                                {routeModalData.durationText ? <Text>Duration: {routeModalData.durationText}</Text> : null}
+                            </Space>
+                        </Space>
+                        {routeModalData.warnings && routeModalData.warnings.length ? (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                message="Warnings"
+                                description={routeModalData.warnings.join('; ')}
+                            />
+                        ) : null}
+                        {routeModalData.shareUrl ? (
+                            <Button
+                                type="primary"
+                                href={routeModalData.shareUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Open in Google Maps
+                            </Button>
+                        ) : null}
+                    </Space>
+                ) : (
+                    <Text type="secondary">No route data available.</Text>
+                )}
+            </Modal>
         </div>
     );
 }
@@ -314,7 +523,7 @@ export default function TripOverview() {
                             ) : (
                                 <Space direction="vertical" style={{width: '100%'}} size={16}>
                                     {timeline.map((day, idx) => (
-                                        <DayTimeline key={idx} day={day}/>
+                                        <DayTimeline key={idx} day={day} trip={trip}/>
                                     ))}
                                 </Space>
                             )}
