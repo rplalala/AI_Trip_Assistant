@@ -11,6 +11,8 @@ import {
     type AttractionTimeLineDTO,
     type HotelTimeLineDTO,
     type TransportationTimeLineDTO,
+    regenerateTrip,
+    type ModifyPlanPayload,
 } from '../../api/trip';
 import {
     Breadcrumb,
@@ -27,9 +29,14 @@ import {
     Skeleton,
     Timeline,
     Image,
+    Button,
+    Modal,
+    Form,
+    Input,
+    message,
 } from 'antd';
 import type {BreadcrumbProps, TabsProps, TableProps} from 'antd';
-import {HomeOutlined, EnvironmentOutlined, CarOutlined} from '@ant-design/icons';
+import {HomeOutlined, EnvironmentOutlined, CarOutlined, ReloadOutlined} from '@ant-design/icons';
 
 const {Title, Text} = Typography;
 
@@ -101,7 +108,12 @@ function DayTimeline({day}: { day: TimeLineDTO }) {
         return <EnvironmentOutlined style={{color: '#52c41a', fontSize: size}}/>;
     };
 
-    const IMAGE_W = 160;
+    const IMAGE_W = 200;
+    const IMAGE_H = 150;
+    // Approximate height of one itinerary row (lineHeight 22 + vertical padding ~6)
+    const ITEM_ROW_HEIGHT = 50;
+    const MIN_ROW_GAP = 3; // keep at least 3 rows worth of spacing
+    const MIN_CONTAINER_HEIGHT = IMAGE_H + ITEM_ROW_HEIGHT * MIN_ROW_GAP;
 
     const weatherIconMap: Record<string, React.ReactNode> = {
         clouds: '☁️',
@@ -133,7 +145,7 @@ function DayTimeline({day}: { day: TimeLineDTO }) {
     })();
 
     return (
-        <div style={{position: 'relative', paddingRight: IMAGE_W + 24}}>
+        <div style={{position: 'relative', paddingRight: IMAGE_W + 24, minHeight: MIN_CONTAINER_HEIGHT}}>
             {/* Scoped style to remove any horizontal connector lines inside this timeline */}
             <style>{`
         .day-timeline .ant-timeline-item-content::before { display: none !important; }
@@ -141,12 +153,12 @@ function DayTimeline({day}: { day: TimeLineDTO }) {
       `}</style>
 
             {day.imageUrl ? (
-                <div style={{position: 'absolute', right: 0, top: 0}}>
+                <div style={{position: 'absolute', right: 0, top: 20}}>
                     <Image
                         src={day.imageUrl}
                         alt={day.summary || day.date}
                         width={IMAGE_W}
-                        height={110}
+                        height={IMAGE_H}
                         style={{
                             objectFit: 'cover',
                             borderRadius: 8,
@@ -206,6 +218,22 @@ export default function TripOverview() {
     const [tripInsights, setTripInsights] = useState<TripInsightsResponse[]>([]);
     const [activeTab, setActiveTab] = useState<'timeline' | 'book'>('timeline');
 
+    const messageApi = message;
+
+    const reloadData = async (tid: string) => {
+        setLoadingTimeline(true);
+        try {
+            const [insights, tl] = await Promise.all([
+                getTripInsights(tid),
+                getTripTimeline(tid),
+            ]);
+            setTripInsights(insights ?? []);
+            setTimeline(tl ?? []);
+        } finally {
+            setLoadingTimeline(false);
+        }
+    };
+
     useEffect(() => {
         let mounted = true;
         if (!tripId) return;
@@ -217,23 +245,43 @@ export default function TripOverview() {
                 setTrip(found ?? null);
             });
 
-        getTripInsights(tripId).then((res) => {
-            if (!mounted) return;
-            setTripInsights(res ?? []);
-        });
-
-        setLoadingTimeline(true);
-        getTripTimeline(tripId)
-            .then((res) => {
-                if (!mounted) return;
-                setTimeline(res ?? []);
-            })
-            .finally(() => mounted && setLoadingTimeline(false));
+        reloadData(tripId);
 
         return () => {
             mounted = false;
         };
     }, [tripId]);
+
+    const [replanOpen, setReplanOpen] = useState(false);
+    const [submittingReplan, setSubmittingReplan] = useState(false);
+    const [form] = Form.useForm<{ secondPreference: string }>();
+
+    const onOpenReplan = () => {
+        form.resetFields();
+        setReplanOpen(true);
+    };
+
+    const onSubmitReplan = async () => {
+        try {
+            const values = await form.validateFields();
+            if (!tripId) return;
+            setSubmittingReplan(true);
+            const payload: ModifyPlanPayload = { secondPreference: values.secondPreference.trim() };
+            await regenerateTrip(tripId, payload);
+            setReplanOpen(false);
+            messageApi.success('Plan regenerated');
+            await reloadData(tripId);
+        } catch (err: unknown) {
+            const isValidationError = (e: unknown): e is { errorFields: unknown } =>
+                !!e && typeof e === 'object' && 'errorFields' in (e as Record<string, unknown>);
+            if (!isValidationError(err)) {
+                const errMsg = err instanceof Error ? err.message : 'Failed to regenerate plan';
+                messageApi.error(errMsg);
+            }
+        } finally {
+            setSubmittingReplan(false);
+        }
+    };
 
     const tabsItems: TabsProps['items'] = [
         {key: 'timeline', label: 'Timeline', children: null},
@@ -266,6 +314,11 @@ export default function TripOverview() {
                     <Text type="secondary">
                         {[titleText.dateText, titleText.travelers, titleText.budgetText].filter(Boolean).join(' · ')}
                     </Text>
+                </div>
+                <div>
+                    <Button type="primary" icon={<ReloadOutlined />} onClick={onOpenReplan} disabled={!tripId || submittingReplan}>
+                        Replan
+                    </Button>
                 </div>
             </div>
 
@@ -322,6 +375,25 @@ export default function TripOverview() {
                     </Card>
                 </Col>
             </Row>
+
+            <Modal
+                title="Regenerate plan"
+                open={replanOpen}
+                onCancel={() => setReplanOpen(false)}
+                onOk={onSubmitReplan}
+                okText="Confirm"
+                confirmLoading={submittingReplan}
+            >
+                <Form form={form} layout="vertical" preserve={false}>
+                    <Form.Item
+                        label="New preference"
+                        name="secondPreference"
+                        rules={[{ required: true, message: 'Please enter your new preference' }]}
+                    >
+                        <Input.TextArea placeholder="e.g., Prefer museums; avoid theme parks; daily walking under 6km" rows={4} maxLength={1000} showCount/>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </Space>
     );
 }

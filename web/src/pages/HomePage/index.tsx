@@ -24,8 +24,8 @@ const features = [
   },
   {
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBgpC-zM0FtZTPUEJBbiz0gt0t0EiM9cSZqneQ_7JYL3On1WlEe85Bmi9fQhauQJyynKIc7v2I0zFL9HnG3jUmY7J7DU-sM6eElQnTr3T_h1TmM4rj4Vmy-VIH8yI1ab57fa0hzpxHdbkKn438fdPL6l9JbHnIs079EVGLUTQMlI0zuwiKO7duhf0TzKDRwigxBGrnWUgwmHt3_9J7i8JyoXbq5UR9wCUWL8rcFxWbPCgzaoL9FgSCmrQ1d3AEBLW4dIRRLKdvEWw4",
-    title: 'Auto Re-plan',
-    desc: 'Automatically adjust your plans based on unforeseen events, ensuring a smooth and stress-free journey.',
+    title: 'Clear Trip insights',
+    desc: 'AI extracts the destination’s highlights and pitfalls: what to see, how to plan, and handy tips—all in one place.',
   },
 ];
 

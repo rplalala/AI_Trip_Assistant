@@ -14,6 +14,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
     List<Trip> findByUserId(Long userId);
 
+    Optional<Trip> findByIdAndUserId(Long id, Long userId);
+
     @Query("select t.id from Trip t where t.userId in :userIds")
     List<Long> findIdsByUserIdIn(Collection<Long> userIds);
 

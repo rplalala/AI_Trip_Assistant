@@ -4,6 +4,7 @@ import com.demo.api.client.OpenAiClient;
 import com.demo.api.dto.DailyWeatherDTO;
 import com.demo.api.dto.ItineraryDTO;
 import com.demo.api.dto.TripPreferenceRequestDTO;
+import com.demo.api.dto.ModifyPlanDTO;
 import com.demo.api.model.Trip;
 import com.demo.api.model.TripWeather;
 import com.demo.api.repository.TripRepository;
@@ -173,4 +174,65 @@ public class TripGenerationServiceImpl implements TripGenerationService {
         log.info("Successfully generated and stored trip plan for user {}", preference.getUserId());
     }
 
+    /**
+     * Regenerate a trip based on user new modification.
+     * @param tripId
+     * @param modifyPlanDTO
+     * @param userId
+     */
+    @Override
+    @Transactional
+    public void regenerateTrip(Long tripId, ModifyPlanDTO modifyPlanDTO, String userId) {
+        Assert.notNull(tripId, "tripId must not be null");
+        Assert.notNull(modifyPlanDTO, "modifyPlanDTO must not be null");
+        Assert.hasText(userId, "userId must not be empty");
+
+        Trip trip = tripRepository.findByIdAndUserId(tripId, Long.valueOf(userId))
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found or not owned by user: " + tripId));
+
+        try {
+            tripWeatherRepository.deleteByTripIdIn(List.of(trip.getId()));
+        } catch (Exception e) {
+            log.warn("Failed to clear existing weather for trip {}", tripId, e);
+        }
+        try {
+            weatherService.fetchAndStoreWeather(trip);
+        } catch (Exception e) {
+            log.warn("Failed to fetch/store latest weather for trip {}", tripId, e);
+        }
+
+        List<TripWeather> storedWeather = tripWeatherRepository.findByTripId(trip.getId());
+        List<DailyWeatherDTO> weatherSummaries = storedWeather.stream()
+                .map(weather -> DailyWeatherDTO.builder()
+                        .date(weather.getDate())
+                        .minTemp(weather.getMinTemp())
+                        .maxTemp(weather.getMaxTemp())
+                        .weatherCondition(weather.getWeatherCondition())
+                        .build())
+                .collect(Collectors.toList());
+
+        String prompt = tripPlanPromptBuilder.buildForRegeneration(trip, weatherSummaries, modifyPlanDTO);
+        log.debug("Constructed regeneration prompt");
+
+        OpenAiClient openAiClient = Optional.ofNullable(openAiClientProvider.getIfAvailable())
+                .orElseThrow(() -> new IllegalStateException("OpenAiClient bean is not configured"));
+        String aiResult = openAiClient.requestTripPlan(prompt);
+        log.debug("Received regenerated trip plan JSON payload");
+
+        ItineraryDTO itineraryDTO = openAiClient.parseContent(aiResult, ItineraryDTO.class);
+        if (itineraryDTO == null) {
+            throw new IllegalStateException("parse failed");
+        }
+        String innerJson;
+        try {
+            innerJson = objectMapper.writeValueAsString(itineraryDTO);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        TripStorageService tripStorageService = Optional.ofNullable(tripStorageServiceProvider.getIfAvailable())
+                .orElseThrow(() -> new IllegalStateException("TripStorageService bean is not configured"));
+        tripStorageService.storeTripPlan(trip, innerJson);
+        log.info("Successfully regenerated and stored trip plan for trip {}", tripId);
+    }
 }
