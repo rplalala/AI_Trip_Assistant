@@ -61,6 +61,8 @@ export interface HotelTimeLineDTO {
 export interface TransportationTimeLineDTO {
     time?: string | null;
     title?: string | null;
+    from?: string | null;
+    to?: string | null;
 }
 
 export interface ModifyPlanPayload {

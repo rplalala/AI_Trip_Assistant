@@ -33,6 +33,8 @@ public class TimeLineDTO {
     }
 
     @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     @Builder
     public static class HotelTimeLineDTO {
         private String hotelName;
@@ -41,9 +43,13 @@ public class TimeLineDTO {
     }
 
     @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     @Builder
     public static class TransportationTimeLineDTO {
         private String time;
         private String title;
+        private String from;
+        private String to;
     }
 }

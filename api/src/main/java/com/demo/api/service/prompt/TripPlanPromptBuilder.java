@@ -128,6 +128,7 @@ public class TripPlanPromptBuilder {
             Attractions per day:
                 - Multiple "attraction" items are allowed per day; NEVER more than 5.
                 - Prefer 3–4 attractions per full sightseeing day (2–3 acceptable on light or travel-heavy days).
+                - Search for real restaurants, cafe, which have authentic local cuisine.
             Transportation on non-first/last days:
                 - You MAY add transportation only within "%s"; both "from" and "to" MUST be within "%s".
                 - Prefer public transit: "bus", "subway"/"metro", "train". Avoid flights on these days.
