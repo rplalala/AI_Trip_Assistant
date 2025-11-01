@@ -12,6 +12,7 @@ import com.demo.api.service.UserService;
 import com.demo.api.utils.SendGridUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -43,7 +44,9 @@ public class UserServiceImpl implements UserService {
 
     private final SendGridUtils sendGridUtils;
     private final EmailTokenRepository emailTokenRepository;
-    private final String baseUrl = "http://localhost:5173";
+
+    @Value("${frontend.base-url}")
+    private String baseUrl;
     private static final SecureRandom RNG = new SecureRandom();
     private static String generateUrlToken() {
         byte[] buf = new byte[32];

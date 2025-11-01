@@ -39,7 +39,8 @@ public class AuthServiceImpl implements AuthService {
     @Value( "${default.avatar-url}")
     private String DEFAULT_AVATAR; // Default avatar
 
-    private final String baseUrl = "http://localhost:5173";
+    @Value("${frontend.base-url}")
+    private String baseUrl;
     private static final SecureRandom RNG = new SecureRandom();
     private static String generateUrlToken() {
         byte[] buf = new byte[32];

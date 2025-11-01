@@ -45,6 +45,9 @@ sendgrid:
   api-key: "***REMOVED***"
   from: "dingzh157@gmail.com"
 
+frontend:
+  base-url: "http://localhost"
+
 default:
   avatar-url: "https://awscdn.dingzh.cc/elec5620-stage2/avatars/default_avatar.png"
 
