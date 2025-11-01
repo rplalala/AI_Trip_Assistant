@@ -89,7 +89,7 @@ const MainLayout = ({ children }: any) => {
             </Content>
 
             <Footer style={{ textAlign: 'center' }}>
-                ELEC5620 ©2025 Created by Group 61
+                ELEC5620 ©2025 Created by Group 61 with ❤️
             </Footer>
         </Layout>
     );
