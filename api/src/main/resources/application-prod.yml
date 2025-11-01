@@ -75,6 +75,6 @@ feign:
         loggerLevel: BASIC
 
 booking:
-  base-url: http://external-service:8092
+  base-url: http://external-service:8092/api/booking
   service:
     base-url: ${booking.base-url}
