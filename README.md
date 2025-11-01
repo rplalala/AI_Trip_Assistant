@@ -49,7 +49,7 @@ Travel planning is typically fragmented across multiple tools for research, weat
 - Ting-Yi Lee - Fullstack Engineer
 - Rong Cao - Fullstack Engineer
 - Zihang Ding - Fullstack Engineer
-- Kexuan Zhao - Jira Manager + Test Engineer
+- Kexuan Zhao - Jira Manager & Frontend Engineer
 
 ## Stage 1 Report
 https://www.overleaf.com/read/wrwbsmtwqhdx#35bd34
