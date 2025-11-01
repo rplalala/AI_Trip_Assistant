@@ -1,4 +1,3 @@
-// src/pages/Trips/Overview/index.tsx
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {
@@ -438,6 +437,7 @@ export default function TripOverview() {
     const [replanOpen, setReplanOpen] = useState(false);
     const [submittingReplan, setSubmittingReplan] = useState(false);
     const [form] = Form.useForm<{ secondPreference: string }>();
+    const [replanVersion, setReplanVersion] = useState(0);
 
     const onOpenReplan = () => {
         form.resetFields();
@@ -454,6 +454,7 @@ export default function TripOverview() {
             setReplanOpen(false);
             messageApi.success('Plan regenerated');
             await reloadData(tripId);
+            setReplanVersion((v) => v + 1);
         } catch (err: unknown) {
             const isValidationError = (e: unknown): e is { errorFields: unknown } =>
                 !!e && typeof e === 'object' && 'errorFields' in (e as Record<string, unknown>);
@@ -530,7 +531,7 @@ export default function TripOverview() {
                         </Card>
                     ) : (
                         <Card title="Booking Tasks">
-                            <BookingSection tripId={tripId}/>
+                            <BookingSection tripId={tripId} refreshSignal={replanVersion}/>
                         </Card>
                     )}
                 </Col>

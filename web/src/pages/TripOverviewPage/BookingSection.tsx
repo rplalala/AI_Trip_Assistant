@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Empty, Space, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -10,6 +10,7 @@ import {
 
 type BookingSectionProps = {
     tripId?: string;
+    refreshSignal?: number;
 };
 
 const { Text } = Typography;
@@ -54,7 +55,7 @@ function makeRowKey(item: BookingItem) {
     return `${item.productType}-${item.entityId}`;
 }
 
-export default function BookingSection({ tripId }: BookingSectionProps) {
+export default function BookingSection({ tripId, refreshSignal }: BookingSectionProps) {
     const [items, setItems] = useState<BookingItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [confirmingId, setConfirmingId] = useState<number | null>(null);
@@ -86,6 +87,12 @@ export default function BookingSection({ tripId }: BookingSectionProps) {
     useEffect(() => {
         void refresh();
     }, [refresh]);
+
+    // Trigger refresh when parent signals replan completion
+    useEffect(() => {
+        if (refreshSignal === undefined) return;
+        void refresh();
+    }, [refreshSignal, refresh]);
 
     const pendingCount = useMemo(() => {
         return items.filter((item) => {
