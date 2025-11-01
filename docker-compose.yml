@@ -27,4 +27,6 @@ services:
       - "80:80"
     depends_on:
       - api-service
+    volumes:
+      - ./web/dist:/usr/share/nginx/html:ro
     restart: always
