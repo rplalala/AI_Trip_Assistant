@@ -46,7 +46,7 @@ sendgrid:
   from: "dingzh157@gmail.com"
 
 frontend:
-  base-url: "http://localhost"
+  base-url: "http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com"
 
 default:
   avatar-url: "https://awscdn.dingzh.cc/elec5620-stage2/avatars/default_avatar.png"
