@@ -108,7 +108,7 @@ export default function LoginPage() {
                 name="email"
                 rules={[{ type: 'email', required: true, message: 'Please input your email!' }]}
             >
-                <Input />
+                <Input autoComplete="email"/>
             </Form.Item>
 
             <Form.Item<LoginFieldType>
@@ -116,12 +116,12 @@ export default function LoginPage() {
                 name="password"
                 rules={[{ required: true, message: 'Please input your password!' }]}
             >
-                <Input.Password />
+                <Input.Password autoComplete="current-password" />
             </Form.Item>
 
             <Form.Item label={null}>
                 <Button type="primary" htmlType="submit" loading={loadingLogin}>
-                    Sign in
+                    Log in
                 </Button>
             </Form.Item>
 
@@ -147,7 +147,7 @@ export default function LoginPage() {
                 name="email"
                 rules={[{ type: 'email', required: true, message: 'Please input your email!' }]}
             >
-                <Input />
+                <Input autoComplete="email" />
             </Form.Item>
 
             <Form.Item<RegisterFormFieldType>
@@ -155,7 +155,7 @@ export default function LoginPage() {
                 name="username"
                 rules={[{ required: true, message: 'Please enter your name' }]}
             >
-                <Input />
+                <Input autoComplete="off" />
             </Form.Item>
 
             <Form.Item<RegisterFormFieldType>
@@ -163,7 +163,7 @@ export default function LoginPage() {
                 name="password"
                 rules={[{ required: true, message: 'Please input your password!' }]}
             >
-                <Input.Password />
+                <Input.Password autoComplete="new-password" />
             </Form.Item>
 
             <Form.Item
@@ -186,7 +186,7 @@ export default function LoginPage() {
                     }),
                 ]}
             >
-                <Input.Password />
+                <Input.Password autoComplete="new-password" />
             </Form.Item>
 
             <Form.Item label={null}>
