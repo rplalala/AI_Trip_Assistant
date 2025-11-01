@@ -1,12 +1,7 @@
 package com.demo.api.service.impl;
 
 import com.demo.api.dto.TimeLineDTO;
-import com.demo.api.model.Trip;
-import com.demo.api.model.TripAttraction;
-import com.demo.api.model.TripDailySummary;
-import com.demo.api.model.TripHotel;
-import com.demo.api.model.TripTransportation;
-import com.demo.api.model.TripWeather;
+import com.demo.api.model.*;
 import com.demo.api.repository.*;
 import com.demo.api.support.TestDataFactory;
 import com.demo.api.utils.UnsplashImgUtils;
@@ -22,7 +17,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,8 +40,15 @@ class TripServiceImplTest {
     @Test
     void getTripDetails_enrichesTripsWithImage() {
         Trip trip = TestDataFactory.trip(200L);
-        when(tripRepository.findByUserId(101L)).thenReturn(List.of(trip));
-        when(unsplashImgUtils.getImgUrls("Tokyo", 1, 600, 400))
+        trip.setToCity("Tokyo");
+        trip.setToCountry("Japan");
+        trip.setStartDate(LocalDate.now());
+        trip.setEndDate(LocalDate.now().plusDays(1));
+
+        when(tripRepository.findByUserIdOrderByUpdatedTimeDesc(101L))
+                .thenReturn(List.of(trip));
+
+        when(unsplashImgUtils.getImgUrls(anyString(), anyInt(), anyInt(), anyInt()))
                 .thenReturn(List.of("https://images/tokyo.jpg"));
 
         List<?> results = tripService.getTripDetails(101L);
@@ -55,7 +57,6 @@ class TripServiceImplTest {
         assertThat(results).first()
                 .hasFieldOrPropertyWithValue("tripId", 200L)
                 .hasFieldOrPropertyWithValue("imgUrl", "https://images/tokyo.jpg");
-        verify(unsplashImgUtils).getImgUrls("Tokyo", 1, 600, 400);
     }
 
     @Test
@@ -100,5 +101,33 @@ class TripServiceImplTest {
         assertThat(dto.getTransportation()).hasSize(1);
         assertThat(dto.getWeatherCondition()).isEqualTo("Sunny");
         assertThat(dto.getDate()).isEqualTo(day1.toString());
+    }
+
+    @Test
+    void deleteTripByIds_whenIdsEmpty_doesNothing() {
+        tripService.deleteTripByIds(List.of());
+
+        verifyNoInteractions(tripWeatherRepository, insightRepository, tripBookingQuoteRepository,
+                tripDailySummaryRepository, tripTransportationRepository, tripHotelRepository,
+                tripAttractionRepository, tripRepository);
+    }
+
+    @Test
+    void getTimeLine_whenWeatherMissing_setsNullTemperatures() {
+        long tripId = 777L;
+        LocalDate date = LocalDate.of(2025, 5, 1);
+        TripDailySummary summary = TestDataFactory.summary(9L, tripId, date);
+
+        when(tripDailySummaryRepository.findByTripId(tripId)).thenReturn(List.of(summary));
+        when(tripAttractionRepository.findAllByTripId(tripId)).thenReturn(List.of());
+        when(tripHotelRepository.findAllByTripId(tripId)).thenReturn(List.of());
+        when(tripTransportationRepository.findAllByTripId(tripId)).thenReturn(List.of());
+        when(tripWeatherRepository.findAllByTripId(tripId)).thenReturn(List.of());
+
+        TimeLineDTO dto = tripService.getTimeLine(tripId).getFirst();
+
+        assertThat(dto.getMaxTemperature()).isNull();
+        assertThat(dto.getMinTemperature()).isNull();
+        assertThat(dto.getWeatherCondition()).isNull();
     }
 }

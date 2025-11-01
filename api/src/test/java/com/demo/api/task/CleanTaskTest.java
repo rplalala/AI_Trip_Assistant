@@ -27,9 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CleanTaskTest {
@@ -113,5 +111,31 @@ class CleanTaskTest {
         verify(hotelRepository).deleteByTripIdIn(List.of(10L, 20L));
         verify(attractionRepository).deleteByTripIdIn(List.of(10L, 20L));
         verify(tripRepository).deleteByUserIdIn(List.of(1L, 2L));
+    }
+
+    @DisplayName("cleanRedundantData logs when no redundant users found")
+    @Test
+    void cleanRedundantData_whenNoUsers() {
+        when(tripRepository.findRedundantUserIds()).thenReturn(List.of());
+
+        task.cleanRedundantData();
+
+        verify(tripRepository).findRedundantUserIds();
+        verify(tripRepository, never()).findIdsByUserIdIn(any());
+        verifyNoInteractions(weatherRepository, insightRepository, bookingQuoteRepository,
+                summaryRepository, transportationRepository, hotelRepository, attractionRepository);
+    }
+
+    @DisplayName("cleanRedundantData skips deletions when no trip ids")
+    @Test
+    void cleanRedundantData_whenNoTrips() {
+        when(tripRepository.findRedundantUserIds()).thenReturn(List.of(5L));
+        when(tripRepository.findIdsByUserIdIn(List.of(5L))).thenReturn(List.of());
+
+        task.cleanRedundantData();
+
+        verify(tripRepository).findIdsByUserIdIn(List.of(5L));
+        verifyNoInteractions(weatherRepository, insightRepository, bookingQuoteRepository,
+                summaryRepository, transportationRepository, hotelRepository, attractionRepository);
     }
 }

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -109,5 +110,24 @@ class BookingFacadeTest {
 
         assertThat(resp).isEmpty();
         verify(bookingService).listBookingItems(10L, null);
+    }
+
+    @Test
+    void quote_whenServiceReturnsNull_throwsIllegalState() {
+        QuoteReq req = new QuoteReq("hotel", "AUD", 1, Map.of(), 55L, 9L, "item");
+        when(bookingService.quoteSingleItem(anyLong(), anyString(), anyLong())).thenReturn(null);
+
+        assertThatThrownBy(() -> bookingFacade.quote(req, "7"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Booking quote result is missing");
+    }
+
+    @Test
+    void listBookings_whenUserIdBlank_parsesToNull() {
+        when(bookingService.listBookingItems(5L, null)).thenReturn(List.of());
+
+        bookingFacade.listBookings(5L, "  ");
+
+        verify(bookingService).listBookingItems(5L, null);
     }
 }

@@ -18,7 +18,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,5 +78,51 @@ class UploadControllerTest {
         assertThatThrownBy(() -> uploadController.uploadAvatar(largeFile, "99"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("File too large");
+    }
+
+    @Test
+    void upload_whenFileTooLarge_throwsBusinessException() {
+        byte[] largeContent = new byte[10 * 1024 * 1024 + 1];
+        MockMultipartFile largeFile = new MockMultipartFile("file", "poster.png", MediaType.IMAGE_PNG_VALUE, largeContent);
+
+        assertThatThrownBy(() -> uploadController.upload(largeFile))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("File too large");
+    }
+
+    @Test
+    void uploadByUrl_whenBlank_throwsBusinessException() {
+        assertThatThrownBy(() -> uploadController.uploadByUrl(""))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("URL cannot be empty");
+    }
+
+    @Test
+    void uploadByUrl_returnsUploadedUrl() throws Exception {
+        when(awsS3Utils.uploadFromUrl(eq("https://example.com/pic.jpg"), eq(false)))
+                .thenReturn("https://cdn/pic.jpg");
+
+        ApiRespond<String> response = uploadController.uploadByUrl("https://example.com/pic.jpg");
+
+        assertThat(response.getData()).isEqualTo("https://cdn/pic.jpg");
+    }
+
+    @Test
+    void uploadAvatarFromUrl_whenBlank_throwsBusinessException() {
+        assertThatThrownBy(() -> uploadController.uploadAvatarFrmUrl("", "88"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("URL cannot be empty");
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void uploadAvatarFromUrl_updatesUserAvatar() throws Exception {
+        when(awsS3Utils.uploadFromUrl(eq("https://cdn/avatar.png"), eq(true)))
+                .thenReturn("https://s3/avatar.png");
+
+        ApiRespond<String> response = uploadController.uploadAvatarFrmUrl("https://cdn/avatar.png", "77");
+
+        assertThat(response.getData()).isEqualTo("https://s3/avatar.png");
+        verify(userService).updateAvatar(77L, "https://s3/avatar.png");
     }
 }

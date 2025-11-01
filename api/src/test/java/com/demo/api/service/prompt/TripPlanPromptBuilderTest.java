@@ -100,4 +100,44 @@ class TripPlanPromptBuilderTest {
                 .contains("Travel dates: Not specified")
                 .doesNotContain("Weather Forecast");
     }
+    @DisplayName("build handles invalid durations and incomplete weather data")
+    @Test
+    void build_handlesNullWeatherValues() {
+        Trip trip = Trip.builder()
+                .fromCity("Brisbane")
+                .fromCountry("Australia")
+                .toCity("Queenstown")
+                .toCountry("New Zealand")
+                .startDate(LocalDate.of(2025, 6, 10))
+                .endDate(LocalDate.of(2025, 6, 8)) // end before start -> duration null
+                .budget(null)
+                .people(null)
+                .currency(null)
+                .preferences("   ") // blank triggers fallback
+                .build();
+
+        List<DailyWeatherDTO> weather = List.of(
+                DailyWeatherDTO.builder()
+                        .date(null)
+                        .minTemp(null)
+                        .maxTemp(null)
+                        .weatherCondition(null)
+                        .build(),
+                DailyWeatherDTO.builder()
+                        .date(LocalDate.of(2025, 6, 9))
+                        .minTemp(3.0)
+                        .maxTemp(11.0)
+                        .weatherCondition("Snow")
+                        .build()
+        );
+
+        String prompt = builder.build(trip, weather);
+
+        assertThat(prompt)
+                .contains("Travel dates: 2025-06-10 to 2025-06-08")
+                .contains("Budget: Not specified")
+                .contains("Travelers: Not specified")
+                .contains("- Unknown date: min N/A / max N/A, Condition unavailable")
+                .contains("- 2025-06-09: min 3.0°C / max 11.0°C, Snow");
+    }
 }

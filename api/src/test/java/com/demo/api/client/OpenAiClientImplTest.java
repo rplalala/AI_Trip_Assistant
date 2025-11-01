@@ -95,6 +95,32 @@ class OpenAiClientImplTest {
                 .hasMessageContaining("Failed to call OpenAI API");
     }
 
+    @DisplayName("requestTripPlan detects non-2xx responses")
+    @Test
+    void requestTripPlan_whenStatusNonSuccess_throwsIllegalState() throws Exception {
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+        ResponseEntity<String> response = ResponseEntity.status(500).body("{\"error\":\"fail\"}");
+        when(restTemplate.postForEntity(eq("https://api.openai.com/v1/chat/completions"), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(response);
+
+        assertThatThrownBy(() -> client.requestTripPlan("Describe Sydney"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("non-success status");
+    }
+
+    @DisplayName("requestTripPlan ensures non-empty response body")
+    @Test
+    void requestTripPlan_whenBodyEmpty_throwsIllegalState() throws Exception {
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+        ResponseEntity<String> response = ResponseEntity.ok("");
+        when(restTemplate.postForEntity(eq("https://api.openai.com/v1/chat/completions"), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(response);
+
+        assertThatThrownBy(() -> client.requestTripPlan("Trip to Rome"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("empty response body");
+    }
+
     @DisplayName("parseContent extracts JSON even when wrapped in code fences")
     @Test
     void parseContent_extractsAndDeserializes() throws Exception {
