@@ -90,6 +90,34 @@ class GlobalExceptionHandlerTest {
         assertThat(parsed.getMsg()).contains("not-json");
     }
 
+    @DisplayName("handleFeignException maps payment and token errors and defaults unknown codes")
+    @Test
+    void handleFeignException_otherCodes() {
+        FeignException payment = feignException(402, Map.of("error_code", "PAYMENT_FAILED"));
+        HttpServletResponse paymentResp = mock(HttpServletResponse.class);
+        ApiRespond<Void> paymentResult = handler.handleFeignException(payment, paymentResp);
+        verify(paymentResp).setStatus(HttpStatus.PAYMENT_REQUIRED.value());
+        assertThat(paymentResult.getMsg()).contains("ERR_PAYMENT_FAILED");
+
+        FeignException invalidToken = feignException(400, Map.of("error_code", "INVALID_QUOTE_TOKEN", "message", "bad token"));
+        HttpServletResponse invalidResp = mock(HttpServletResponse.class);
+        ApiRespond<Void> invalidResult = handler.handleFeignException(invalidToken, invalidResp);
+        verify(invalidResp).setStatus(HttpStatus.BAD_REQUEST.value());
+        assertThat(invalidResult.getMsg()).contains("ERR_INVALID_QUOTE_TOKEN").contains("bad token");
+
+        FeignException unknown = feignException(503, Map.of("code", "UNKNOWN", "message", "oops"));
+        HttpServletResponse unknownResp = mock(HttpServletResponse.class);
+        ApiRespond<Void> unknownResult = handler.handleFeignException(unknown, unknownResp);
+        verify(unknownResp).setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+        assertThat(unknownResult.getMsg()).contains("oops");
+
+        FeignException blankBody = feignExceptionRaw(500, "");
+        HttpServletResponse blankResp = mock(HttpServletResponse.class);
+        ApiRespond<Void> blankResult = handler.handleFeignException(blankBody, blankResp);
+        verify(blankResp).setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        assertThat(blankResult.getMsg()).contains("bookingClient#quote");
+    }
+
     private FeignException feignException(int status, Map<String, String> body) {
         try {
             String json = new ObjectMapper().writeValueAsString(body);

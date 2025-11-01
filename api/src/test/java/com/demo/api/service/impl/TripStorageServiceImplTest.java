@@ -10,6 +10,7 @@ import com.demo.api.repository.TripDailySummaryRepository;
 import com.demo.api.repository.TripHotelRepository;
 import com.demo.api.repository.TripTransportationRepository;
 import com.demo.api.utils.UnsplashImgUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -147,5 +149,108 @@ class TripStorageServiceImplTest {
         assertThatThrownBy(() -> tripStorageService.storeTripPlan(trip, "{not-json"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Failed to persist trip plan JSON");
+    }
+
+    @Test
+    void storeTripPlan_whenTripIdMissing_throwsIllegalArgument() {
+        Trip trip = Trip.builder().build();
+
+        assertThatThrownBy(() -> tripStorageService.storeTripPlan(trip, "{}"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("tripId");
+    }
+
+    @Test
+    void storeTripPlan_whenExistingData_cleansThenSavesMappedValues() {
+        Trip trip = Trip.builder()
+                .id(300L)
+                .currency("")
+                .build();
+
+        List<TripDailySummary> existingSummaries = List.of(new TripDailySummary());
+        List<TripTransportation> existingTransport = List.of(new TripTransportation());
+        List<TripHotel> existingHotels = List.of(new TripHotel());
+        List<TripAttraction> existingAttractions = List.of(new TripAttraction());
+
+        when(tripDailySummaryRepository.findByTripId(300L)).thenReturn(existingSummaries);
+        when(tripTransportationRepository.findByTripId(300L)).thenReturn(existingTransport);
+        when(tripHotelRepository.findByTripId(300L)).thenReturn(existingHotels);
+        when(tripAttractionRepository.findByTripId(300L)).thenReturn(existingAttractions);
+
+        String payload = """
+                {
+                  "daily_summaries": [
+                    {"date":"invalid-date","summary":"Relax","image_url":null}
+                  ],
+                  "activities": [
+                    {
+                      "type":"transportation",
+                      "date":"2025-07-01",
+                      "time":"08:30",
+                      "title":"Harbour Ferry",
+                      "status":" ",
+                      "reservation_required":false,
+                      "from":"Circular Quay",
+                      "to":"Manly",
+                      "price":"45.8",
+                      "currency":"NZD",
+                      "image_description":"sunrise"
+                    },
+                    {
+                      "type":"hotel",
+                      "date":"2025-07-01",
+                      "time":"21:15",
+                      "title":"Harbour Stay",
+                      "people":2.6,
+                      "nights":"3",
+                      "price":199.4
+                    },
+                    {
+                      "type":"attraction",
+                      "title":"Bridge Climb",
+                      "ticket_price":"not-a-number",
+                      "people":null
+                    },
+                    {
+                      "type":"unknown",
+                      "title":"Skip me"
+                    }
+                  ]
+                }
+                """;
+
+        tripStorageService.storeTripPlan(trip, payload);
+
+        verify(tripDailySummaryRepository).deleteAll(existingSummaries);
+        verify(tripTransportationRepository).deleteAll(existingTransport);
+        verify(tripHotelRepository).deleteAll(existingHotels);
+        verify(tripAttractionRepository).deleteAll(existingAttractions);
+
+        verify(tripDailySummaryRepository).saveAll(any());
+        verify(tripTransportationRepository).saveAll(any());
+        verify(tripHotelRepository).saveAll(any());
+        verify(tripAttractionRepository).saveAll(any());
+
+        verifyNoMoreInteractions(tripDailySummaryRepository, tripTransportationRepository,
+                tripHotelRepository, tripAttractionRepository);
+    }
+
+    @Test
+    void asInteger_convertsNumbersAndStrings() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode intNode = mapper.readTree("42");
+        JsonNode decimalNode = mapper.readTree("45.6");
+        JsonNode stringNode = mapper.readTree("\"78\"");
+        JsonNode badNode = mapper.readTree("\"abc\"");
+
+        Integer intValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", intNode);
+        Integer decimalValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", decimalNode);
+        Integer stringValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", stringNode);
+        Integer badValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", badNode);
+
+        assertThat(intValue).isEqualTo(42);
+        assertThat(decimalValue).isEqualTo(46);
+        assertThat(stringValue).isEqualTo(78);
+        assertThat(badValue).isNull();
     }
 }
