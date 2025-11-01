@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  api-service:
+    build: ./api
+    container_name: api-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - GOOGLE_MAPS_API_KEY=***REMOVED***
+    restart: always
+
+  external-service:
+    build: ./external-service
+    container_name: external-service
+    ports:
+      - "8092:8092"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    restart: always
+
+  web-client:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: web-client
+    ports:
+      - "80:80"
+    depends_on:
+      - api-service
+    restart: always
