@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -73,9 +75,23 @@ public class WeatherServiceImpl implements WeatherService {
         URI uri = buildForecastUri(preference);
 
         // 2. Call the OpenWeatherMap API via RestTemplate
-        String responseJson = restTemplate.getForObject(uri, String.class);
+        String responseJson;
+        try{
+            responseJson = restTemplate.getForObject(uri, String.class);
+        } catch (HttpClientErrorException.NotFound e){
+            log.warn("Skip weather: OpenWeather 404 for q='{},{}'", preference.getToCity(), preference.getToCountry());
+            return;
+        } catch (RestClientException e){
+            log.warn("Skip weather: OpenWeather call failed: {}", e.getMessage());
+            return;
+        }
         if (!StringUtils.hasText(responseJson)) {
-            throw new IllegalStateException("Empty response received from OpenWeatherMap");
+            log.warn("Skip weather: empty response for trip {}", preference.getId());
+            return;
+        }
+        if (responseJson.contains("\"cod\":\"404\"") || responseJson.contains("\"cod\":404")) {
+            log.warn("Skip weather: response cod=404 (city not found) for trip {}", preference.getId());
+            return;
         }
         log.debug("OpenWeatherMap raw response: {}", responseJson);
 
