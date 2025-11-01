@@ -1,23 +1,18 @@
 # ELEC5620_AI_Trip_Assistant
-Our team is developing an AI Travel Assistant that plans daily itineraries from user preferences, monitors weather/availability in real time, auto-replans on disruptions, and supports booking + payment + calendar integration.
+
+Our team is developing an AI Travel Assistant that generates daily itineraries from user constraints and preferences, incorporates weather-aware adjustments and routing, supports booking with a one-click confirm flow, and can quickly regenerate a plan when new constraints are provided.
 
 This project will have some key requirements including but not limited to:
 
-1. Generate daily trip plans under constraints (budget, food, time, opening-hours).
-
-2. Monitor weather/transport; send advice and automatically re-plan when needed.
-
-3. Single-item modification and full reprompting to regenerate itinerary.
-
-4. Group travel support: roles (Editor/Viewer), questionnaire-based preference collection, budget management and alerts.
-
-5. Unified booking orchestration (hotel/flight/tickets), payment redirect, and calendar insertion.
+1. Generate daily trip plans under constraints (destination, budget, party size, date range, preferences).
+2. Monitor and incorporate destination weather for the relevant day(s), adjusting activities intelligently.
+3. Support full re-prompting to regenerate itineraries when users provide new constraints or are not satisfied with the plan.
+4. Provide clear Trip Insights (local news and practical tips) to improve decision quality and the overall travel experience.
+5. Offer unified booking orchestration (hotel/transport/tickets) with a one-click Confirm demonstration flow.
 
 ## Statement
-Travel planning is fragmented across many apps (planning, booking, weather, transport). Plans often break when weather changes or availability shifts. Users jump between tools and manually fix conflicts.
 
-**AI Travel Assistant** centralises this flow: collect preferences (or group questionnaire) → generate primary plan with alternatives → validate opening hours & availability → live weather monitoring → auto-replanning on alerts → booking & payment → calendar write-back and notifications. 
-The goal is to make travel **smart**, **resilient**, and **low-effort**.
+Travel planning is typically fragmented across multiple tools for research, weather, routing, and booking. When weather or availability changes, users must manually revisit each step to fix conflicts. **ELEC5620_AI_Trip_Assistant** consolidates this workflow: start from user preferences and constraints, produce a structured day-by-day itinerary, factor in real-world signals such as destination weather and route feasibility, and allow rapid regeneration when constraints change. On top of planning, it provides unified booking orchestration with a one-click confirm demo flow, and Trip Insights (local news and tips) to raise situational awareness. The goal is to make travel smarter, more resilient, and lower-effort for users.
 
 ## Tech Stack
 - Frontend: React 19, Vite, TypeScript
@@ -50,11 +45,11 @@ The goal is to make travel **smart**, **resilient**, and **low-effort**.
 - **SendGrid Email API:** provides verification for registration, forgot password reset, and email change.
 
 ## Team
-- Pin-Hsuan Lai - xxx
-- Ting-Yi Lee - xxx
-- Kexuan Zhao - xxx
-- Rong Cao - xxx
-- Zihang Ding - xxx
+- Pin-Hsuan Lai - Fullstack Engineer
+- Ting-Yi Lee - Fullstack Engineer
+- Rong Cao - Fullstack Engineer
+- Zihang Ding - Fullstack Engineer
+- Kexuan Zhao - Jira Manager + Test Engineer
 
 ## Stage 1 Report
 https://www.overleaf.com/read/wrwbsmtwqhdx#35bd34
