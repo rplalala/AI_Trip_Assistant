@@ -24,6 +24,9 @@ import java.util.List;
 @Component
 public class OpenAiClientImpl implements OpenAiClient {
 
+    @Value("${spring.ai.openai.model-name:gpt-4o-mini}")
+    private String modelName;
+
     // Logger for debugging and monitoring
     private static final Logger log = LoggerFactory.getLogger(OpenAiClientImpl.class);
 
@@ -62,7 +65,7 @@ public class OpenAiClientImpl implements OpenAiClient {
 
         // Construct request payload with model, temperature, and message history
         ChatCompletionRequest payload = new ChatCompletionRequest(
-                "gpt-4o-mini",    // Model name to use
+                modelName,    // Model name to use
                 0.7,              // Temperature for creativity control
                 List.of(
                         new ChatMessage("system", "You are a helpful travel planner."), // System instruction
