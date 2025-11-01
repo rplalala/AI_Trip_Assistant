@@ -28,9 +28,10 @@ Travel planning is typically fragmented across multiple tools for research, weat
 **(2) Cloud Services**
 - **AWS S3 + Cloudflare:** hosts static resources with CDN acceleration while storing object URLs in the DB to cut app memory and improve throughput.
 - **Neon Serverless PostgresSQL:** provides a serverless database service.
+- **AWS EC2:** 
 
 **(3) Deployment**
-- **CI/CD:**
+- **CI/CD:** 
 
 **(4) New AI Tools**
 - **Stitch (UI Design with Gemini AI) + Figma:** designs UI with AI assistant, then refined in Figma, speeding up design-to-code handoff and keeping visual consistency.
@@ -49,7 +50,7 @@ Travel planning is typically fragmented across multiple tools for research, weat
 - Ting-Yi Lee - Fullstack Engineer
 - Rong Cao - Fullstack Engineer
 - Zihang Ding - Fullstack Engineer
-- Kexuan Zhao - Jira Manager & Frontend Engineer
+- Kexuan Zhao - Frontend Engineer
 
 ## Stage 1 Report
 https://www.overleaf.com/read/wrwbsmtwqhdx#35bd34
@@ -59,6 +60,9 @@ https://uni-elec5620.atlassian.net/jira/software/projects/ELEC5620/summary?atlOr
 
 ## UI Mockup
 https://www.figma.com/design/Orh6WDE8hFQUl9IjHuvOG3/Untitled?node-id=0-1&t=Jw0UUMtVW4z3PVYe-1
+
+## Deployed Live Demo (AWS EC2)
+http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com
 
 ## Development Guide
 ### Install required dependencies:
