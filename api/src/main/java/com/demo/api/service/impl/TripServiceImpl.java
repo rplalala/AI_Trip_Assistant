@@ -34,7 +34,7 @@ public class TripServiceImpl implements TripService {
 
     @Override
     public List<TripDetailDTO> getTripDetails(Long userId) {
-        List<Trip> userTrips = tripRepository.findByUserId(userId);
+        List<Trip> userTrips = tripRepository.findByUserIdOrderByUpdatedTimeDesc(userId);
         return userTrips.stream().map(trip -> {
             return TripDetailDTO.builder()
                     .tripId(trip.getId())
