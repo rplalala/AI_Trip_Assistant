@@ -397,22 +397,34 @@ export default function TripOverview() {
     const [trip, setTrip] = useState<TripDetail | null>(null);
     const [timeline, setTimeline] = useState<TimeLineDTO[]>([]);
     const [loadingTimeline, setLoadingTimeline] = useState<boolean>(false);
+    const [loadingInsights, setLoadingInsights] = useState<boolean>(false);
     const [tripInsights, setTripInsights] = useState<TripInsightsResponse[]>([]);
     const [activeTab, setActiveTab] = useState<'timeline' | 'book'>('timeline');
 
     const messageApi = message;
 
     const reloadData = async (tid: string) => {
+        loadTimelineData(tid)
+        loadInsightsData(tid)
+    };
+
+    const loadTimelineData = async (tid: string) => {
         setLoadingTimeline(true);
         try {
-            const [insights, tl] = await Promise.all([
-                getTripInsights(tid),
-                getTripTimeline(tid),
-            ]);
-            setTripInsights(insights ?? []);
+            const tl = await getTripTimeline(tid)
             setTimeline(tl ?? []);
         } finally {
             setLoadingTimeline(false);
+        }
+    };
+
+    const loadInsightsData = async (tid: string) => {
+        setLoadingInsights(true);
+        try {
+            const insights = await getTripInsights(tid)
+            setTripInsights(insights ?? []);
+        } finally {
+            setLoadingInsights(false);
         }
     };
 
@@ -427,7 +439,7 @@ export default function TripOverview() {
                 setTrip(found ?? null);
             });
 
-        reloadData(tripId);
+        reloadData(tripId)
 
         return () => {
             mounted = false;
@@ -541,6 +553,7 @@ export default function TripOverview() {
                         <List<TripInsightsResponse>
                             itemLayout="horizontal"
                             dataSource={tripInsights}
+                            loading={loadingInsights}
                             renderItem={(item) => (
                                 <List.Item>
                                     <List.Item.Meta
