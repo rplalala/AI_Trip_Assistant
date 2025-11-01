@@ -127,16 +127,6 @@ export default function HomePage(): React.ReactElement {
               ))}
             </div>
           </div>
-
-          {/* Footer */}
-          <footer style={{ padding: '24px 20px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, justifyContent: 'center', marginBottom: 16 }}>
-              <a href="#" style={{ color: '#618983' }}>About</a>
-              <a href="#" style={{ color: '#618983' }}>Contact</a>
-              <a href="#" style={{ color: '#618983' }}>Terms of Service</a>
-              <a href="#" style={{ color: '#618983' }}>Privacy Policy</a>
-            </div>
-          </footer>
         </div>
       </div>
     </div>
