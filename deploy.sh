@@ -16,7 +16,7 @@ npm run build
 
 echo "===== Rebuild & Restart Docker ====="
 cd $PROJECT_DIR
-docker compose down
-docker compose up -d --build
+docker-compose down
+docker-compose up -d --build
 
 echo "✅ Deployment Completed Successfully!"
