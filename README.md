@@ -26,18 +26,18 @@ Travel planning is typically fragmented across multiple tools for research, weat
 ## Advanced Technologies
 We integrated 10 advanced technologies to significantly improve system performance (faster static delivery with CDN), scalability (EC2 + serverless PostgreSQL), and maintainability (Dockerized CI/CD automation).
 
-| **No.** | **Technology**                                | **Contribution**                                                                               | **Category**               |
-|---------|-----------------------------------------------|------------------------------------------------------------------------------------------------|----------------------------|
-| 1       | **React (Vite + TypeScript) + Ant Design**    | Builds a high-performance SPA with type safety and consistent UI components                    | **Application Frameworks** |
-| 2       | **Spring Boot (Java 21 + Maven)**             | Implements a clean, layered REST backend with testable services and maintainable architecture  | **Application Frameworks** |
-| 3       | **Docker + Docker Compose**                   | Containerizes frontend and backend for reproducible production environments                    | **Deployment**             |
-| 4       | **GitHub Webhook-based CI/CD**                | Automatically pulls latest code, rebuilds Docker images, and restarts services on push to main | **Deployment**             |
-| 5       | **Nginx Reverse Proxy**                       | Consolidates routing on port 80 and enables secure access to internal containers               | **Deployment**             |
-| 6       | **AWS EC2**                                   | Deploys the full-stack Dockerized application in the cloud                                     | **Cloud Services**         |
-| 7       | **AWS S3 + Cloudflare**                       | Hosts static resources with CDN acceleration and reduced server load                           | **Cloud Services**         |
-| 8       | **Neon Serverless PostgreSQL**                | Provides a scalable serverless database service                                                | **Cloud Services**         |
-| 9       | **Stitch (UI Design with Gemini AI) + Figma** | AI-assisted UI generation refined into production-ready design                                 | **New AI Tools**           |
-| 10      | **OpenAI GPT via Spring AI Framework**        | Generates trip plans as structured JSON using prompt templates and output parsers              | **New AI Tools**           |
+| **No.** | **Technology**                                | **Contribution**                                                                               | **Category**           |
+|---------|-----------------------------------------------|------------------------------------------------------------------------------------------------|------------------------|
+| 1       | **React (Vite + TypeScript) + Ant Design**    | Builds a high-performance SPA with type safety and consistent UI components                    | Application Frameworks |
+| 2       | **Spring Boot (Java 21 + Maven)**             | Implements a clean, layered REST backend with testable services and maintainable architecture  | Application Frameworks |
+| 3       | **Docker + Docker Compose**                   | Containerizes frontend and backend for reproducible production environments                    | Deployment             |
+| 4       | **GitHub Webhook-based CI/CD**                | Automatically pulls latest code, rebuilds Docker images, and restarts services on push to main | Deployment             |
+| 5       | **Nginx Reverse Proxy**                       | Consolidates routing on port 80 and enables secure access to internal containers               | Deployment             |
+| 6       | **AWS EC2**                                   | Deploys the full-stack Dockerized application in the cloud                                     | Cloud Services         |
+| 7       | **AWS S3 + Cloudflare**                       | Hosts static resources with CDN acceleration and reduced server load                           | Cloud Services         |
+| 8       | **Neon Serverless PostgreSQL**                | Provides a scalable serverless database service                                                | Cloud Services         |
+| 9       | **Stitch (UI Design with Gemini AI) + Figma** | AI-assisted UI generation refined into production-ready design                                 | New AI Tools           |
+| 10      | **OpenAI GPT via Spring AI Framework**        | Generates trip plans as structured JSON using prompt templates and output parsers              | New AI Tools           |
 
 ## External APIs
 | External API             | Used in Feature                  | Value Provided                                                             |
