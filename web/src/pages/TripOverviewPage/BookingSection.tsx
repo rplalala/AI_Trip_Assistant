@@ -24,7 +24,7 @@ function statusColor(status: string) {
             return 'red';
         case 'pending':
         default:
-            return 'blue';
+            return 'cyan';
     }
 }
 
@@ -156,7 +156,7 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
                         <Space direction="vertical" size={4}>
                             <Text strong>{item.title || capitalize(item.productType)}</Text>
                             <Space size={8} wrap>
-                                <Tag color="geekblue">{capitalize(item.productType)}</Tag>
+                                <Tag color="cyan">{capitalize(item.productType)}</Tag>
                                 {item.subtitle ? <Text type="secondary">{item.subtitle}</Text> : null}
                             </Space>
                             {metadataText ? (

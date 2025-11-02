@@ -234,7 +234,7 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
         const condKey = cond?.toLowerCase() ?? '';
         const icon = weatherIconMap[condKey];
         const tempText = (day.minTemperature != null || day.maxTemperature != null)
-            ? `${day.minTemperature ?? ''}${day.minTemperature != null ? '°' : ''}${day.maxTemperature != null ? ` – ${day.maxTemperature}°` : ''}`
+            ? `${day.minTemperature ?? ''}${day.minTemperature != null ? '°C' : ''}${day.maxTemperature != null ? ` – ${day.maxTemperature}°C` : ''}`
             : '';
         if (!cond && !tempText) return null;
         return (

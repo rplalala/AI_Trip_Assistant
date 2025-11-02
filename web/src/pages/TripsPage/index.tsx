@@ -153,7 +153,7 @@ export default function TripsPage(): React.ReactElement {
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
       {/* Breadcrumb */}
-      <Breadcrumb items={[{ title: "Home" }, { title: "Trips" }]} />
+      <Breadcrumb items={[{ title: "Home", href: "/" }, { title: "Trips" }]} />
 
       {/* Header */}
       <div
@@ -195,7 +195,7 @@ export default function TripsPage(): React.ReactElement {
           ) : (
             <>
               <Button
-                type="default"
+                type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => navigate("/trips/new")}
               >
