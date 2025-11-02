@@ -43,7 +43,7 @@ We integrated 10 advanced technologies to significantly improve system performan
 | 4       | **GitHub Webhook-based CI/CD**                | Automatically pulls latest code, rebuilds Docker images, and restarts services on push to main | Deployment             |
 | 5       | **Nginx Reverse Proxy**                       | Consolidates routing on port 80 and enables secure access to internal containers               | Deployment             |
 | 6       | **AWS EC2**                                   | Deploys the full-stack Dockerized application in the cloud                                     | Cloud Services         |
-| 7       | **AWS S3 + Cloudflare**                       | Hosts static resources with CDN acceleration and reduced server load                           | Cloud Services         |
+| 7       | **AWS S3 + CloudFront**                       | Hosts static resources with CDN acceleration and reduced server load                           | Cloud Services         |
 | 8       | **Neon Serverless PostgreSQL**                | Provides a scalable serverless database service                                                | Cloud Services         |
 | 9       | **Stitch (UI Design with Gemini AI) + Figma** | AI-assisted UI generation refined into production-ready design                                 | New AI Tools           |
 | 10      | **OpenAI GPT via Spring AI Framework**        | Generates trip plans as structured JSON using prompt templates and output parsers              | New AI Tools           |
