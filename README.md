@@ -4,13 +4,20 @@ Our team is developing an AI Travel Assistant that generates daily itineraries f
 
 ## Key Features
 
-1. Generate daily trip plans under constraints (destination, budget, party size, date range, preferences).
-2. Monitor and incorporate destination weather for the relevant day(s), adjusting activities intelligently.
-3. Support full re-prompting to regenerate itineraries when users provide new constraints or are not satisfied with the plan.
-4. Provide clear Trip Insights (local news and practical tips) to improve decision quality and the overall travel experience.
-5. Offer unified booking orchestration (hotel/transport/tickets) with a one-click Confirm demonstration flow.
+1. **AI-driven personalized trip generation**: Generate daily trip plans under constraints (destination, budget, party size, date range, preferences).
 
-These features combine LLM intelligence with real-world data (weather, maps, geo-routing) to deliver a dynamic, practical, and user-centric travel planning experience.
+2. **Weather-aware dynamic planning**: Monitor and incorporate destination weather for the relevant day(s), adjusting activities intelligently.
+
+3. **Iterative LLM feedback loop**: Support full re-prompting to regenerate itineraries when users provide new constraints or are not satisfied with the plan.
+
+4. **Contextual Trip Insights for smarter decisions**: Provide clear Trip Insights (local news and practical tips) to improve decision quality and the overall travel experience.
+
+5. **Unified booking orchestration**: Offer one-click confirmation for hotels/transport/tickets as a demonstration of an integrated booking workflow.
+
+6. **Route optimization with visual mapping**: Optimize routing and visualize navigation between locations by calculating travel time and distance (walking/transport/driving where applicable), and providing interactive map visualization.
+
+**In summary:**
+These features combine **LLM intelligence + real-world data pipelines** (weather, mapping, routing) to deliver a **dynamic, practical, and user-centric** travel planning experience.
 
 ## Live Demo
 [http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com](http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com)
