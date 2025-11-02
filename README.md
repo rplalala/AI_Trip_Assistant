@@ -2,13 +2,15 @@
 
 Our team is developing an AI Travel Assistant that generates daily itineraries from user constraints and preferences, incorporates weather-aware adjustments and routing, supports booking with a one-click confirm flow, and can quickly regenerate a plan when new constraints are provided.
 
-This project will have some key requirements including but not limited to:
+## Key Features
 
 1. Generate daily trip plans under constraints (destination, budget, party size, date range, preferences).
 2. Monitor and incorporate destination weather for the relevant day(s), adjusting activities intelligently.
 3. Support full re-prompting to regenerate itineraries when users provide new constraints or are not satisfied with the plan.
 4. Provide clear Trip Insights (local news and practical tips) to improve decision quality and the overall travel experience.
 5. Offer unified booking orchestration (hotel/transport/tickets) with a one-click Confirm demonstration flow.
+
+These features combine LLM intelligence with real-world data (weather, maps, geo-routing) to deliver a dynamic, practical, and user-centric travel planning experience.
 
 ## Live Demo
 [http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com](http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com)
@@ -62,6 +64,56 @@ We integrated 10 advanced technologies to significantly improve system performan
 - Jira Project: [Kanban & Sprint Board](https://uni-elec5620.atlassian.net/jira/software/projects/ELEC5620/summary?atlOrigin=eyJpIjoiMTM2NGM1YTY4ZTg2NDRkN2JjZjVhY2VjODdmNWI2NzciLCJwIjoiaiJ9)
 - Stage 1 Report: [Overleaf Document](https://www.overleaf.com/read/wrwbsmtwqhdx#35bd34)
 - CI/CD Webhook: [GitHub Hooks Settings](https://github.sydney.edu.au/25S2-ELEC5620-Wed9-11-Group61/ELEC5620_AI_Trip_Assistant/settings/hooks/10084)
+
+## Feature Preview
+
+### 1. Home Page Product Introduction
+
+![Home Page](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/1_home.png)
+
+Users can explore the major features and start planning a trip instantly via “Try Free”.
+
+### 2. Create New Trip Collect User Preference
+
+![Create Trip Form](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/2_create.png)
+
+Destination autocomplete, date selection, budget, currency, and preferences input enable highly personalized planning.
+
+### 3. My Trips Saved Itineraries Dashboard
+
+![My Trips](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/3_trips.png)
+
+Manage multiple saved itineraries, revisit plans, or create new trips conveniently.
+
+### 4. Trip Detail Timeline and AI Trip Insights
+
+![Trip Detail Timeline](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/4_trip_detail.png)
+
+AI-generated day schedule, real-time weather, destination photos and contextual travel insights enhance decision quality.
+
+### 5. Booking Screen One Click Confirm Flow
+
+![Booking Tasks](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/5_trip_booking.png)
+
+All activities become booking tasks. Demonstrates complete booking readiness with batch confirmation.
+
+### 6. Trip Map View Route Visualization
+
+![Map View](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/6_trip_map.png)
+
+Estimated distance and duration between attractions, supporting better route optimization and mobility planning.
+
+### 7. Re Planning Modal Iterative Feedback with LLM
+
+![Replan Modal](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/7_trip_replan.png)
+
+Users can add or adjust preference to regenerate itineraries seamlessly with the LLM.
+
+### 8. User Profile Personalized Experience
+
+![User Profile](https://rongcaorc.s3.ap-southeast-2.amazonaws.com/elec5620/8_user_profile.png)
+
+Profile editing, avatar upload, and verified email ensure a personalized and secure experience. Gender and age will be used as preference if applicable.
 
 ## Development Guide
 ### Install required dependencies:
