@@ -23,7 +23,7 @@ export default function VerifyEmailSentPage() {
                     style={{ marginBottom: 16 }}
                 />
                 <Typography.Paragraph type="secondary" style={{ marginBottom: 16 }}>
-                    Check your console logs for the verification link.
+                    Check your email inbox for the verification link.
                 </Typography.Paragraph>
                 <Button type="primary" block onClick={() => navigate('/login')}>
                     Back to Login
