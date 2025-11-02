@@ -10,6 +10,9 @@ This project will have some key requirements including but not limited to:
 4. Provide clear Trip Insights (local news and practical tips) to improve decision quality and the overall travel experience.
 5. Offer unified booking orchestration (hotel/transport/tickets) with a one-click Confirm demonstration flow.
 
+## Live Demo
+[http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com](http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com)
+
 ## Statement
 
 Travel planning is typically fragmented across multiple tools for research, weather, routing, and booking. When weather or availability changes, users must manually revisit each step to fix conflicts. **ELEC5620_AI_Trip_Assistant** consolidates this workflow: start from user preferences and constraints, produce a structured day-by-day itinerary, factor in real-world signals such as destination weather and route feasibility, and allow rapid regeneration when constraints change. On top of planning, it provides unified booking orchestration with a one-click confirm demo flow, and Trip Insights (local news and tips) to raise situational awareness. The goal is to make travel smarter, more resilient, and lower-effort for users.
@@ -18,32 +21,33 @@ Travel planning is typically fragmented across multiple tools for research, weat
 - Frontend: React 19, Vite, TypeScript
 - Backend: Spring Boot 3.5, Java 21, Maven
 - Database: PostgreSQL 16 (Neon Serverless)
-- Ai Agent Model: OpenAI gpt-4o-mini
+- AI Agent Model: OpenAI gpt-4o-mini
 
 ## Advanced Technologies
-**(1) Application Frameworks**
-- **React (Vite + TypeScript) + Ant Design:** builds a high-performance SPA with Vite and TypeScript type safety, while crafts page layouts using Ant Design’s components and theming to speed up delivery and ensure visual consistency.
-- **Spring Boot (Java 21 + Maven):** implements a clean, layered REST backend with modern Java, while ensures testable services, clear configuration, and repeatable Maven builds. 
+We integrated 10 advanced technologies to significantly improve system performance (faster static delivery with CDN), scalability (EC2 + serverless PostgreSQL), and maintainability (Dockerized CI/CD automation).
 
-**(2) Cloud Services**
-- **AWS S3 + Cloudflare:** hosts static resources with CDN acceleration while storing object URLs in the DB to cut app memory and improve throughput.
-- **Neon Serverless PostgresSQL:** provides a serverless database service.
-- **AWS EC2:** 
+| **No.** | **Technology**                                | **Contribution**                                                                               | **Category**               |
+|---------|-----------------------------------------------|------------------------------------------------------------------------------------------------|----------------------------|
+| 1       | **React (Vite + TypeScript) + Ant Design**    | Builds a high-performance SPA with type safety and consistent UI components                    | **Application Frameworks** |
+| 2       | **Spring Boot (Java 21 + Maven)**             | Implements a clean, layered REST backend with testable services and maintainable architecture  | **Application Frameworks** |
+| 3       | **Docker + Docker Compose**                   | Containerizes frontend and backend for reproducible production environments                    | **Deployment**             |
+| 4       | **GitHub Webhook-based CI/CD**                | Automatically pulls latest code, rebuilds Docker images, and restarts services on push to main | **Deployment**             |
+| 5       | **Nginx Reverse Proxy**                       | Consolidates routing on port 80 and enables secure access to internal containers               | **Deployment**             |
+| 6       | **AWS EC2**                                   | Deploys the full-stack Dockerized application in the cloud                                     | **Cloud Services**         |
+| 7       | **AWS S3 + Cloudflare**                       | Hosts static resources with CDN acceleration and reduced server load                           | **Cloud Services**         |
+| 8       | **Neon Serverless PostgreSQL**                | Provides a scalable serverless database service                                                | **Cloud Services**         |
+| 9       | **Stitch (UI Design with Gemini AI) + Figma** | AI-assisted UI generation refined into production-ready design                                 | **New AI Tools**           |
+| 10      | **OpenAI GPT via Spring AI Framework**        | Generates trip plans as structured JSON using prompt templates and output parsers              | **New AI Tools**           |
 
-**(3) Deployment**
-- **CI/CD:** 
-
-**(4) New AI Tools**
-- **Stitch (UI Design with Gemini AI) + Figma:** designs UI with AI assistant, then refined in Figma, speeding up design-to-code handoff and keeping visual consistency.
-- **OpenAI GPT via Spring AI Framework:** generates trip plans as structured JSON using prompt templates and output parsers, then validate and persist to databases.
-
-*Note*: Since the backend uses the Spring Boot framework, we chose Spring AI to integrate LLMs instead of LangChain because it better fits the Spring ecosystem.
-
-**(5) External APIs**
-- **Google Maps API:** provides route planning for itinerary activities.
-- **Unsplash API:** provides high-quality related images for the itinerary timeline.
-- **OpenWeather API:** provides weather forecasts for the trip plan.
-- **SendGrid Email API:** provides verification for registration, forgot password reset, and email change.
+## External APIs
+| External API             | Used in Feature                  | Value Provided                                                             |
+|--------------------------|----------------------------------|----------------------------------------------------------------------------|
+| **GeoDB Cities API**     | Destination auto-suggestion      | Improves perception, reduces input errors, and increases planning accuracy |
+| **Google Maps API**      | Route view + travel distance     | Ensures itinerary feasibility                                              |
+| **OpenWeather API**      | Weather-aware （re)scheduling     | Increases plan robustness                                                  |
+| **Unsplash API**         | Trip timeline visuals            | Better context & engagement                                                |
+| **SendGrid API**         | Verification & password recovery | Maintains account authenticity & security                                  |
+| **Booking API (Mocked)** | One-click confirm booking flow   | Demonstrates integration-ready transactional workflow                      |
 
 ## Team
 - Pin-Hsuan Lai - Fullstack Engineer
@@ -52,23 +56,18 @@ Travel planning is typically fragmented across multiple tools for research, weat
 - Zihang Ding - Fullstack Engineer
 - Kexuan Zhao - Frontend Engineer
 
-## Stage 1 Report
-https://www.overleaf.com/read/wrwbsmtwqhdx#35bd34
-
-## Jira Board
-https://uni-elec5620.atlassian.net/jira/software/projects/ELEC5620/summary?atlOrigin=eyJpIjoiMTM2NGM1YTY4ZTg2NDRkN2JjZjVhY2VjODdmNWI2NzciLCJwIjoiaiJ9
-
-## UI Mockup
-https://www.figma.com/design/Orh6WDE8hFQUl9IjHuvOG3/Untitled?node-id=0-1&t=Jw0UUMtVW4z3PVYe-1
-
-## Deployed Live Demo (AWS EC2)
-http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com
+## Project Resources & Deliverables
+- Live Demo: [EC2 Deployment](http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com)
+- UI Mockup: [Figma Prototype](https://www.figma.com/design/Orh6WDE8hFQUl9IjHuvOG3/Untitled?node-id=0-1&t=Jw0UUMtVW4z3PVYe-1)
+- Jira Project: [Kanban & Sprint Board](https://uni-elec5620.atlassian.net/jira/software/projects/ELEC5620/summary?atlOrigin=eyJpIjoiMTM2NGM1YTY4ZTg2NDRkN2JjZjVhY2VjODdmNWI2NzciLCJwIjoiaiJ9)
+- Stage 1 Report: [Overleaf Document](https://www.overleaf.com/read/wrwbsmtwqhdx#35bd34)
+- CI/CD Webhook: [GitHub Hooks Settings](https://github.sydney.edu.au/25S2-ELEC5620-Wed9-11-Group61/ELEC5620_AI_Trip_Assistant/settings/hooks/10084)
 
 ## Development Guide
 ### Install required dependencies:
-- java 21 https://www.oracle.com/java/technologies/downloads/
-- git https://git-scm.com/install/
-- nvm (not necessary but recommended) + Node 20 https://nodejs.org/en/download/
+- [java 21](https://www.oracle.com/java/technologies/downloads/)
+- [git](https://git-scm.com/install/)
+- [nvm (not necessary but recommended) + Node 20](https://nodejs.org/en/download/)
 
 Nvm is a nodejs manager that lets you install and switch between different nodejs versions locally. After you install it, you can use it to install and switch between different nodejs versions.
 ```
@@ -91,9 +90,9 @@ git checkout <your development branch>
 Or you can use any other git gui client, like Github Desktop, TortoiseGit.
 
 ### PostgresSQL (Neon Serverless) Setup
-This project uses Neon to host PostgreSQL. Neon project: https://console.neon.tech/app/projects/round-sound-33830706
+This project uses Neon to host PostgreSQL.
 
-Please create a database in the Neon Console https://console.neon.tech, and then fill in the corresponding values for `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password` in api/src/main/resources/application.yaml.
+Please create a database in the [Neon Console](https://console.neon.tech), and then fill in the corresponding values for `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password` in api/src/main/resources/application.yaml.
 
 ### OpenAI GPT-4o-Mini Setup
 This project uses OpenAI GPT-4o-Mini as the default LLM model to generate trip plans, you can choose your own model or use the default model.
@@ -116,6 +115,7 @@ AWS S3 docs: https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket
 
 ### Other External APIs Setup
 Please refer to the following guides to set up the external APIs.
+- GeoDB API: http://geodb-cities-api.wirefreethought.com/
 - Google Maps API: https://developers.google.com/maps/documentation/javascript/get-api-key
 - Unsplash API: https://unsplash.com/developers
 - OpenWeather API: https://openweathermap.org/api
