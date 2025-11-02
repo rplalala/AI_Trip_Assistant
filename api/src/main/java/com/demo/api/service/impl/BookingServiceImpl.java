@@ -540,9 +540,10 @@ public class BookingServiceImpl implements BookingService {
         params.put("reservation_required", entity.getReservationRequired() != null ? entity.getReservationRequired() : Boolean.TRUE);
         params.put("people", partySize);
         params.put("fees", 0);
-        if (entity.getPrice() != null) {
-            params.put("price", entity.getPrice());
-        }
+        // if (entity.getPrice() != null) {
+        //     params.put("price", entity.getPrice());
+        // }
+        params.put("price", entity.getPrice() != null ? entity.getPrice() : 0);
         params.put("currency", currency);
         return new QuotePayload(
                 "transportation",
