@@ -2,12 +2,10 @@ server:
   port: 8082
 
 spring:
-  profiles:
-    active: dev
   datasource:
-    url: "jdbc:postgresql://ep-snowy-sea-a7ovq2o7-pooler.ap-southeast-2.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require"
-    username: ***REMOVED***
-    password: ***REMOVED***
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,8 +14,10 @@ spring:
       hibernate.jdbc.time_zone: UTC
   ai:
     openai:
-      api-key: ***REMOVED***
+      api-key: "${OPENAI_API_KEY}"
       model-name: "gpt-4o-mini"
+      temperature: 0.7
+      chat-completions-url: https://api.openai.com/v1/chat/completions
   servlet:
     multipart:
       max-file-size: 10MB
@@ -36,15 +36,15 @@ jwt:
 
 aws:
   region: ap-southeast-2
-  accesskeyId: ***REMOVED***
-  secretAccessKey: ***REMOVED***
+  accesskeyId: "${AWS_ACCESS_KEY_ID}"
+  secretAccessKey: "${AWS_SECRET_ACCESS_KEY}"
   s3:
     bucket-name: buckets-zihang
     dir-name: elec5620-stage2
     cdn: awscdn.dingzh.cc
 
 sendgrid:
-  api-key: "***REMOVED***"
+  api-key: "${SENDGRID_API_KEY}"
   from: "dingzh157@gmail.com"
 
 frontend:
@@ -55,14 +55,14 @@ default:
 
 openweather:
   api:
-    key: "***REMOVED***"
+    key: "${OPENWEATHER_API_KEY}"
 
 unsplash:
-  access-key: ***REMOVED***
+  access-key: "${UNSPLASH_API_KEY}"
 
 google:
   maps:
-    api-key: "${GOOGLE_MAPS_API_KEY:}"
+    api-key: "${GOOGLE_MAPS_API_KEY}"
 
 feign:
   httpclient:

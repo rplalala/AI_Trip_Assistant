@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: "jdbc:postgresql://ep-snowy-sea-a7ovq2o7-pooler.ap-southeast-2.aws.neon.tech:5432/external_db?sslmode=require&channel_binding=require"
-    username: ***REMOVED***
-    password: ***REMOVED***
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
