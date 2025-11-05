@@ -1,5 +1,7 @@
 # TESTING
 
+Please ensure you are in the `api/` directory.
+
 ## Unit tests
 Run `mvn test` from `api/` to execute the Mockito-based unit suite. Each class uses `@ExtendWith(MockitoExtension.class)` and either pure mocks or standalone MockMvc, so the Spring container is not started.
 
