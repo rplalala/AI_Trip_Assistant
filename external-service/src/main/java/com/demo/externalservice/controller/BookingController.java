@@ -1,9 +1,9 @@
 package com.demo.externalservice.controller;
 
-import com.demo.externalservice.dto.booking.ItineraryQuoteReq;
-import com.demo.externalservice.dto.booking.ItineraryQuoteResp;
-import com.demo.externalservice.dto.booking.QuoteReq;
-import com.demo.externalservice.dto.booking.QuoteResp;
+import com.demo.externalservice.dto.ItineraryQuoteReq;
+import com.demo.externalservice.dto.ItineraryQuoteResp;
+import com.demo.externalservice.dto.QuoteReq;
+import com.demo.externalservice.dto.QuoteResp;
 import com.demo.externalservice.service.ItineraryService;
 import com.demo.externalservice.service.PricingResult;
 import com.demo.externalservice.service.PricingService;

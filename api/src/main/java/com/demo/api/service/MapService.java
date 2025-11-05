@@ -1,7 +1,7 @@
 package com.demo.api.service;
 
-import com.demo.api.dto.map.MapRouteRequest;
-import com.demo.api.dto.map.MapRouteResponse;
+import com.demo.api.dto.MapRouteRequest;
+import com.demo.api.dto.MapRouteResponse;
 
 public interface MapService {
 

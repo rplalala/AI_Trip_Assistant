@@ -3,6 +3,7 @@ package com.demo.api.service.prompt;
 import com.demo.api.dto.DailyWeatherDTO;
 import com.demo.api.dto.ModifyPlanDTO;
 import com.demo.api.model.Trip;
+import com.demo.api.service.TripPlanPromptBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

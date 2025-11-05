@@ -1,5 +1,6 @@
-package com.demo.api.client;
+package com.demo.api.client.impl;
 
+import com.demo.api.client.OpenAiClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,17 +24,14 @@ import java.util.List;
  */
 @Component
 public class OpenAiClientImpl implements OpenAiClient {
-
-    @Value("${spring.ai.openai.model-name:gpt-4o-mini}")
-    private String modelName;
-
     // Logger for debugging and monitoring
     private static final Logger log = LoggerFactory.getLogger(OpenAiClientImpl.class);
 
-    // OpenAI Chat Completions endpoint
-    private static final String CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
-
     private final String apiKey;             // API key for OpenAI (injected from application.properties/yaml)
+    private final String modelName;         // Model name to use
+    private final double temperature;       // Temperature for creativity control
+    private final String chatCompletionsUrl; // OpenAI Chat Completions endpoint
+
     private final RestTemplate restTemplate; // Spring's HTTP client for sending requests
     private final ObjectMapper objectMapper; // Jackson object mapper for JSON serialization/deserialization
 
@@ -41,9 +39,15 @@ public class OpenAiClientImpl implements OpenAiClient {
      * Constructor with dependency injection
      */
     public OpenAiClientImpl(@Value("${spring.ai.openai.api-key:}") String apiKey,
+                            @Value("${spring.ai.openai.model-name:gpt-4o-mini}") String modelName,
+                            @Value("${spring.ai.openai.temperature:0.7}") double temperature,
+                            @Value("${spring.ai.openai.chat-completions-url:https://api.openai.com/v1/chat/completions}") String chatCompletionsUrl,
                             RestTemplate restTemplate,
                             ObjectMapper objectMapper) {
         this.apiKey = apiKey;
+        this.modelName = modelName;
+        this.temperature = temperature;
+        this.chatCompletionsUrl = chatCompletionsUrl;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
     }
@@ -65,8 +69,8 @@ public class OpenAiClientImpl implements OpenAiClient {
 
         // Construct request payload with model, temperature, and message history
         ChatCompletionRequest payload = new ChatCompletionRequest(
-                modelName,    // Model name to use
-                0.7,              // Temperature for creativity control
+                modelName,
+                temperature,
                 List.of(
                         new ChatMessage("system", "You are a helpful travel planner."), // System instruction
                         new ChatMessage("user", prompt)                                 // User's travel prompt
@@ -87,7 +91,7 @@ public class OpenAiClientImpl implements OpenAiClient {
             HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
 
             // Send the POST request to OpenAI
-            ResponseEntity<String> response = restTemplate.postForEntity(CHAT_COMPLETIONS_URL, entity, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(chatCompletionsUrl, entity, String.class);
 
             // Extract response body
             String body = response.getBody();

@@ -1,5 +1,6 @@
 package com.demo.api.client;
 
+import com.demo.api.client.impl.OpenAiClientImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,11 +36,11 @@ class OpenAiClientImplTest {
     private ObjectMapper objectMapper;
 
     @InjectMocks
-    private OpenAiClientImpl client = new OpenAiClientImpl("api-key", restTemplate, objectMapper);
+    private OpenAiClientImpl client = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, "http://api-mockup", restTemplate, objectMapper);
 
     @BeforeEach
     void setUp() {
-        client = new OpenAiClientImpl("api-key", restTemplate, objectMapper);
+        client = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, "http://api-mockup", restTemplate, objectMapper);
     }
 
     @DisplayName("requestTripPlan posts payload and returns response body")
@@ -66,7 +67,7 @@ class OpenAiClientImplTest {
     @DisplayName("requestTripPlan requires configured API key and non-empty prompt")
     @Test
     void requestTripPlan_validatesInputs() {
-        OpenAiClientImpl noKeyClient = new OpenAiClientImpl("", restTemplate, objectMapper);
+        OpenAiClientImpl noKeyClient = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, "http://api-mockup", restTemplate, objectMapper);
         assertThatThrownBy(() -> noKeyClient.requestTripPlan("anything"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("API key");

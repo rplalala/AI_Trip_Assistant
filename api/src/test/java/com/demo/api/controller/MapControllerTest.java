@@ -1,7 +1,7 @@
 package com.demo.api.controller;
 
-import com.demo.api.dto.map.MapRouteRequest;
-import com.demo.api.dto.map.MapRouteResponse;
+import com.demo.api.dto.MapRouteRequest;
+import com.demo.api.dto.MapRouteResponse;
 import com.demo.api.service.MapService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

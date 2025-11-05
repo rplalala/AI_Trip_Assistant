@@ -1,6 +1,6 @@
 package com.demo.externalservice.controller;
 
-import com.demo.externalservice.dto.booking.ErrorResp;
+import com.demo.externalservice.dto.ErrorResp;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

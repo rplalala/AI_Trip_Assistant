@@ -1,6 +1,6 @@
 package com.demo.externalservice.service;
 
-import com.demo.externalservice.dto.booking.QuoteItem;
+import com.demo.externalservice.dto.QuoteItem;
 
 import java.math.BigDecimal;
 import java.util.List;

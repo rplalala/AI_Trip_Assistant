@@ -23,13 +23,13 @@ import java.util.Map;
 /**
  * BookingFacade orchestrates controller calls and delegates business logic to BookingService.
  * 
- * ▶️ Purpose:
+ * Purpose:
  * This class acts as the middle layer between the BookingController (REST endpoint)
  * and the BookingServiceImpl (core business logic).
  * 
- * ✅ BookingController → BookingFacade → BookingServiceImpl
+ * BookingController → BookingFacade → BookingServiceImpl
  * 
- * 🧠 Responsibilities:
+ * Responsibilities:
  * - Orchestrate high-level flow (e.g., log, security context)
  * - Prepare or transform requests if needed
  * - Call BookingServiceImpl for actual quoting logic (validation, persistence, external API)
@@ -48,7 +48,7 @@ public class BookingFacade {
      * Handles single-item quote requests from BookingController.
      * This method does NOT contain business logic — it delegates to BookingService.
      *
-     * 🧱 Flow:
+     * Flow:
      * 1. Receives QuoteReq (from controller)
      * 2. Calls BookingServiceImpl.quoteSingleItem() to handle DB/API logic
      * 3. Converts TripBookingQuote (entity) into QuoteResp (DTO)
@@ -123,7 +123,7 @@ public class BookingFacade {
      * Handles itinerary-level quote request (multi-item).
      * Delegates the full business logic to BookingServiceImpl.
      * 
-     * 🧱 Flow:
+     * Flow:
      * 1. Receives ItineraryQuoteReq (from controller)
      * 2. Calls BookingServiceImpl.quoteItinerary() to handle filtering, API calls, DB write
      * 3. Returns ItineraryQuoteResp DTO to frontend

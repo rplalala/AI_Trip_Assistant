@@ -1,6 +1,6 @@
 package com.demo.externalservice.service;
 
-import com.demo.externalservice.dto.booking.QuoteReq;
+import com.demo.externalservice.dto.QuoteReq;
 import com.demo.externalservice.service.pricing.PricingCalculator;
 import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Service;

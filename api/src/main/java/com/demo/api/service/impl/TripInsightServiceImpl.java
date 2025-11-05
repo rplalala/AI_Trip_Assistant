@@ -11,15 +11,12 @@ import com.demo.api.repository.TripAttractionRepository;
 import com.demo.api.repository.TripInsightRepository;
 import com.demo.api.repository.TripRepository;
 import com.demo.api.service.TripInsightService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
-import lombok.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,8 +26,6 @@ import java.util.Optional;
 public class TripInsightServiceImpl implements TripInsightService {
 
     private static final Logger log = LoggerFactory.getLogger(TripInsightServiceImpl.class);
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final TripInsightMapper tripInsightMapper;
 
@@ -67,7 +62,6 @@ public class TripInsightServiceImpl implements TripInsightService {
         OpenAiClient openAiClient = Optional.ofNullable(openAiClientProvider.getIfAvailable())
                 .orElseThrow(() -> new IllegalStateException("OpenAiClient bean is not configured"));
         String InsightsJson = openAiClient.requestTripPlan(userPrompt);
-        log.info("Received Insights Json: {}", InsightsJson);
 
         InsightResponseDTO insightResponse = openAiClient.parseContent(InsightsJson, InsightResponseDTO.class);
 

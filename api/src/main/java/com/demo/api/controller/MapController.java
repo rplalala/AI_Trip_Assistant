@@ -1,8 +1,8 @@
 package com.demo.api.controller;
 
 import com.demo.api.ApiRespond;
-import com.demo.api.dto.map.MapRouteRequest;
-import com.demo.api.dto.map.MapRouteResponse;
+import com.demo.api.dto.MapRouteRequest;
+import com.demo.api.dto.MapRouteResponse;
 import com.demo.api.service.MapService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

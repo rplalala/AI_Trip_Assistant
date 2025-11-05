@@ -1,4 +1,4 @@
-package com.demo.externalservice.dto.booking;
+package com.demo.externalservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;

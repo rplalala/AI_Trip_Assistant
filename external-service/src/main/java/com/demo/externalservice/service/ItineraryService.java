@@ -1,11 +1,11 @@
 package com.demo.externalservice.service;
 
-import com.demo.externalservice.dto.booking.ItineraryQuoteItem;
-import com.demo.externalservice.dto.booking.ItineraryQuoteReq;
-import com.demo.externalservice.dto.booking.ItineraryQuoteReqItem;
-import com.demo.externalservice.dto.booking.ItineraryQuoteResp;
-import com.demo.externalservice.dto.booking.QuoteItem;
-import com.demo.externalservice.dto.booking.QuoteReq;
+import com.demo.externalservice.dto.ItineraryQuoteItem;
+import com.demo.externalservice.dto.ItineraryQuoteReq;
+import com.demo.externalservice.dto.ItineraryQuoteReqItem;
+import com.demo.externalservice.dto.ItineraryQuoteResp;
+import com.demo.externalservice.dto.QuoteItem;
+import com.demo.externalservice.dto.QuoteReq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

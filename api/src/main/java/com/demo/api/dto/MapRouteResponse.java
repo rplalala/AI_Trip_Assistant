@@ -1,10 +1,10 @@
-package com.demo.api.dto.map;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.demo.api.dto;
 
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Response payload returned for a generated Google Maps route.

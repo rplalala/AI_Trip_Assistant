@@ -1,7 +1,7 @@
 package com.demo.api.service.impl;
 
-import com.demo.api.dto.map.MapRouteRequest;
-import com.demo.api.dto.map.MapRouteResponse;
+import com.demo.api.dto.MapRouteRequest;
+import com.demo.api.dto.MapRouteResponse;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,8 +11,6 @@ import org.hamcrest.Matchers;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
-
-import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

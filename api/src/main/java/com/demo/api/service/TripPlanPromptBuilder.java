@@ -1,4 +1,4 @@
-package com.demo.api.service.prompt;
+package com.demo.api.service;
 
 import com.demo.api.dto.DailyWeatherDTO;
 import com.demo.api.dto.ModifyPlanDTO;

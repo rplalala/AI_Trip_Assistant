@@ -1,4 +1,4 @@
-package com.demo.externalservice.dto.booking;
+package com.demo.externalservice.dto;
 
 public record ErrorResp(
         String code,

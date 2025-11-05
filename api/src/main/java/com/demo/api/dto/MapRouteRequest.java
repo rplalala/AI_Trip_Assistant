@@ -1,4 +1,4 @@
-package com.demo.api.dto.map;
+package com.demo.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
