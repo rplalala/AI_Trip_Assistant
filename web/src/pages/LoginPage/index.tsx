@@ -20,7 +20,9 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { setStatus, refreshProfile } = useAuth();
-    const from = (location.state)?.from?.pathname || '/trips';
+    const rawFrom: string | undefined = (location.state)?.from?.pathname;
+    // If from is '/' or missing, land on '/trips' after login
+    const effectiveAfterLogin = !rawFrom || rawFrom === '/' ? '/trips' : rawFrom;
     const { message } = AntdApp.useApp();
 
     const [loadingLogin, setLoadingLogin] = useState(false);
@@ -31,7 +33,7 @@ export default function LoginPage() {
         localStorage.setItem('token', token);
         refreshProfile()
             .then(() => {
-                navigate(from, { replace: true });
+                navigate(effectiveAfterLogin, { replace: true });
             })
     }
 
@@ -43,9 +45,10 @@ export default function LoginPage() {
         }
         login(loginPayload)
             .then(afterLogin)
-            .catch((err: Error) => {
+            .catch((err: unknown) => {
                 console.log(err)
-                if (err.message.includes('Email not verified')) {
+                const error = err as Error;
+                if (error.message?.includes?.('Email not verified')) {
                     Modal.confirm({
                         title: 'Email not verified',
                         content: 'Your email has not been verified. Please click "Resend" to resend the verification email.',
@@ -59,13 +62,14 @@ export default function LoginPage() {
                                 await resendVerifyEmail(values.email);
                                 message.success('Verification email resent successfully! Please check your email.');
                                 navigate('/verify-email-pending?email=' + encodeURIComponent(values.email));
-                            } catch (e: any) {
-                                message.error(e.message || 'Failed to resend verification email.');
+                            } catch (e: unknown) {
+                                const emsg = (e as Error)?.message || 'Failed to resend verification email.';
+                                message.error(emsg);
                             }
                         },
                     });
                 } else {
-                    message.error(err.message || 'Login failed.');
+                    message.error(error.message || 'Login failed.');
                 }
             })
             .finally(() => {
@@ -86,8 +90,9 @@ export default function LoginPage() {
             .then(() => {
                 navigate('/verify-email-pending?email=' + encodeURIComponent(values.email));
             })
-            .catch((err: any) => {
-                message.error(err.message || 'Register failed.');
+            .catch((err: unknown) => {
+                const msg = (err as Error)?.message || 'Register failed.';
+                message.error(msg);
             })
             .finally(() => {
                 setLoadingReg(false);
