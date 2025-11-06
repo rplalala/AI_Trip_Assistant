@@ -20,7 +20,7 @@ Our team is developing an AI Travel Assistant that generates daily itineraries f
 These features combine **LLM intelligence + real-world data pipelines** (weather, mapping, routing) to deliver a **dynamic, practical, and user-centric** travel planning experience.
 
 ## Live Demo
-[http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com](http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com)
+[https://aitrip.dingzh.cc](http://ec2-3-26-48-217.ap-southeast-2.compute.amazonaws.com)
 
 ## Statement
 
@@ -40,7 +40,7 @@ We integrated 10 advanced technologies to significantly improve system performan
 | 1       | **React (Vite + TypeScript) + Ant Design**    | Builds a high-performance SPA with type safety and consistent UI components                    | Application Frameworks |
 | 2       | **Spring Boot (Java 21 + Maven)**             | Implements a clean, layered REST backend with testable services and maintainable architecture  | Application Frameworks |
 | 3       | **Docker + Docker Compose**                   | Containerizes frontend and backend for reproducible production environments                    | Deployment             |
-| 4       | **GitHub Webhook-based CI/CD**                | Automatically pulls latest code, rebuilds Docker images, and restarts services on push to main | Deployment             |
+| 4       | **GitHub Actions CI/CD**                      | Automatically pulls latest code, rebuilds Docker images, and restarts services on push to main | Deployment             |
 | 5       | **Nginx Reverse Proxy**                       | Consolidates routing on port 80 and enables secure access to internal containers               | Deployment             |
 | 6       | **AWS EC2**                                   | Deploys the full-stack Dockerized application in the cloud                                     | Cloud Services         |
 | 7       | **AWS S3 + CloudFront**                       | Hosts static resources with CDN acceleration and reduced server load                           | Cloud Services         |
