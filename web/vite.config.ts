@@ -17,6 +17,14 @@ export default defineConfig({
         port: 5173,
         proxy: {
             '/api': { target: 'http://localhost:8082', changeOrigin: true },
+
+            // 新增：本地把 /ext/geodb/* 代理到 GeoDB 的 HTTP free 实例
+            '/ext/geodb': {
+                target: 'http://geodb-free-service.wirefreethought.com',
+                changeOrigin: true,
+                // /ext/geodb/xxx  →  http://geodb.../v1/geo/xxx
+                rewrite: (path) => path.replace(/^\/ext\/geodb/, '/v1/geo'),
+            },
         },
     },
 })

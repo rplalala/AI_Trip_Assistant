@@ -29,10 +29,10 @@ type GeoCountry = {
     name: string;
 };
 
-const CITIES_URL =
-    'http://geodb-free-service.wirefreethought.com/v1/geo/cities';
-const COUNTRIES_URL =
-    'http://geodb-free-service.wirefreethought.com/v1/geo/countries';
+// const CITIES_URL = 'http://geodb-free-service.wirefreethought.com/v1/geo/cities';
+const CITIES_URL    = '/ext/geodb/cities';
+const COUNTRIES_URL = '/ext/geodb/countries';
+// const COUNTRIES_URL = 'http://geodb-free-service.wirefreethought.com/v1/geo/countries';
 
 async function searchGeo(query: string, signal?: AbortSignal): Promise<Location[]> {
     if (!query) return [];
