@@ -114,7 +114,7 @@ export default function CreateTripPage() {
                     valuePropName="value"
                     getValueFromEvent={(val: Location | null) => val}
                 >
-                    <LocationAutoComplete placeholder="Search city or country..." />
+                    <LocationAutoComplete placeholder="Search city or country (City, Country)" />
                 </Form.Item>
 
                 <Form.Item<CreateTripFieldType>
@@ -124,7 +124,7 @@ export default function CreateTripPage() {
                     valuePropName="value"
                     getValueFromEvent={(val: Location | null) => val}
                 >
-                    <LocationAutoComplete placeholder="Search your departure city..." />
+                    <LocationAutoComplete placeholder="Search your departure city (City, Country)" />
                 </Form.Item>
 
                 <Form.Item<CreateTripFieldType>
