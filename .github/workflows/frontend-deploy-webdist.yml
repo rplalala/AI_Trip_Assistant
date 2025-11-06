@@ -4,7 +4,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: ec2-deploy-${{ github.ref }}
+  group: fe-ec2-deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

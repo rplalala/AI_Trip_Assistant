@@ -17,7 +17,7 @@ services:
     restart: always
 
   api-service:
-    image: ghcr.io/${GHCR_OWNER}/${GHCR_REPO}-api:latest
+    image: ghcr.io/${GHCR_USERNAME}/${GHCR_REPO}-api:latest
     env_file:
       - /home/ec2-user/AI_Trip_Assistant/.env
     environment:
@@ -37,7 +37,7 @@ services:
       retries: 10
 
   external-service:
-    image: ghcr.io/${GHCR_OWNER}/${GHCR_REPO}-mockbooking:latest
+    image: ghcr.io/${GHCR_USERNAME}/${GHCR_REPO}-mockbooking:latest
     env_file:
       - /home/ec2-user/AI_Trip_Assistant/.env
     environment:
