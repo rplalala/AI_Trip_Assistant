@@ -67,12 +67,14 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
         return Number.isFinite(parsed) ? parsed : null;
     }, [tripId]);
 
-    const refresh = useCallback(async () => {
+    const refresh = useCallback(async (opts?: { silent?: boolean }) => {
+        // If no trip ID, clear items and stop.
         if (!numericTripId) {
             setItems([]);
             return;
         }
-        setLoading(true);
+        // Only show table overlay spinner when not a silent refresh
+        if (!opts?.silent) setLoading(true);
         try {
             const data = await getBookingItems(numericTripId);
             setItems(Array.isArray(data) ? data : []);
@@ -80,7 +82,7 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
             const msg = err instanceof Error ? err.message : 'Failed to load bookings';
             message.error(msg);
         } finally {
-            setLoading(false);
+            if (!opts?.silent) setLoading(false);
         }
     }, [numericTripId]);
 
@@ -111,7 +113,8 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
             try {
                 await confirmBooking(item.quoteRequest);
                 message.success('Booking confirmation requested');
-                await refresh();
+                // Do a silent data refresh to avoid showing the table-level spinner
+                await refresh({ silent: true });
             } catch (err) {
                 const msg = err instanceof Error ? err.message : 'Failed to confirm booking';
                 message.error(msg);
@@ -135,7 +138,8 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
             });
             await confirmAllBookings(numericTripId, pendingItems);
             message.success('Confirmation requested for all pending items');
-            await refresh();
+            // Keep the overlay indicated by confirmingAll; avoid toggling table loading
+            await refresh({ silent: true });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Failed to confirm all bookings';
             message.error(msg);
@@ -150,6 +154,7 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
                 title: 'Item',
                 dataIndex: 'title',
                 key: 'title',
+                // Let this column flex naturally
                 render: (_: unknown, item) => {
                     const metadataText = formatMetadata(item.metadata);
                     return (
@@ -172,10 +177,11 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
                 title: 'Date',
                 dataIndex: 'date',
                 key: 'date',
+                width: 160,
                 render: (value: string | null | undefined, item) => (
                     <Space direction="vertical" size={0}>
-                        <Text>{value ?? 'TBD'}</Text>
-                        {item.time ? <Text type="secondary">{item.time}</Text> : null}
+                        <Text style={{ whiteSpace: 'nowrap' }}>{value ?? 'TBD'}</Text>
+                        {item.time ? <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>{item.time}</Text> : null}
                     </Space>
                 ),
             },
@@ -184,6 +190,7 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
                 dataIndex: 'status',
                 key: 'status',
                 align: 'right',
+                width: 260,
                 render: (value: string, item) => {
                     const normalized = value || 'pending';
                     const normalizedLower = normalized.toLowerCase();
@@ -199,7 +206,7 @@ export default function BookingSection({ tripId, refreshSignal }: BookingSection
                         <Space direction="vertical" align="end" size={4}>
                             <Tag color={color}>{capitalize(normalized)}</Tag>
                             {item.quoteSummary?.voucherCode ? (
-                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                <Text type="secondary" style={{ fontSize: 12, maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     Voucher: {item.quoteSummary.voucherCode}
                                 </Text>
                             ) : null}
