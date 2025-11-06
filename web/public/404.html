@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>404 - Page Not Found | AI Trip Assistant</title>
+    <meta name="description" content="The page you are looking for doesn’t exist, has been moved, or is temporarily unavailable." />
+    <meta name="theme-color" content="#0ea5e9" />
+    <link rel="icon" href="/ai.trip.planner.icon.png" />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #0f172a; /* slate-900 */
+        --text: #e5e7eb; /* gray-200 */
+        --muted: #94a3b8; /* slate-400 */
+        --primary: #0ea5e9; /* sky-500 */
+        --primary-600: #0284c7; /* sky-600 */
+        --ring: rgba(14,165,233,.25);
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f8fafc; /* slate-50 */
+          --card: #ffffff;
+          --text: #0f172a; /* slate-900 */
+          --muted: #475569; /* slate-600 */
+          --primary: #0284c7; /* sky-600 */
+          --primary-600: #0369a1; /* sky-700 */
+          --ring: rgba(2,132,199,.18);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--text);
+        background:
+          radial-gradient(1200px 600px at 80% -10%, rgba(14,165,233,.12), transparent 60%),
+          radial-gradient(800px 400px at 10% 110%, rgba(14,165,233,.1), transparent 60%),
+          linear-gradient(0deg, var(--bg), var(--bg));
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .card {
+        width: 100%;
+        max-width: 960px; /* was 720px: make the frame larger */
+        background: var(--card);
+        border: 1px solid rgba(148,163,184,.15);
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(2, 6, 23, .35);
+        overflow: hidden;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(148,163,184,.12);
+        background: linear-gradient(180deg, rgba(14,165,233,.08), transparent);
+      }
+      .header img { width: 22px; height: 22px; border-radius: 4px; }
+      .header span { font-weight: 600; letter-spacing: .2px; color: var(--muted); }
+
+      .content { padding: 36px 28px 28px; text-align: center; }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        margin-bottom: 16px;
+        border-radius: 999px;
+        background: rgba(14,165,233,.12);
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 12px;
+        letter-spacing: .3px;
+        border: 1px solid rgba(14,165,233,.25);
+      }
+      .code {
+        display: inline-block;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum";
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(36px, 7vw, 56px);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        white-space: nowrap; /* keep the title in one line on desktop */
+      }
+      .sub {
+        margin: 0 auto 22px;
+        max-width: 560px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 4px;
+      }
+      .btn, .link-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,.22);
+        text-decoration: none;
+        color: var(--text);
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        transition: transform .06s ease, background .2s, border-color .2s, color .2s;
+      }
+      .btn:focus, .link-btn:focus { outline: 4px solid var(--ring); outline-offset: 2px; }
+      .btn:hover { transform: translateY(-1px); border-color: rgba(148,163,184,.35); }
+
+      .primary {
+        background: linear-gradient(180deg, var(--primary), var(--primary-600));
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 6px 14px rgba(14,165,233,.25);
+      }
+      .primary:hover { filter: brightness(1.05); }
+
+      .footer {
+        margin-top: 26px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .grid {
+        position: relative;
+        margin-top: 26px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .hint {
+        border: 1px dashed rgba(148,163,184,.25);
+        border-radius: 12px;
+        padding: 14px;
+        text-align: left;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .hint strong { color: var(--text); }
+
+      @media (max-width: 560px) {
+        .grid { grid-template-columns: 1fr; }
+        h1 { white-space: normal; } /* allow wrap on small screens */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="main" aria-labelledby="title">
+      <div class="header">
+        <img src="/ai.trip.planner.icon.png" alt="AI Trip Assistant" />
+        <span>AI Trip Assistant</span>
+      </div>
+
+      <div class="content">
+        <div class="badge" aria-hidden="true">Error <span class="code">404</span> · Page Not Found</div>
+        <h1 id="title">Sorry, this page can’t be found</h1>
+        <p class="sub">The address you requested doesn’t exist, has been moved, or is temporarily unavailable. You can return to Home, go to Trips, or go back to the previous page.</p>
+
+        <div class="actions">
+          <a class="btn primary" href="/">Go Home</a>
+          <a class="btn" href="/trips">Go to My Trips</a>
+          <button class="link-btn" type="button" onclick="history.back()" aria-label="Go back to previous page">Go Back</button>
+        </div>
+
+        <div class="grid" aria-hidden="true">
+          <div class="hint">If this was caused by an internal link, please <strong>refresh the page</strong> or try again later.</div>
+          <div class="hint">If you came from an external link, please check the <strong>URL</strong>, or start from the home page.</div>
+        </div>
+
+        <div class="footer">Error code <span class="code">404</span> · Not Found</div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -14,6 +14,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import VerifyEmailPendingPage from './pages/VerifyEmailPendingPage';
 import ChangeEmailPage from './pages/ChangeEmailPage';
 import ConfirmChangeEmailPage from './pages/ConfirmChangeEmailPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 
 export default function App() {
@@ -50,6 +51,8 @@ export default function App() {
                                 <TripOverviewPage />
                             </RequireAuth>
                         } />
+                        {/* catch-all 404 must be last */}
+                        <Route path='*' element={<NotFoundPage />} />
                     </Routes>
                 </MainLayout>
             </AuthProvider>
