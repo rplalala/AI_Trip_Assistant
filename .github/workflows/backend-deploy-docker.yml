@@ -3,6 +3,12 @@ name: BE → EC2 (Docker/Compose)
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'external-service/**'
+      - '.github/workflows/backend-deploy-docker.yml'
+      - 'docker-compose.yml'
+      - 'nginx.conf'
   workflow_dispatch: {}
 
 concurrency:

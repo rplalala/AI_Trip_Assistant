@@ -1,6 +1,13 @@
 name: FE → EC2 (dist → Nginx)
+
 on:
-  push: { branches: [ main ], paths: [ 'web/**' ] }
+  push:
+    branches: [ main ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/frontend-deploy-webdist.yml'
+      - 'docker-compose.yml'
+      - 'nginx.conf'
   workflow_dispatch: {}
 
 concurrency:
