@@ -2,7 +2,7 @@ booking:
   base-url: ${BOOKING_BASE_URL:http://external-service:8092/api/booking}
 
 frontend:
-  base-url: "http://ec2-54-251-70-46.ap-southeast-1.compute.amazonaws.com"
+  base-url: "https://aitrip.dingzh.cc"
 
 # 开启健康检查
 management:
