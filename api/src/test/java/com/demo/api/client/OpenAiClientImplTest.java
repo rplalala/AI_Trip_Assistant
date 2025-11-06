@@ -8,7 +8,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.Mockito;
@@ -29,18 +28,19 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OpenAiClientImplTest {
 
+    private static final String CHAT_COMPLETIONS_URL = "http://api-mockup";
+
     @Mock
     private RestTemplate restTemplate;
 
     @Mock
     private ObjectMapper objectMapper;
 
-    @InjectMocks
-    private OpenAiClientImpl client = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, "http://api-mockup", restTemplate, objectMapper);
+    private OpenAiClientImpl client;
 
     @BeforeEach
     void setUp() {
-        client = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, "http://api-mockup", restTemplate, objectMapper);
+        client = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, CHAT_COMPLETIONS_URL, restTemplate, objectMapper);
     }
 
     @DisplayName("requestTripPlan posts payload and returns response body")
@@ -48,7 +48,7 @@ class OpenAiClientImplTest {
     void requestTripPlan_successfulCall() throws Exception {
         when(objectMapper.writeValueAsString(any())).thenReturn("{\"prompt\":\"value\"}");
         ResponseEntity<String> response = ResponseEntity.ok("{\"id\":\"req\"}");
-        when(restTemplate.postForEntity(eq("https://api.openai.com/v1/chat/completions"), any(HttpEntity.class), eq(String.class)))
+        when(restTemplate.postForEntity(eq(CHAT_COMPLETIONS_URL), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(response);
 
         String result = client.requestTripPlan("Plan a trip to Tokyo");
@@ -56,7 +56,7 @@ class OpenAiClientImplTest {
         assertThat(result).isEqualTo("{\"id\":\"req\"}");
 
         ArgumentCaptor<HttpEntity<String>> captor = ArgumentCaptor.forClass(HttpEntity.class);
-        verify(restTemplate).postForEntity(eq("https://api.openai.com/v1/chat/completions"), captor.capture(), eq(String.class));
+        verify(restTemplate).postForEntity(eq(CHAT_COMPLETIONS_URL), captor.capture(), eq(String.class));
         HttpEntity<String> entity = captor.getValue();
         assertThat(entity.getBody()).isEqualTo("{\"prompt\":\"value\"}");
         HttpHeaders headers = entity.getHeaders();
@@ -67,7 +67,7 @@ class OpenAiClientImplTest {
     @DisplayName("requestTripPlan requires configured API key and non-empty prompt")
     @Test
     void requestTripPlan_validatesInputs() {
-        OpenAiClientImpl noKeyClient = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, "http://api-mockup", restTemplate, objectMapper);
+        OpenAiClientImpl noKeyClient = new OpenAiClientImpl("", "gpt-40-mini", 0.7, CHAT_COMPLETIONS_URL, restTemplate, objectMapper);
         assertThatThrownBy(() -> noKeyClient.requestTripPlan("anything"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("API key");
@@ -101,7 +101,7 @@ class OpenAiClientImplTest {
     void requestTripPlan_whenStatusNonSuccess_throwsIllegalState() throws Exception {
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         ResponseEntity<String> response = ResponseEntity.status(500).body("{\"error\":\"fail\"}");
-        when(restTemplate.postForEntity(eq("https://api.openai.com/v1/chat/completions"), any(HttpEntity.class), eq(String.class)))
+        when(restTemplate.postForEntity(eq(CHAT_COMPLETIONS_URL), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(response);
 
         assertThatThrownBy(() -> client.requestTripPlan("Describe Sydney"))
@@ -114,7 +114,7 @@ class OpenAiClientImplTest {
     void requestTripPlan_whenBodyEmpty_throwsIllegalState() throws Exception {
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         ResponseEntity<String> response = ResponseEntity.ok("");
-        when(restTemplate.postForEntity(eq("https://api.openai.com/v1/chat/completions"), any(HttpEntity.class), eq(String.class)))
+        when(restTemplate.postForEntity(eq(CHAT_COMPLETIONS_URL), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(response);
 
         assertThatThrownBy(() -> client.requestTripPlan("Trip to Rome"))
