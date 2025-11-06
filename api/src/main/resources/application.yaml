@@ -78,5 +78,3 @@ feign:
 
 booking:
   base-url: http://localhost:8092/api/booking
-  service:
-    base-url: ${booking.base-url}

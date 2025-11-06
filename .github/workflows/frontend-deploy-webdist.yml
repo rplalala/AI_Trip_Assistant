@@ -1,0 +1,37 @@
+name: FE → EC2 (dist → Nginx)
+on:
+  push: { branches: [ main ], paths: [ 'web/**' ] }
+  workflow_dispatch: {}
+
+concurrency:
+  group: ec2-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fe-build-sync:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - name: Build (Vite)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Sync dist & reload nginx
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem && chmod 600 key.pem
+          ssh -i key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} 'mkdir -p /home/ec2-user/AI_Trip_Assistant/web-dist'
+          rsync -az --delete -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+            dist/ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/AI_Trip_Assistant/web-dist/
+          ssh -i key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} '
+            set -e
+            cd /home/ec2-user/AI_Trip_Assistant || exit 0
+            if docker compose ps web-client >/dev/null 2>&1; then
+              docker compose up -d --no-deps web-client || true
+              docker compose exec -T web-client nginx -t && docker compose exec -T web-client nginx -s reload || true
+            fi
+          '

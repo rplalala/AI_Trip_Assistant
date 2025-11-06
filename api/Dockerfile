@@ -1,11 +1,5 @@
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY . .
-RUN mvn install -DskipTests -q -Djacoco.skip=true
-
-FROM eclipse-temurin:21-jdk
-WORKDIR /app
-COPY --from=build /app/target/*.jar /app/app.jar
-ENV PORT=8082
+COPY target/*.jar /app/app.jar
 EXPOSE 8082
 ENTRYPOINT ["java","-jar","/app/app.jar"]

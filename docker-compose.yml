@@ -1,31 +1,53 @@
+version: "3.9"
 services:
-  api-service:
-    build: ./api
-    container_name: api-service
-    ports:
-      - "8082:8082"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - GOOGLE_MAPS_API_KEY=***REMOVED***
-    restart: always
-
-  external-service:
-    build: ./external-service
-    container_name: external-service
-    ports:
-      - "8092:8092"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-    restart: always
-
   web-client:
     image: nginx:alpine
-    container_name: web-client
-    ports:
-      - "80:80"
+    ports: ["80:80"]
     volumes:
-      - ./web/dist:/usr/share/nginx/html:ro
-      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /home/ec2-user/AI_Trip_Assistant/web-dist:/usr/share/nginx/html:ro
+      - /home/ec2-user/AI_Trip_Assistant/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - api-service
+      api-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t && cat /proc/1/comm | grep -qi nginx"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
     restart: always
+
+  api-service:
+    image: ghcr.io/${GHCR_OWNER}/${GHCR_REPO}-api:latest
+    env_file:
+      - /home/ec2-user/AI_Trip_Assistant/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: "8082"
+      BOOKING_BASE_URL: "http://external-service:8092/api/booking"
+      JAVA_TOOL_OPTIONS: "-Xms512m -Xmx768m -XX:+UseG1GC -XX:MaxMetaspaceSize=256m"
+    expose: ["8082"]
+    depends_on:
+      external-service:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health >/dev/null || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  external-service:
+    image: ghcr.io/${GHCR_OWNER}/${GHCR_REPO}-mockbooking:latest
+    env_file:
+      - /home/ec2-user/AI_Trip_Assistant/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: "8092"
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+    expose: ["8092"]
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8092/actuator/health >/dev/null || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
