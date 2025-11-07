@@ -1,6 +1,8 @@
 services:
   web-client:
+    container_name: web-client
     image: nginx:alpine
+    # 把 ec2 的 80 端口（HTTP）映射到 docker 容器的 80 端口 （Nginx）
     ports: ["80:80"]
     volumes:
       - /home/ec2-user/AI_Trip_Assistant/web-dist:/usr/share/nginx/html:ro
@@ -14,8 +16,16 @@ services:
       timeout: 3s
       retries: 10
     restart: always
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-southeast-1
+        awslogs-group: /aitrip/nginx          # CloudWatch Log Group 名
+        awslogs-stream: web-client            # 日志流名（用 container_name 稳定）
+        awslogs-create-group: "true"          # 没有则自动创建（需要权限）
 
   api-service:
+    container_name: api-service
     image: ghcr.io/${GHCR_USERNAME}/${GHCR_REPO}-api:latest
     env_file:
       - /home/ec2-user/AI_Trip_Assistant/.env
@@ -24,11 +34,19 @@ services:
       SERVER_PORT: "8082"
       BOOKING_BASE_URL: "http://external-service:8092/api/booking"
       JAVA_TOOL_OPTIONS: "-Xms512m -Xmx768m -XX:+UseG1GC -XX:MaxMetaspaceSize=256m"
+    # 只在 docker 内网可见，没有对外映射，所以直接访问 EC2 公网是到不了后端容器的。（通过 Nginx 在内网转给后端）
     expose: ["8082"]
     depends_on:
       external-service:
         condition: service_healthy
     restart: always
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-southeast-1
+        awslogs-group: /aitrip/api
+        awslogs-stream: api-service
+        awslogs-create-group: "true"
     healthcheck:
       test: [ "CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health >/dev/null || exit 1" ]
       interval: 10s
@@ -36,6 +54,7 @@ services:
       retries: 10
 
   external-service:
+    container_name: external-service
     image: ghcr.io/${GHCR_USERNAME}/${GHCR_REPO}-mockbooking:latest
     env_file:
       - /home/ec2-user/AI_Trip_Assistant/.env
@@ -45,6 +64,13 @@ services:
       JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m -XX:+UseG1GC"
     expose: ["8092"]
     restart: always
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-southeast-1
+        awslogs-group: /aitrip/external
+        awslogs-stream: external-service
+        awslogs-create-group: "true"
     healthcheck:
       test: [ "CMD-SHELL", "wget -qO- http://localhost:8092/actuator/health >/dev/null || exit 1" ]
       interval: 10s
