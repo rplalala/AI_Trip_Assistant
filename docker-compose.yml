@@ -20,7 +20,7 @@ services:
       driver: awslogs
       options:
         awslogs-region: ap-southeast-1
-        awslogs-group: /aitrip/nginx          # CloudWatch Log Group 名
+        awslogs-group: aitrip          # CloudWatch Log Group 名
         awslogs-stream: web-client            # 日志流名（用 container_name 稳定）
         awslogs-create-group: "true"          # 没有则自动创建（需要权限）
 
@@ -44,7 +44,7 @@ services:
       driver: awslogs
       options:
         awslogs-region: ap-southeast-1
-        awslogs-group: /aitrip/api
+        awslogs-group: aitrip
         awslogs-stream: api-service
         awslogs-create-group: "true"
     healthcheck:
@@ -68,7 +68,7 @@ services:
       driver: awslogs
       options:
         awslogs-region: ap-southeast-1
-        awslogs-group: /aitrip/external
+        awslogs-group: aitrip
         awslogs-stream: external-service
         awslogs-create-group: "true"
     healthcheck:
