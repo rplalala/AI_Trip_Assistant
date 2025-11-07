@@ -6,8 +6,6 @@ on:
     paths:
       - 'web/**'
       - '.github/workflows/frontend-deploy-webdist.yml'
-      - 'docker-compose.yml'
-      - 'nginx.conf'
   workflow_dispatch: {}
 
 concurrency:
