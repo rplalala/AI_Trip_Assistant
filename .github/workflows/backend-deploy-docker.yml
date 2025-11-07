@@ -102,6 +102,8 @@ jobs:
           DATABASE_URL=${{ vars.DATABASE_URL }}
           GHCR_USERNAME=${{ secrets.GHCR_USERNAME }}
           GHCR_REPO=${{ vars.GHCR_REPO }}
+          OSS_ACCESS_KEY_SECRET=${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          OSS_ACCESS_KEY_ID=${{ secrets.OSS_ACCESS_KEY_ID }}
           EOF
   
           scp -i key.pem -o StrictHostKeyChecking=no .env \
