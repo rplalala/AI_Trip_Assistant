@@ -6,7 +6,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -101,6 +100,6 @@ public class UnsplashImgUtils {
 
         String join = base.contains("?") ? "&" : "?";
         // q: compress img quality 1-100
-        return base + join + "w=" + width + "&h=" + height + "&fit=crop&fm=jpg&q=80&auto=format";
+        return base + join + "w=" + width + "&h=" + height + "&fit=crop&fm=jpg&q=60&auto=format";
     }
 }

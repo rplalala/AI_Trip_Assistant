@@ -25,6 +25,17 @@ export default defineConfig({
                 // /ext/geodb/xxx  →  http://geodb.../v1/geo/xxx
                 rewrite: (path) => path.replace(/^\/ext\/geodb/, '/v1/geo'),
             },
+            '/ext/unsplash': {
+                target: 'https://images.unsplash.com',
+                changeOrigin: true,
+                secure: true, // 上游是 HTTPS，校验证书
+                headers: {
+                    // 有些上游对 Host/SNI 严格，手动对齐最保险
+                    Host: 'images.unsplash.com',
+                },
+                // 去掉本地前缀，保持与生产 Nginx 的映射一致
+                rewrite: (path) => path.replace(/^\/ext\/unsplash\/?/, '/'),
+            },
         },
     },
 })

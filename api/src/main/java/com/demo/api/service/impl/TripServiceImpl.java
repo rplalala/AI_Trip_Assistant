@@ -1,5 +1,6 @@
 package com.demo.api.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.demo.api.dto.TimeLineDTO;
 import com.demo.api.dto.TripDetailDTO;
 import com.demo.api.model.*;
@@ -36,6 +37,12 @@ public class TripServiceImpl implements TripService {
     public List<TripDetailDTO> getTripDetails(Long userId) {
         List<Trip> userTrips = tripRepository.findByUserIdOrderByUpdatedTimeDesc(userId);
         return userTrips.stream().map(trip -> {
+            String imgUrl = unsplashImgUtils.getImgUrls(trip.getToCity(), 1, 600, 400).getFirst();
+            // 如果有图：把 Unsplash 直链改成 /ext/unsplash/ 相对路径；没有就保持 null
+            String proxied = (ObjectUtil.isNotEmpty(imgUrl))
+                    ? imgUrl.replaceFirst("^https?://images\\.unsplash\\.com/?", "/ext/unsplash/")
+                    : imgUrl;
+            log.info("Unsplash img url {} to {}", imgUrl, proxied);
             return TripDetailDTO.builder()
                     .tripId(trip.getId())
                     .fromCountry(trip.getFromCountry())
@@ -46,7 +53,7 @@ public class TripServiceImpl implements TripService {
                     .people(trip.getPeople())
                     .startDate(trip.getStartDate())
                     .endDate(trip.getEndDate())
-                    .imgUrl(unsplashImgUtils.getImgUrls(trip.getToCity(),1, 600,400).getFirst())
+                    .imgUrl(proxied)
                     .build();
         }).toList();
 
