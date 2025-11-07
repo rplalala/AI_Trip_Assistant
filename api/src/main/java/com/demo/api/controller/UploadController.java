@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.demo.api.ApiRespond;
 import com.demo.api.exception.BusinessException;
 import com.demo.api.service.UserService;
+import com.demo.api.utils.AliyunOSSUtils;
 import com.demo.api.utils.AwsS3Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class UploadController {
 
     private final AwsS3Utils awsS3Utils;
     private final UserService userService;
+    private final AliyunOSSUtils aliyunOSSUtils;
 
     /**
      * Image upload. Local upload.
@@ -44,7 +46,8 @@ public class UploadController {
             throw new BusinessException("File too large, max size is 10 MB");
         }
 
-        return ApiRespond.success(awsS3Utils.upload(file.getInputStream(), file.getOriginalFilename(), false));
+//        return ApiRespond.success(awsS3Utils.upload(file.getInputStream(), file.getOriginalFilename(), false));
+        return ApiRespond.success(aliyunOSSUtils.upload(file.getInputStream(), file.getOriginalFilename(), false));
     }
 
     /**
@@ -58,7 +61,8 @@ public class UploadController {
             throw new BusinessException("URL cannot be empty");
         }
         log.info("Upload Img Url：{}", url);
-        return ApiRespond.success(awsS3Utils.uploadFromUrl(url, false));
+//        return ApiRespond.success(awsS3Utils.uploadFromUrl(url, false));
+        return ApiRespond.success(aliyunOSSUtils.uploadFromUrl(url, false));
     }
 
     /**
@@ -79,7 +83,8 @@ public class UploadController {
             throw new BusinessException("File too large, max size is 10 MB");
         }
 
-        String newAvatarUrl = awsS3Utils.upload(file.getInputStream(), file.getOriginalFilename(), true);
+//        String newAvatarUrl = awsS3Utils.upload(file.getInputStream(), file.getOriginalFilename(), true);
+        String newAvatarUrl = aliyunOSSUtils.upload(file.getInputStream(), file.getOriginalFilename(), true);
         log.info("Upload avatar success, new avatar url: {}", newAvatarUrl);
         userService.updateAvatar(Long.valueOf(userId), newAvatarUrl);
         return ApiRespond.success(newAvatarUrl);
@@ -96,7 +101,8 @@ public class UploadController {
         if (ObjectUtil.isEmpty(url)) {
             throw new BusinessException("URL cannot be empty");
         }
-        String newAvatarUrl = awsS3Utils.uploadFromUrl(url, true);
+//        String newAvatarUrl = awsS3Utils.uploadFromUrl(url, true);
+        String newAvatarUrl = aliyunOSSUtils.uploadFromUrl(url, true);
         userService.updateAvatar(Long.valueOf(userId), newAvatarUrl);
         return ApiRespond.success(newAvatarUrl);
     }

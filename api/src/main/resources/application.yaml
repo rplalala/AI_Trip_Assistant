@@ -43,6 +43,16 @@ aws:
     dir-name: elec5620-stage2
     cdn: awscdn.dingzh.cc
 
+aliyun:
+  oss:
+    endpoint: https://oss-cn-hangzhou.aliyuncs.com
+    bucketName: dingzh
+    dirName: ai-trip-assistant
+    cdn: alicdn.dingzh.cc
+    region: cn-hangzhou
+    accessKeyId: "${OSS_ACCESS_KEY_ID}"
+    accessKeySecret: "${OSS_ACCESS_KEY_SECRET}"
+
 sendgrid:
   api-key: "${SENDGRID_API_KEY}"
   from: "dingzh157@gmail.com"
@@ -51,7 +61,8 @@ frontend:
   base-url: "http://localhost:5173"
 
 default:
-  avatar-url: "https://awscdn.dingzh.cc/elec5620-stage2/avatars/default_avatar.png"
+#  avatar-url: "https://awscdn.dingzh.cc/elec5620-stage2/avatars/default_avatar.png"
+  avatar-url: "https://alicdn.dingzh.cc/ai-trip-assistant/default_avatar.png"
 
 openweather:
   api:

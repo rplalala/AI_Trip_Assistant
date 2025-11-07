@@ -4,26 +4,31 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import React from 'react';
 
 const heroBg =
-  "linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url('https://awscdn.dingzh.cc/elec5620-stage2/2025/10/c5bdc3ca7ef042e9926d06dfa52d5d92.png')";
+  // "linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url('https://awscdn.dingzh.cc/elec5620-stage2/2025/10/c5bdc3ca7ef042e9926d06dfa52d5d92.png')";
+  "linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url('https://alicdn.dingzh.cc/ai-trip-assistant/home_image/home_0.png')";
 
 const features = [
   {
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDeqJdt7iTW8DthSHGh0UDw1gO-0sJKrEsvgJHZiI6YUeAHo9uwO5TeLfPWr25BkcZp7CEYzgquCXWE1kk3bPU04Cb0lMQxc87lS5q-hUKPKoiuaPc3OCfVHxy_qNrkp9mn7GPlaqpJZbBiBSMqW7drVqw94sH9psdxh3YUSNTn9kZ_0yoYOa-AKUYpMP_Fktd2BDmB7MN5Vdz4kmXLSbavd_VG_eEMRrZD5TYUszLlgsIzpP28XPj1XLPtAJFnS2DmLny4A7X8ouo",
+    // img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDeqJdt7iTW8DthSHGh0UDw1gO-0sJKrEsvgJHZiI6YUeAHo9uwO5TeLfPWr25BkcZp7CEYzgquCXWE1kk3bPU04Cb0lMQxc87lS5q-hUKPKoiuaPc3OCfVHxy_qNrkp9mn7GPlaqpJZbBiBSMqW7drVqw94sH9psdxh3YUSNTn9kZ_0yoYOa-AKUYpMP_Fktd2BDmB7MN5Vdz4kmXLSbavd_VG_eEMRrZD5TYUszLlgsIzpP28XPj1XLPtAJFnS2DmLny4A7X8ouo",
+    img: "https://alicdn.dingzh.cc/ai-trip-assistant/home_image/home_1.png",
     title: 'Smart Planning',
     desc: 'Create detailed itineraries with integrated maps, points of interest, and personalized recommendations.'
   },
   {
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgnvGgHS6vYsBYuQcYH3fqEFNJghpVC_ysYVdMBNcFJniii87SCn0Jf6FnyYERt6JGJiSwKYsAsSVwWcX1aIsUX43B4v7l_X8jP4wJ3GpJq1sHP-e425-6I_K6h6ssLGDsKkRpPAWVXK1n_UXzMsTGwVLn88c620c-KPq8xB3AaZle-BEZr0pAEJz--zP9doL9M8vm_qekixwAYjWsqydj9aQwyUHv5wqOb4blP-96Ox9pl-EvL2sZkNAyHLl-rloJMUmbcFNgZ_I",
+    // img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgnvGgHS6vYsBYuQcYH3fqEFNJghpVC_ysYVdMBNcFJniii87SCn0Jf6FnyYERt6JGJiSwKYsAsSVwWcX1aIsUX43B4v7l_X8jP4wJ3GpJq1sHP-e425-6I_K6h6ssLGDsKkRpPAWVXK1n_UXzMsTGwVLn88c620c-KPq8xB3AaZle-BEZr0pAEJz--zP9doL9M8vm_qekixwAYjWsqydj9aQwyUHv5wqOb4blP-96Ox9pl-EvL2sZkNAyHLl-rloJMUmbcFNgZ_I",
+    img: "https://alicdn.dingzh.cc/ai-trip-assistant/home_image/home_2.png",
     title: 'Live Weather',
     desc: "Stay ahead with real-time weather updates for your destinations, ensuring you're always prepared.",
   },
   {
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCIlT-nxwSgTvSSx6ZqnDcdDq8pgXxGgFAvZ-MfEJbikW5CES0_S-VcknUbMRxBDQKMMaSjOpYADct5YliTrYIdQVJCYviuUkM45TOOdzMuQecdsiGj-PW0zr1woTzXtwYNhGR6VZxpPm0PxoFkqxub6mpXimvH92UsnQphFtqB0bgW8OfDyNjft7B9Ptqwn9XqtMiGuot5pW7ScQieBWosydAK46rEQPK7Iqxfl4LUwL3LLj2o-SdVsPv1ECBIBV2OfAzFBftOMZo",
+    // img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCIlT-nxwSgTvSSx6ZqnDcdDq8pgXxGgFAvZ-MfEJbikW5CES0_S-VcknUbMRxBDQKMMaSjOpYADct5YliTrYIdQVJCYviuUkM45TOOdzMuQecdsiGj-PW0zr1woTzXtwYNhGR6VZxpPm0PxoFkqxub6mpXimvH92UsnQphFtqB0bgW8OfDyNjft7B9Ptqwn9XqtMiGuot5pW7ScQieBWosydAK46rEQPK7Iqxfl4LUwL3LLj2o-SdVsPv1ECBIBV2OfAzFBftOMZo",
+    img: "https://alicdn.dingzh.cc/ai-trip-assistant/home_image/home_3.png",
     title: 'One-click Booking',
     desc: 'Secure flights, accommodations, and activities with a single click, using our trusted partner network.',
   },
   {
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBgpC-zM0FtZTPUEJBbiz0gt0t0EiM9cSZqneQ_7JYL3On1WlEe85Bmi9fQhauQJyynKIc7v2I0zFL9HnG3jUmY7J7DU-sM6eElQnTr3T_h1TmM4rj4Vmy-VIH8yI1ab57fa0hzpxHdbkKn438fdPL6l9JbHnIs079EVGLUTQMlI0zuwiKO7duhf0TzKDRwigxBGrnWUgwmHt3_9J7i8JyoXbq5UR9wCUWL8rcFxWbPCgzaoL9FgSCmrQ1d3AEBLW4dIRRLKdvEWw4",
+    // img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBgpC-zM0FtZTPUEJBbiz0gt0t0EiM9cSZqneQ_7JYL3On1WlEe85Bmi9fQhauQJyynKIc7v2I0zFL9HnG3jUmY7J7DU-sM6eElQnTr3T_h1TmM4rj4Vmy-VIH8yI1ab57fa0hzpxHdbkKn438fdPL6l9JbHnIs079EVGLUTQMlI0zuwiKO7duhf0TzKDRwigxBGrnWUgwmHt3_9J7i8JyoXbq5UR9wCUWL8rcFxWbPCgzaoL9FgSCmrQ1d3AEBLW4dIRRLKdvEWw4",
+    img: "https://alicdn.dingzh.cc/ai-trip-assistant/home_image/home_4.png",
     title: 'Clear Trip insights',
     desc: 'AI extracts the destination’s highlights and pitfalls: what to see, how to plan, and handy tips—all in one place.',
   },

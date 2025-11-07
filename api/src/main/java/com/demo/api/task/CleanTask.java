@@ -3,6 +3,7 @@ package com.demo.api.task;
 import cn.hutool.core.util.ObjectUtil;
 import com.demo.api.model.EmailToken;
 import com.demo.api.repository.*;
+import com.demo.api.utils.AliyunOSSUtils;
 import com.demo.api.utils.AwsS3Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CleanTask {
     private final AwsS3Utils awsS3Utils;
+    private final AliyunOSSUtils aliyunOSSUtils;
     private final UserRepository userRepository;
     private final EmailTokenRepository emailTokenRepository;
     private final TripRepository tripRepository;
@@ -57,7 +59,8 @@ public class CleanTask {
         log.info("Number of avatars in database: {}", dbFormatUrls.size());
 
         // Get all user avatar URLs in AWS S3
-        List<String> awsS3AllFiles = awsS3Utils.listPageAllFiles(dirName + "/avatars/", 1000);
+//        List<String> awsS3AllFiles = awsS3Utils.listPageAllFiles(dirName + "/avatars/", 1000);
+        List<String> awsS3AllFiles = aliyunOSSUtils.listPageAllFiles(dirName + "/avatars/", 1000);
         log.info("Number of avatar images in AWS S3: {}", awsS3AllFiles.size());
         // If S3 is empty, do not perform delete operations.
         if(ObjectUtil.isNotEmpty(awsS3AllFiles) && ObjectUtil.isNotEmpty(dbFormatUrls)) {
@@ -69,7 +72,8 @@ public class CleanTask {
             if(ObjectUtil.isNotEmpty(deleteFiles)){
                 deleteFiles.forEach(s -> log.info("File to delete: {}", s));
                 // Delete redundant images
-                awsS3Utils.batchDeleteFiles(deleteFiles);
+//                awsS3Utils.batchDeleteFiles(deleteFiles);
+                aliyunOSSUtils.batchDeleteFiles(deleteFiles);
             }
         } else {
             log.info("No files to delete");
