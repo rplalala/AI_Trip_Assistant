@@ -193,7 +193,6 @@ public class TripPlanPromptBuilder {
                         - "title": short title to show on a timeline
                         - "status": always set to "pending"
                         - "reservation_required": true if booking is needed, else false
-                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     For "transportation" type, include (in order):
                         - "from": starting location
@@ -202,7 +201,6 @@ public class TripPlanPromptBuilder {
                         - "ticket_type": e.g., "economy"
                         - "price": number
                         - "currency": e.g., "JPY" or "AUD"
-                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     For "hotel" type, include (in order):
                         - "hotel_name": hotel name
@@ -211,14 +209,12 @@ public class TripPlanPromptBuilder {
                         - "nights": how many nights
                         - "price": number
                         - "currency": e.g., "JPY"
-                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     For "attraction" type (includes restaurants, parks, temples) (in order):
                         - "location": e.g., "Shinjuku, Tokyo"
                         - "ticket_price": number (meal or entry cost)
                         - "people": number of attendees
                         - "currency": e.g., "JPY"
-                        - "image_description": a short and adaptable Unsplash search phrase in ENGLISH (3–7 words)
 
                     Scheduling rules:
                         - All fields MUST have a value, cannot be null! Do not invent impossible data.
