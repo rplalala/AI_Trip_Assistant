@@ -26,9 +26,15 @@ public class MapRouteRequest {
     private String destination;
 
     /**
-     * Travel mode supported by Google Directions API (driving, walking, bicycling, transit).
+     * Travel mode supported by Google/AMap APIs (driving, walking, bicycling, transit).
      * Defaults to driving when omitted.
      */
     private String travelMode;
+
+    /**
+     * Optional map provider override supplied by the frontend (e.g. "google", "amap").
+     * When blank the backend will infer the best provider based on the user's region.
+     */
+    private String provider;
 }
 

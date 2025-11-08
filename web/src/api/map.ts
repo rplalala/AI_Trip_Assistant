@@ -1,11 +1,13 @@
 import { apiRequest } from './client';
 
 export type MapTravelMode = 'driving' | 'walking' | 'bicycling' | 'transit';
+export type MapProvider = 'google' | 'amap';
 
 export interface MapRouteRequest {
     origin: string;
     destination: string;
     travelMode?: MapTravelMode | string;
+    provider?: MapProvider; // explicit provider override to send to backend
 }
 
 export interface MapRouteResponse {
@@ -19,6 +21,7 @@ export interface MapRouteResponse {
     embedUrl?: string | null;
     shareUrl?: string | null;
     warnings?: string[] | null;
+    provider?: MapProvider | null; // backend returns which provider was used
 }
 
 export async function generateRoute(payload: MapRouteRequest) {

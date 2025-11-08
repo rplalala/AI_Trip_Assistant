@@ -104,6 +104,7 @@ jobs:
           GHCR_REPO=${{ vars.GHCR_REPO }}
           OSS_ACCESS_KEY_SECRET=${{ secrets.OSS_ACCESS_KEY_SECRET }}
           OSS_ACCESS_KEY_ID=${{ secrets.OSS_ACCESS_KEY_ID }}
+          AMAP_WEB_SERVICE_API_KEY=${{ secrets.AMAP_WEB_SERVICE_API_KEY }}
           EOF
   
           scp -i key.pem -o StrictHostKeyChecking=no .env \

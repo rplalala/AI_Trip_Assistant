@@ -1,5 +1,6 @@
 package com.demo.api.dto;
 
+import com.demo.api.enums.MapProvider;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +13,9 @@ import java.util.List;
 @Data
 @Builder
 public class MapRouteResponse {
+
+    /** Provider that generated the route (e.g. google, amap). */
+    private MapProvider provider;
 
     /** Travel mode requested (normalized). */
     private String travelMode;

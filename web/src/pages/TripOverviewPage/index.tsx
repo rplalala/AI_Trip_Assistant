@@ -25,7 +25,7 @@ import {
     Empty,
     Skeleton,
     Timeline,
-    Image,
+    Image as AntImage, // alias to avoid collision with global Image constructor
     Button,
     Modal,
     Form,
@@ -38,7 +38,7 @@ import {
 import type {BreadcrumbProps, TabsProps} from 'antd';
 import {HomeOutlined, EnvironmentOutlined, CarOutlined, ReloadOutlined} from '@ant-design/icons';
 import BookingSection from './BookingSection';
-import {generateRoute, type MapRouteResponse} from '../../api/map';
+import {generateRoute, type MapRouteResponse, type MapProvider} from '../../api/map';
 
 const {Title, Text} = Typography;
 
@@ -70,6 +70,56 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
     const [routeModalData, setRouteModalData] = useState<MapRouteResponse | null>(null);
     const [routeModalTarget, setRouteModalTarget] = useState<TimelineRouteContext | null>(null);
     const [routeError, setRouteError] = useState<string | null>(null);
+    const [routeProvider, setRouteProvider] = useState<MapProvider | null>(null);
+    const [manualProviderOverride, setManualProviderOverride] = useState<MapProvider | null>(null);
+
+    // Lightweight Google reachability probe (image load) with timeout to avoid CORS HEAD false negatives.
+    useEffect(() => {
+        const LS_KEY = 'map_provider_probe_v1';
+        const TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+        const PROBE_IMG = 'https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png';
+        if (manualProviderOverride) {
+            setRouteProvider(manualProviderOverride);
+            return;
+        }
+        try {
+            const cachedRaw = localStorage.getItem(LS_KEY);
+            if (cachedRaw) {
+                const cached = JSON.parse(cachedRaw) as { provider: MapProvider; ts: number };
+                if (Date.now() - cached.ts < TTL_MS) {
+                    setRouteProvider(cached.provider);
+                    return;
+                }
+            }
+        } catch {/* ignore cache parse */}
+        let done = false;
+        const img = new window.Image(); // use global Image constructor explicitly
+        const timer = window.setTimeout(() => {
+            if (done) return;
+            done = true;
+            localStorage.setItem(LS_KEY, JSON.stringify({ provider: 'amap', ts: Date.now() }));
+            setRouteProvider('amap');
+        }, 2500); // timeout
+        img.onload = () => {
+            if (done) return;
+            done = true;
+            window.clearTimeout(timer);
+            localStorage.setItem(LS_KEY, JSON.stringify({ provider: 'google', ts: Date.now() }));
+            setRouteProvider('google');
+        };
+        img.onerror = () => {
+            if (done) return;
+            done = true;
+            window.clearTimeout(timer);
+            localStorage.setItem(LS_KEY, JSON.stringify({ provider: 'amap', ts: Date.now() }));
+            setRouteProvider('amap');
+        };
+        img.src = PROBE_IMG + `?v=${Date.now()}`; // cache-bust
+        return () => {
+            done = true;
+            window.clearTimeout(timer);
+        };
+    }, [manualProviderOverride]);
 
     const attractions = sortByTime<AttractionTimeLineDTO>(day.attraction);
     const hotels = sortByTime<HotelTimeLineDTO>(day.hotel);
@@ -187,6 +237,7 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
                     origin: route.origin,
                     destination: route.destination,
                     travelMode: route.travelMode,
+                    provider: manualProviderOverride || routeProvider || undefined,
                 });
                 setRouteModalData(data);
             } catch (err) {
@@ -197,7 +248,7 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
                 setRouteModalLoading(false);
             }
         },
-        []
+        [manualProviderOverride, routeProvider]
     );
 
     const handleCloseRouteModal = useCallback(() => {
@@ -207,6 +258,30 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
         setRouteModalData(null);
         setRouteError(null);
     }, []);
+
+    // When user manually switches provider and the modal is open, auto refresh the route
+    useEffect(() => {
+        if (!routeModalOpen || !routeModalTarget) return;
+        (async () => {
+            setRouteModalLoading(true);
+            setRouteError(null);
+            try {
+                const data = await generateRoute({
+                    origin: routeModalTarget.origin,
+                    destination: routeModalTarget.destination,
+                    travelMode: routeModalTarget.travelMode,
+                    provider: manualProviderOverride || routeProvider || undefined,
+                });
+                setRouteModalData(data);
+            } catch (err) {
+                const errMsg = err instanceof Error ? err.message : 'Failed to generate route';
+                setRouteError(errMsg);
+                message.error(errMsg);
+            } finally {
+                setRouteModalLoading(false);
+            }
+        })();
+    }, [manualProviderOverride, routeModalOpen, routeModalTarget, routeProvider]);
 
     const dotFor = (type: BaseItem['type'], size = 14) => {
         if (type === 'hotel') return <HomeOutlined style={{color: '#fa8c16', fontSize: size}}/>;
@@ -258,7 +333,7 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
 
             {day.imageUrl ? (
                 <div style={{position: 'absolute', right: 0, top: 20}}>
-                    <Image
+                    <AntImage
                         src={day.imageUrl}
                         alt={day.summary || day.date}
                         width={IMAGE_W}
@@ -334,13 +409,35 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
                 open={routeModalOpen}
                 onCancel={handleCloseRouteModal}
                 footer={null}
-                width={720}
+                width={760}
                 title={
                     routeModalTarget
                         ? `Route: ${routeModalTarget.origin} → ${routeModalTarget.destination}`
                         : 'Route'
                 }
             >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <Space size={8} wrap>
+                        <Text type="secondary">Provider:</Text>
+                        <Space>
+                            <Button
+                                size="small"
+                                type={ (manualProviderOverride || routeProvider) === 'google' ? 'primary' : 'default' }
+                                onClick={() => setManualProviderOverride('google')}
+                            >Google</Button>
+                            <Button
+                                size="small"
+                                type={ (manualProviderOverride || routeProvider) === 'amap' ? 'primary' : 'default' }
+                                onClick={() => setManualProviderOverride('amap')}
+                            >AMap</Button>
+                        </Space>
+                        {routeProvider && !manualProviderOverride ? (
+                            <Tooltip title="Auto-selected based on connectivity probe">
+                                <Text type="secondary">(auto: {routeProvider})</Text>
+                            </Tooltip>
+                        ) : null}
+                    </Space>
+                </div>
                 {routeModalLoading ? (
                     <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 0'}}>
                         <Spin size="large"/>
@@ -380,7 +477,7 @@ function DayTimeline({day, trip}: { day: TimeLineDTO; trip: TripDetail | null })
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                Open in Google Maps
+                                { (routeModalData.provider || manualProviderOverride || routeProvider) === 'amap' ? 'Open in AMap' : 'Open in Google Maps' }
                             </Button>
                         ) : null}
                     </Space>
@@ -403,30 +500,30 @@ export default function TripOverview() {
 
     const messageApi = message;
 
-    const reloadData = async (tid: string) => {
-        loadTimelineData(tid)
-        loadInsightsData(tid)
-    };
-
-    const loadTimelineData = async (tid: string) => {
+    const loadTimelineData = useCallback(async (tid: string) => {
         setLoadingTimeline(true);
         try {
-            const tl = await getTripTimeline(tid)
+            const tl = await getTripTimeline(tid);
             setTimeline(tl ?? []);
         } finally {
             setLoadingTimeline(false);
         }
-    };
+    }, []);
 
-    const loadInsightsData = async (tid: string) => {
+    const loadInsightsData = useCallback(async (tid: string) => {
         setLoadingInsights(true);
         try {
-            const insights = await getTripInsights(tid)
+            const insights = await getTripInsights(tid);
             setTripInsights(insights ?? []);
         } finally {
             setLoadingInsights(false);
         }
-    };
+    }, []);
+
+    const reloadData = useCallback((tid: string) => {
+        void loadTimelineData(tid);
+        void loadInsightsData(tid);
+    }, [loadTimelineData, loadInsightsData]);
 
     useEffect(() => {
         let mounted = true;
@@ -439,12 +536,12 @@ export default function TripOverview() {
                 setTrip(found ?? null);
             });
 
-        reloadData(tripId)
+        reloadData(tripId);
 
         return () => {
             mounted = false;
         };
-    }, [tripId]);
+    }, [tripId, reloadData]);
 
     const [replanOpen, setReplanOpen] = useState(false);
     const [submittingReplan, setSubmittingReplan] = useState(false);
