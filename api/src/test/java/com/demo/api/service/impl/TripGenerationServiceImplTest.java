@@ -25,7 +25,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -49,7 +48,6 @@ class TripGenerationServiceImplTest {
     void setUp() {
         tripGenerationService = new TripGenerationServiceImpl(
                 new ModelMapper(),
-                new com.fasterxml.jackson.databind.ObjectMapper(),
                 weatherService,
                 tripWeatherRepository,
                 tripPlanPromptBuilder,
@@ -86,18 +84,17 @@ class TripGenerationServiceImplTest {
         when(tripPlanPromptBuilder.build(any(Trip.class), anyList())).thenReturn("prompt");
         when(openAiClientProvider.getIfAvailable()).thenReturn(openAiClient);
         when(tripStorageServiceProvider.getIfAvailable()).thenReturn(tripStorageService);
-        when(openAiClient.requestTripPlan("prompt")).thenReturn("{\"daily_summaries\":[],\"activities\":[]}");
         ItineraryDTO itineraryDTO = ItineraryDTO.builder()
                 .dailySummaries(List.of())
                 .activities(List.of())
                 .build();
-        when(openAiClient.parseContent(anyString(), eq(ItineraryDTO.class))).thenReturn(itineraryDTO);
+        when(openAiClient.generate("prompt", ItineraryDTO.class)).thenReturn(itineraryDTO);
 
         tripGenerationService.generateTripAndReturnJson(dto, "42");
 
         verify(weatherService).fetchAndStoreWeather(argThat(trip -> trip.getUserId().equals(42L)));
-        verify(openAiClient).requestTripPlan("prompt");
-        verify(tripStorageService).storeTripPlan(any(Trip.class), contains("\"daily_summaries\""));
+        verify(openAiClient).generate("prompt", ItineraryDTO.class);
+        verify(tripStorageService).storeTripPlan(any(Trip.class), eq(itineraryDTO));
     }
 
     @Test
@@ -144,16 +141,14 @@ class TripGenerationServiceImplTest {
                 .thenReturn("regen-prompt");
         when(openAiClientProvider.getIfAvailable()).thenReturn(openAiClient);
         when(tripStorageServiceProvider.getIfAvailable()).thenReturn(tripStorageService);
-        when(openAiClient.requestTripPlan("regen-prompt")).thenReturn("{\"daily_summaries\":[],\"activities\":[]}");
-        when(openAiClient.parseContent(anyString(), eq(ItineraryDTO.class))).thenReturn(
-                ItineraryDTO.builder().dailySummaries(List.of()).activities(List.of()).build()
-        );
+        ItineraryDTO regenDto = ItineraryDTO.builder().dailySummaries(List.of()).activities(List.of()).build();
+        when(openAiClient.generate(eq("regen-prompt"), eq(ItineraryDTO.class))).thenReturn(regenDto);
 
         tripGenerationService.regenerateTrip(55L, new ModifyPlanDTO(), "7");
 
         verify(tripWeatherRepository).deleteByTripIdIn(List.of(55L));
         verify(weatherService).fetchAndStoreWeather(trip);
-        verify(openAiClient).requestTripPlan("regen-prompt");
-        verify(tripStorageService).storeTripPlan(eq(trip), contains("\"activities\""));
+        verify(openAiClient).generate("regen-prompt", ItineraryDTO.class);
+        verify(tripStorageService).storeTripPlan(eq(trip), eq(regenDto));
     }
 }

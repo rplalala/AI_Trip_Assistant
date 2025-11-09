@@ -1,160 +1,88 @@
 package com.demo.api.client;
 
 import com.demo.api.client.impl.OpenAiClientImpl;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.Mockito;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.ai.chat.client.ChatClient;
+
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class OpenAiClientImplTest {
 
-    private static final String CHAT_COMPLETIONS_URL = "http://api-mockup";
-
-    @Mock
-    private RestTemplate restTemplate;
-
-    @Mock
-    private ObjectMapper objectMapper;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private ChatClient chatClient;
+    @Mock private ChatClient.CallResponseSpec callResponseSpec;
 
     private OpenAiClientImpl client;
 
     @BeforeEach
     void setUp() {
-        client = new OpenAiClientImpl("api-key", "gpt-40-mini", 0.7, CHAT_COMPLETIONS_URL, restTemplate, objectMapper);
+        client = new OpenAiClientImpl(chatClient, 1, Duration.ZERO, "system prompt");
     }
 
-    @DisplayName("requestTripPlan posts payload and returns response body")
     @Test
-    void requestTripPlan_successfulCall() throws Exception {
-        when(objectMapper.writeValueAsString(any())).thenReturn("{\"prompt\":\"value\"}");
-        ResponseEntity<String> response = ResponseEntity.ok("{\"id\":\"req\"}");
-        when(restTemplate.postForEntity(eq(CHAT_COMPLETIONS_URL), any(HttpEntity.class), eq(String.class)))
-                .thenReturn(response);
+    void generate_returnsMappedEntity() {
+        TestDto dto = new TestDto("Tokyo");
+        when(chatClient.prompt().system(anyString()).user(anyString()).call()).thenReturn(callResponseSpec);
+        when(callResponseSpec.entity(TestDto.class)).thenReturn(dto);
 
-        String result = client.requestTripPlan("Plan a trip to Tokyo");
+        TestDto result = client.generate("Plan a trip", TestDto.class);
 
-        assertThat(result).isEqualTo("{\"id\":\"req\"}");
-
-        ArgumentCaptor<HttpEntity<String>> captor = ArgumentCaptor.forClass(HttpEntity.class);
-        verify(restTemplate).postForEntity(eq(CHAT_COMPLETIONS_URL), captor.capture(), eq(String.class));
-        HttpEntity<String> entity = captor.getValue();
-        assertThat(entity.getBody()).isEqualTo("{\"prompt\":\"value\"}");
-        HttpHeaders headers = entity.getHeaders();
-        assertThat(headers.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
-        assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isEqualTo("Bearer api-key");
+        assertThat(result).isEqualTo(dto);
     }
 
-    @DisplayName("requestTripPlan requires configured API key and non-empty prompt")
     @Test
-    void requestTripPlan_validatesInputs() {
-        OpenAiClientImpl noKeyClient = new OpenAiClientImpl("", "gpt-40-mini", 0.7, CHAT_COMPLETIONS_URL, restTemplate, objectMapper);
-        assertThatThrownBy(() -> noKeyClient.requestTripPlan("anything"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("API key");
-
-        assertThatThrownBy(() -> client.requestTripPlan("  "))
+    void generate_validatesInputs() {
+        assertThatThrownBy(() -> client.generate("   ", TestDto.class))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Prompt must not be empty");
+                .hasMessageContaining("Prompt");
+        assertThatThrownBy(() -> client.generate("prompt", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Response type");
     }
 
-    @DisplayName("requestTripPlan wraps serialization and HTTP failures")
     @Test
-    void requestTripPlan_handlesFailures() throws Exception {
-        Mockito.doThrow(new JsonProcessingException("boom") {})
-                .when(objectMapper).writeValueAsString(any());
+    void generate_whenResponseNull_throwsIllegalState() {
+        when(chatClient.prompt().system(anyString()).user(anyString()).call()).thenReturn(null);
 
-        assertThatThrownBy(() -> client.requestTripPlan("Plan a trip"))
+        assertThatThrownBy(() -> client.generate("prompt", TestDto.class))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("serialize");
+                .hasMessageContaining("empty response");
+    }
 
-        Mockito.doReturn("{}").when(objectMapper).writeValueAsString(any());
-        when(restTemplate.postForEntity(any(String.class), any(HttpEntity.class), eq(String.class)))
-                .thenThrow(new RestClientException("network down"));
+    @Test
+    void generate_whenMappingFails_throwsIllegalState() {
+        when(chatClient.prompt().system(anyString()).user(anyString()).call()).thenReturn(callResponseSpec);
+        when(callResponseSpec.entity(TestDto.class)).thenReturn(null);
 
-        assertThatThrownBy(() -> client.requestTripPlan("Plan a trip"))
+        assertThatThrownBy(() -> client.generate("prompt", TestDto.class))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Failed to call OpenAI API");
+                .hasMessageContaining("mapped");
     }
 
-    @DisplayName("requestTripPlan detects non-2xx responses")
     @Test
-    void requestTripPlan_whenStatusNonSuccess_throwsIllegalState() throws Exception {
-        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-        ResponseEntity<String> response = ResponseEntity.status(500).body("{\"error\":\"fail\"}");
-        when(restTemplate.postForEntity(eq(CHAT_COMPLETIONS_URL), any(HttpEntity.class), eq(String.class)))
-                .thenReturn(response);
+    void generate_retriesAndPropagatesFailure() {
+        when(chatClient.prompt().system(anyString()).user(anyString()).call()).thenThrow(new IllegalStateException("boom"));
 
-        assertThatThrownBy(() -> client.requestTripPlan("Describe Sydney"))
+        OpenAiClientImpl retryingClient = new OpenAiClientImpl(chatClient, 2, Duration.ZERO, "system prompt");
+
+        assertThatThrownBy(() -> retryingClient.generate("prompt", TestDto.class))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("non-success status");
+                .hasMessageContaining("boom");
     }
 
-    @DisplayName("requestTripPlan ensures non-empty response body")
-    @Test
-    void requestTripPlan_whenBodyEmpty_throwsIllegalState() throws Exception {
-        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-        ResponseEntity<String> response = ResponseEntity.ok("");
-        when(restTemplate.postForEntity(eq(CHAT_COMPLETIONS_URL), any(HttpEntity.class), eq(String.class)))
-                .thenReturn(response);
-
-        assertThatThrownBy(() -> client.requestTripPlan("Trip to Rome"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("empty response body");
-    }
-
-    @DisplayName("parseContent extracts JSON even when wrapped in code fences")
-    @Test
-    void parseContent_extractsAndDeserializes() throws Exception {
-        String response = """
-                {
-                  "choices": [
-                    {
-                      "message": {
-                        "content": "```json\\n{\\n  \\"title\\": \\"Tokyo\\"\\n}\\n```"
-                      }
-                    }
-                  ]
-                }
-                """;
-
-        when(objectMapper.readTree(response)).thenReturn(new ObjectMapper().readTree(response));
-        when(objectMapper.readValue(any(String.class), eq(TestDto.class)))
-                .thenReturn(new TestDto("Tokyo"));
-
-        TestDto dto = client.parseContent(response, TestDto.class);
-
-        assertThat(dto).isNotNull();
-        assertThat(dto.title()).isEqualTo("Tokyo");
-    }
-
-    @DisplayName("parseContent returns null on parsing errors")
-    @Test
-    void parseContent_onFailureReturnsNull() throws Exception {
-        String response = "{\"choices\":[]}";
-        when(objectMapper.readTree(response)).thenThrow(new JsonProcessingException("boom") {});
-
-        assertThat(client.parseContent(response, TestDto.class)).isNull();
-    }
-
-    private record TestDto(String title) {}
+    private record TestDto(String city) {}
 }

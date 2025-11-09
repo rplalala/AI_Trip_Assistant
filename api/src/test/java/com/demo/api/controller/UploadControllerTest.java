@@ -2,7 +2,7 @@ package com.demo.api.controller;
 
 import com.demo.api.exception.BusinessException;
 import com.demo.api.service.UserService;
-import com.demo.api.utils.AwsS3Utils;
+import com.demo.api.utils.AliyunOSSUtils;
 import com.demo.api.ApiRespond;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 class UploadControllerTest {
 
     @Mock
-    private AwsS3Utils awsS3Utils;
+    private AliyunOSSUtils aliyunOSSUtils;
     @Mock
     private UserService userService;
 
@@ -44,7 +44,7 @@ class UploadControllerTest {
 
     @Test
     void upload_returnsCdnUrl() throws Exception {
-        when(awsS3Utils.upload(any(), any(), any(Boolean.class))).thenReturn("https://cdn.example.com/photo.jpg");
+        when(aliyunOSSUtils.upload(any(), any(), any(Boolean.class))).thenReturn("https://cdn.example.com/photo.jpg");
 
         ApiRespond<String> response = uploadController.upload(file);
 
@@ -53,7 +53,7 @@ class UploadControllerTest {
 
     @Test
     void uploadAvatar_updatesUserAvatar() throws Exception {
-        when(awsS3Utils.upload(any(), any(), any(Boolean.class))).thenReturn("https://cdn.example.com/avatar.png");
+        when(aliyunOSSUtils.upload(any(), any(), any(Boolean.class))).thenReturn("https://cdn.example.com/avatar.png");
 
         ApiRespond<String> response = uploadController.uploadAvatar(file, "42");
 
@@ -99,7 +99,7 @@ class UploadControllerTest {
 
     @Test
     void uploadByUrl_returnsUploadedUrl() throws Exception {
-        when(awsS3Utils.uploadFromUrl(eq("https://example.com/pic.jpg"), eq(false)))
+        when(aliyunOSSUtils.uploadFromUrl(eq("https://example.com/pic.jpg"), eq(false)))
                 .thenReturn("https://cdn/pic.jpg");
 
         ApiRespond<String> response = uploadController.uploadByUrl("https://example.com/pic.jpg");
@@ -117,7 +117,7 @@ class UploadControllerTest {
 
     @Test
     void uploadAvatarFromUrl_updatesUserAvatar() throws Exception {
-        when(awsS3Utils.uploadFromUrl(eq("https://cdn/avatar.png"), eq(true)))
+        when(aliyunOSSUtils.uploadFromUrl(eq("https://cdn/avatar.png"), eq(true)))
                 .thenReturn("https://s3/avatar.png");
 
         ApiRespond<String> response = uploadController.uploadAvatarFrmUrl("https://cdn/avatar.png", "77");

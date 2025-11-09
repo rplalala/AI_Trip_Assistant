@@ -65,7 +65,6 @@ class TripInsightServiceImplTest {
                 TripAttraction.builder().location("Fushimi Inari").build()
         ));
         when(openAiClientProvider.getIfAvailable()).thenReturn(openAiClient);
-        when(openAiClient.requestTripPlan(anyString())).thenReturn("{\"insights\":[]}");
         InsightResponseDTO.InsightItem item = new InsightResponseDTO.InsightItem();
         item.setId("1");
         item.setTitle("Shrine Etiquette");
@@ -74,7 +73,7 @@ class TripInsightServiceImplTest {
         item.setIcon("⛩️");
         InsightResponseDTO response = new InsightResponseDTO();
         response.setInsights(List.of(item));
-        when(openAiClient.parseContent(anyString(), eq(InsightResponseDTO.class))).thenReturn(response);
+        when(openAiClient.generate(anyString(), eq(InsightResponseDTO.class))).thenReturn(response);
         when(tripInsightRepository.saveAll(anyList())).thenAnswer(invocation -> {
             List<TripInsight> saved = invocation.getArgument(0);
             long counter = 1L;
@@ -96,7 +95,7 @@ class TripInsightServiceImplTest {
         ArgumentCaptor<List<TripInsight>> captor = ArgumentCaptor.forClass(List.class);
         verify(tripInsightRepository).saveAll(captor.capture());
         assertThat(captor.getValue()).hasSize(1);
-        verify(openAiClient).requestTripPlan(contains("Kyoto"));
+        verify(openAiClient).generate(contains("Kyoto"), eq(InsightResponseDTO.class));
     }
 
     @Test
@@ -139,7 +138,6 @@ class TripInsightServiceImplTest {
         when(tripRepository.findById(30L)).thenReturn(Optional.of(trip));
         when(tripAttractionRepository.findByTripId(30L)).thenReturn(List.of(attraction));
         when(openAiClientProvider.getIfAvailable()).thenReturn(openAiClient);
-        when(openAiClient.requestTripPlan(anyString())).thenReturn("{\"insights\":[]}");
         InsightResponseDTO response = new InsightResponseDTO();
         InsightResponseDTO.InsightItem item = new InsightResponseDTO.InsightItem();
         item.setId("1");
@@ -148,7 +146,7 @@ class TripInsightServiceImplTest {
         item.setIcon("⛴️");
         item.setTheme("scenery");
         response.setInsights(List.of(item));
-        when(openAiClient.parseContent(anyString(), eq(InsightResponseDTO.class))).thenReturn(response);
+        when(openAiClient.generate(anyString(), eq(InsightResponseDTO.class))).thenReturn(response);
         when(tripInsightRepository.saveAll(anyList())).thenAnswer(invocation -> {
             List<TripInsight> saved = invocation.getArgument(0);
             long counter = 1L;

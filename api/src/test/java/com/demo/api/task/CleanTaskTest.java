@@ -11,6 +11,7 @@ import com.demo.api.repository.TripRepository;
 import com.demo.api.repository.TripTransportationRepository;
 import com.demo.api.repository.TripWeatherRepository;
 import com.demo.api.repository.UserRepository;
+import com.demo.api.utils.AliyunOSSUtils;
 import com.demo.api.utils.AwsS3Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +35,8 @@ class CleanTaskTest {
 
     @Mock
     private AwsS3Utils awsS3Utils;
+    @Mock
+    private AliyunOSSUtils aliyunOSSUtils;
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -67,13 +70,13 @@ class CleanTaskTest {
     @Test
     void fileClean_deletesOrphanedFiles() throws Exception {
         when(userRepository.findAllAvatar()).thenReturn(List.of("https://cdn.example.com/root/avatars/2025/05/a.jpg"));
-        when(awsS3Utils.listPageAllFiles("root/avatars/", 1000))
+        when(aliyunOSSUtils.listPageAllFiles("root/avatars/", 1000))
                 .thenReturn(List.of("root/avatars/2025/05/a.jpg", "root/avatars/2025/05/b.jpg"));
 
         task.fileClean();
 
         ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
-        verify(awsS3Utils).batchDeleteFiles(captor.capture());
+        verify(aliyunOSSUtils).batchDeleteFiles(captor.capture());
         assertThat(captor.getValue()).containsExactly("root/avatars/2025/05/b.jpg");
     }
 
@@ -81,11 +84,11 @@ class CleanTaskTest {
     @Test
     void fileClean_noFiles() throws Exception {
         when(userRepository.findAllAvatar()).thenReturn(List.of());
-        when(awsS3Utils.listPageAllFiles("root/avatars/", 1000)).thenReturn(List.of());
+        when(aliyunOSSUtils.listPageAllFiles("root/avatars/", 1000)).thenReturn(List.of());
 
         task.fileClean();
 
-        verify(awsS3Utils, never()).batchDeleteFiles(any());
+        verify(aliyunOSSUtils, never()).batchDeleteFiles(any());
     }
 
     @DisplayName("cleanup deletes expired tokens")

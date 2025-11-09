@@ -1,5 +1,6 @@
 package com.demo.api.service.impl;
 
+import com.demo.api.dto.ItineraryDTO;
 import com.demo.api.model.Trip;
 import com.demo.api.model.TripAttraction;
 import com.demo.api.model.TripDailySummary;
@@ -10,8 +11,6 @@ import com.demo.api.repository.TripDailySummaryRepository;
 import com.demo.api.repository.TripHotelRepository;
 import com.demo.api.repository.TripTransportationRepository;
 import com.demo.api.utils.UnsplashImgUtils;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -20,8 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +43,6 @@ class TripStorageServiceImplTest {
     @BeforeEach
     void setUp() {
         tripStorageService = new TripStorageServiceImpl(
-                new ObjectMapper(),
                 tripTransportationRepository,
                 tripHotelRepository,
                 tripAttractionRepository,
@@ -54,7 +52,7 @@ class TripStorageServiceImplTest {
     }
 
     @Test
-    void storeTripPlan_withStructuredJson_persistsActivitiesAndSummaries() {
+    void storeTripPlan_withStructuredDto_persistsActivitiesAndSummaries() {
         Trip trip = Trip.builder()
                 .id(900L)
                 .currency("AUD")
@@ -65,49 +63,51 @@ class TripStorageServiceImplTest {
         when(tripHotelRepository.findByTripId(900L)).thenReturn(List.of());
         when(tripAttractionRepository.findByTripId(900L)).thenReturn(List.of());
 
-        String payload = """
-                {
-                  "daily_summaries": [
-                    {"date":"2025-06-01","summary":"Arrival","image_url":"https://img/day1.jpg"}
-                  ],
-                  "activities": [
-                    {
-                      "type":"transportation",
-                      "date":"2025-06-01",
-                      "time":"09:00",
-                      "title":"Flight",
-                      "status":"planned",
-                      "reservation_required":true,
-                      "from":"SYD",
-                      "to":"MEL",
-                      "price":320,
-                      "currency":"AUD"
-                    },
-                    {
-                      "type":"hotel",
-                      "date":"2025-06-01",
-                      "time":"15:00",
-                      "title":"Check in",
-                      "status":"planned",
-                      "hotel_name":"Harbour Hotel",
-                      "price":280,
-                      "currency":"AUD"
-                    },
-                    {
-                      "type":"attraction",
-                      "date":"2025-06-01",
-                      "time":"19:00",
-                      "title":"Opera House",
-                      "status":"planned",
-                      "location":"Sydney",
-                      "ticket_price":80,
-                      "currency":"AUD"
-                    }
-                  ]
-                }
-                """;
+        ItineraryDTO dto = ItineraryDTO.builder()
+                .dailySummaries(List.of(
+                        ItineraryDTO.DailySummaryDTO.builder()
+                                .date(LocalDate.parse("2025-06-01"))
+                                .summary("Arrival")
+                                .imageUrl("https://img/day1.jpg")
+                                .build()
+                ))
+                .activities(List.of(
+                        ItineraryDTO.TransportationDTO.builder()
+                                .type("transportation")
+                                .date(LocalDate.parse("2025-06-01"))
+                                .time("09:00")
+                                .title("Flight")
+                                .status("planned")
+                                .reservationRequired(true)
+                                .from("SYD")
+                                .to("MEL")
+                                .price(320)
+                                .currency("AUD")
+                                .build(),
+                        ItineraryDTO.HotelDTO.builder()
+                                .type("hotel")
+                                .date(LocalDate.parse("2025-06-01"))
+                                .time("15:00")
+                                .title("Check in")
+                                .status("planned")
+                                .hotelName("Harbour Hotel")
+                                .price(280)
+                                .currency("AUD")
+                                .build(),
+                        ItineraryDTO.AttractionDTO.builder()
+                                .type("attraction")
+                                .date(LocalDate.parse("2025-06-01"))
+                                .time("19:00")
+                                .title("Opera House")
+                                .status("planned")
+                                .location("Sydney")
+                                .ticketPrice(80)
+                                .currency("AUD")
+                                .build()
+                ))
+                .build();
 
-        tripStorageService.storeTripPlan(trip, payload);
+        tripStorageService.storeTripPlan(trip, dto);
 
         ArgumentCaptor<List<TripDailySummary>> summariesCaptor = ArgumentCaptor.forClass(List.class);
         verify(tripDailySummaryRepository).saveAll(summariesCaptor.capture());
@@ -133,29 +133,20 @@ class TripStorageServiceImplTest {
     }
 
     @Test
-    void storeTripPlan_whenJsonBlank_noPersistenceOccurs() {
+    void storeTripPlan_whenDtoNull_noPersistenceOccurs() {
         Trip trip = Trip.builder().id(1L).build();
 
-        tripStorageService.storeTripPlan(trip, "   ");
+        tripStorageService.storeTripPlan(trip, null);
 
         verifyNoInteractions(tripDailySummaryRepository, tripTransportationRepository,
                 tripHotelRepository, tripAttractionRepository);
     }
 
     @Test
-    void storeTripPlan_whenJsonInvalid_wrapsException() {
-        Trip trip = Trip.builder().id(2L).build();
-
-        assertThatThrownBy(() -> tripStorageService.storeTripPlan(trip, "{not-json"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Failed to persist trip plan JSON");
-    }
-
-    @Test
     void storeTripPlan_whenTripIdMissing_throwsIllegalArgument() {
         Trip trip = Trip.builder().build();
 
-        assertThatThrownBy(() -> tripStorageService.storeTripPlan(trip, "{}"))
+        assertThatThrownBy(() -> tripStorageService.storeTripPlan(trip, ItineraryDTO.builder().build()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("tripId");
     }
@@ -177,49 +168,51 @@ class TripStorageServiceImplTest {
         when(tripHotelRepository.findByTripId(300L)).thenReturn(existingHotels);
         when(tripAttractionRepository.findByTripId(300L)).thenReturn(existingAttractions);
 
-        String payload = """
-                {
-                  "daily_summaries": [
-                    {"date":"invalid-date","summary":"Relax","image_url":null}
-                  ],
-                  "activities": [
-                    {
-                      "type":"transportation",
-                      "date":"2025-07-01",
-                      "time":"08:30",
-                      "title":"Harbour Ferry",
-                      "status":" ",
-                      "reservation_required":false,
-                      "from":"Circular Quay",
-                      "to":"Manly",
-                      "price":"45.8",
-                      "currency":"NZD",
-                      "image_description":"sunrise"
-                    },
-                    {
-                      "type":"hotel",
-                      "date":"2025-07-01",
-                      "time":"21:15",
-                      "title":"Harbour Stay",
-                      "people":2.6,
-                      "nights":"3",
-                      "price":199.4
-                    },
-                    {
-                      "type":"attraction",
-                      "title":"Bridge Climb",
-                      "ticket_price":"not-a-number",
-                      "people":null
-                    },
-                    {
-                      "type":"unknown",
-                      "title":"Skip me"
-                    }
-                  ]
-                }
-                """;
+        ItineraryDTO dto = ItineraryDTO.builder()
+                .dailySummaries(List.of(
+                        ItineraryDTO.DailySummaryDTO.builder()
+                                .date(null) // should be skipped
+                                .summary("Relax")
+                                .imageUrl(null)
+                                .build()
+                ))
+                .activities(List.of(
+                        ItineraryDTO.TransportationDTO.builder()
+                                .type("transportation")
+                                .date(LocalDate.parse("2025-07-01"))
+                                .time("08:30")
+                                .title("Harbour Ferry")
+                                .status(" ") // should default to pending
+                                .reservationRequired(false)
+                                .from("Circular Quay")
+                                .to("Manly")
+                                .price(46)
+                                .currency("NZD")
+                                .imageDescription("sunrise")
+                                .build(),
+                        ItineraryDTO.HotelDTO.builder()
+                                .type("hotel")
+                                .date(LocalDate.parse("2025-07-01"))
+                                .time("21:15")
+                                .title("Harbour Stay")
+                                .people(3)
+                                .nights(3)
+                                .price(199)
+                                .build(),
+                        ItineraryDTO.AttractionDTO.builder()
+                                .type("attraction")
+                                .title("Bridge Climb")
+                                .ticketPrice(null)
+                                .people(null)
+                                .build(),
+                        ItineraryDTO.ActivityDTO.builder()
+                                .type("unknown")
+                                .title("Skip me")
+                                .build()
+                ))
+                .build();
 
-        tripStorageService.storeTripPlan(trip, payload);
+        tripStorageService.storeTripPlan(trip, dto);
 
         verify(tripDailySummaryRepository).deleteAll(existingSummaries);
         verify(tripTransportationRepository).deleteAll(existingTransport);
@@ -233,24 +226,5 @@ class TripStorageServiceImplTest {
 
         verifyNoMoreInteractions(tripDailySummaryRepository, tripTransportationRepository,
                 tripHotelRepository, tripAttractionRepository);
-    }
-
-    @Test
-    void asInteger_convertsNumbersAndStrings() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode intNode = mapper.readTree("42");
-        JsonNode decimalNode = mapper.readTree("45.6");
-        JsonNode stringNode = mapper.readTree("\"78\"");
-        JsonNode badNode = mapper.readTree("\"abc\"");
-
-        Integer intValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", intNode);
-        Integer decimalValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", decimalNode);
-        Integer stringValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", stringNode);
-        Integer badValue = ReflectionTestUtils.invokeMethod(tripStorageService, "asInteger", badNode);
-
-        assertThat(intValue).isEqualTo(42);
-        assertThat(decimalValue).isEqualTo(46);
-        assertThat(stringValue).isEqualTo(78);
-        assertThat(badValue).isNull();
     }
 }
