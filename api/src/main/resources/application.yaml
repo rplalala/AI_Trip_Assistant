@@ -15,9 +15,11 @@ spring:
   ai:
     openai:
       api-key: "${OPENAI_API_KEY}"
-      model-name: "gpt-4o-mini"
-      temperature: 0.7
-      chat-completions-url: https://api.openai.com/v1/chat/completions
+      base-url: https://api.openai.com
+      chat:
+        options:
+          model: "gpt-4o-mini"
+          temperature: 0.7
   servlet:
     multipart:
       max-file-size: 10MB
@@ -93,3 +95,12 @@ feign:
 
 booking:
   base-url: http://localhost:8092/api/booking
+
+app:
+  openai:
+    system-prompt: >
+      You are a helpful travel planner. Respond only with strict JSON that matches the requested schema.
+      Do not include markdown fences or commentary.
+    retry:
+      max-attempts: 3
+      backoff: 500ms

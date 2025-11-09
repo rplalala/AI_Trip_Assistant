@@ -61,9 +61,7 @@ public class TripInsightServiceImpl implements TripInsightService {
 
         OpenAiClient openAiClient = Optional.ofNullable(openAiClientProvider.getIfAvailable())
                 .orElseThrow(() -> new IllegalStateException("OpenAiClient bean is not configured"));
-        String InsightsJson = openAiClient.requestTripPlan(userPrompt);
-
-        InsightResponseDTO insightResponse = openAiClient.parseContent(InsightsJson, InsightResponseDTO.class);
+        InsightResponseDTO insightResponse = openAiClient.generate(userPrompt, InsightResponseDTO.class);
 
         List<TripInsight> results = new ArrayList<>();
         if (insightResponse != null) {
