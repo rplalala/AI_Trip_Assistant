@@ -13,8 +13,6 @@ import com.demo.api.service.TripGenerationService;
 import com.demo.api.service.TripStorageService;
 import com.demo.api.service.WeatherService;
 import com.demo.api.service.TripPlanPromptBuilder;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -45,7 +43,6 @@ public class TripGenerationServiceImpl implements TripGenerationService {
     private static final Logger log = LoggerFactory.getLogger(TripGenerationServiceImpl.class);
 
     private final ModelMapper modelMapper;
-    private final ObjectMapper objectMapper;
     private final WeatherService weatherService;
     private final TripWeatherRepository tripWeatherRepository;
     private final TripPlanPromptBuilder tripPlanPromptBuilder;
@@ -98,26 +95,13 @@ public class TripGenerationServiceImpl implements TripGenerationService {
         // 4. Get OpenAiClient and call GPT API using the built prompt
         OpenAiClient openAiClient = Optional.ofNullable(openAiClientProvider.getIfAvailable())
                 .orElseThrow(() -> new IllegalStateException("OpenAiClient bean is not configured"));
-        String tripPlanJson = openAiClient.requestTripPlan(prompt);
-        log.debug("Received trip plan JSON payload：{}", tripPlanJson);
-
-        ItineraryDTO itineraryDTO = openAiClient.parseContent(tripPlanJson, ItineraryDTO.class);
-        if (itineraryDTO == null) {
-            throw new IllegalStateException("parse failed");
-        }
-        String innerJson = null;
-        try {
-            innerJson = objectMapper.writeValueAsString(itineraryDTO);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        ItineraryDTO itineraryDTO = openAiClient.generate(prompt, ItineraryDTO.class);
 
         // 5. Store the generated trip plan using TripStorageService
         TripStorageService tripStorageService = Optional.ofNullable(tripStorageServiceProvider.getIfAvailable())
                 .orElseThrow(() -> new IllegalStateException("TripStorageService bean is not configured"));
-        tripStorageService.storeTripPlan(preference, innerJson);
+        tripStorageService.storeTripPlan(preference, itineraryDTO);
 
-        log.info("Generated Trip JSON:\n{}", innerJson);
         log.info("Successfully generated and stored trip plan for user {}", preference.getUserId());
     }
 
@@ -163,23 +147,11 @@ public class TripGenerationServiceImpl implements TripGenerationService {
 
         OpenAiClient openAiClient = Optional.ofNullable(openAiClientProvider.getIfAvailable())
                 .orElseThrow(() -> new IllegalStateException("OpenAiClient bean is not configured"));
-        String aiResult = openAiClient.requestTripPlan(prompt);
-        log.debug("Received regenerated trip plan JSON payload");
-
-        ItineraryDTO itineraryDTO = openAiClient.parseContent(aiResult, ItineraryDTO.class);
-        if (itineraryDTO == null) {
-            throw new IllegalStateException("parse failed");
-        }
-        String innerJson;
-        try {
-            innerJson = objectMapper.writeValueAsString(itineraryDTO);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        ItineraryDTO itineraryDTO = openAiClient.generate(prompt, ItineraryDTO.class);
 
         TripStorageService tripStorageService = Optional.ofNullable(tripStorageServiceProvider.getIfAvailable())
                 .orElseThrow(() -> new IllegalStateException("TripStorageService bean is not configured"));
-        tripStorageService.storeTripPlan(trip, innerJson);
+        tripStorageService.storeTripPlan(trip, itineraryDTO);
         log.info("Successfully regenerated and stored trip plan for trip {}", tripId);
     }
 }

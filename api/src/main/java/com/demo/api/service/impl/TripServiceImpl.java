@@ -42,7 +42,6 @@ public class TripServiceImpl implements TripService {
             String proxied = (ObjectUtil.isNotEmpty(imgUrl))
                     ? imgUrl.replaceFirst("^https?://images\\.unsplash\\.com/?", "/ext/unsplash/")
                     : imgUrl;
-            log.info("Unsplash img url {} to {}", imgUrl, proxied);
             return TripDetailDTO.builder()
                     .tripId(trip.getId())
                     .fromCountry(trip.getFromCountry())

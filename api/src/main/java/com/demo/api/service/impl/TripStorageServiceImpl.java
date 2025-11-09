@@ -1,5 +1,6 @@
 package com.demo.api.service.impl;
 
+import com.demo.api.dto.ItineraryDTO;
 import com.demo.api.model.TripAttraction;
 import com.demo.api.model.TripDailySummary;
 import com.demo.api.model.TripHotel;
@@ -11,9 +12,6 @@ import com.demo.api.repository.TripHotelRepository;
 import com.demo.api.repository.TripTransportationRepository;
 import com.demo.api.service.TripStorageService;
 import com.demo.api.utils.UnsplashImgUtils;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
 
 /**
  * Persists the structured itinerary returned by the AI planner into the trip_* tables.
@@ -39,7 +33,6 @@ public class TripStorageServiceImpl implements TripStorageService {
     private static final Logger log = LoggerFactory.getLogger(TripStorageServiceImpl.class);
     private static final String DEFAULT_STATUS = "pending";
 
-    private final ObjectMapper objectMapper;
     private final TripTransportationRepository tripTransportationRepository;
     private final TripHotelRepository tripHotelRepository;
     private final TripAttractionRepository tripAttractionRepository;
@@ -48,20 +41,19 @@ public class TripStorageServiceImpl implements TripStorageService {
 
     @Override
     @Transactional
-    public void storeTripPlan(Trip preference, String tripPlanJson) {
+    public void storeTripPlan(Trip preference, ItineraryDTO itinerary) {
         if (preference == null || preference.getId() == null) {
             throw new IllegalArgumentException("Trip preference with persistent tripId is required");
         }
-        if (!StringUtils.hasText(tripPlanJson)) {
-            log.warn("Empty trip plan JSON for trip {}", preference.getId());
+        if (itinerary == null) {
+            log.warn("Empty itinerary DTO for trip {}", preference.getId());
             return;
         }
 
         try {
-            JsonNode root = objectMapper.readTree(tripPlanJson);
-
+            // Daily summaries
             tripDailySummaryRepository.deleteAll(tripDailySummaryRepository.findByTripId(preference.getId()));
-            List<TripDailySummary> summariesToSave = readDailySummaries(root.path("daily_summaries"), preference);
+            List<TripDailySummary> summariesToSave = readDailySummaries(itinerary.getDailySummaries(), preference);
             tripDailySummaryRepository.saveAll(summariesToSave);
 
             // Clear previously generated activities for idempotency.
@@ -69,21 +61,19 @@ public class TripStorageServiceImpl implements TripStorageService {
             tripHotelRepository.deleteAll(tripHotelRepository.findByTripId(preference.getId()));
             tripAttractionRepository.deleteAll(tripAttractionRepository.findByTripId(preference.getId()));
 
-            ArrayNode activitiesNode = root.has("activities") && root.get("activities").isArray()
-                    ? (ArrayNode) root.get("activities")
-                    : objectMapper.createArrayNode();
-
             List<TripTransportation> transportation = new ArrayList<>();
             List<TripHotel> hotels = new ArrayList<>();
             List<TripAttraction> attractions = new ArrayList<>();
 
-            for (JsonNode activityNode : activitiesNode) {
-                String type = optionalText(activityNode, "type").orElse("").toLowerCase(Locale.ENGLISH);
-                switch (type) {
-                    case "transportation" -> transportation.add(mapTransportation(activityNode, preference));
-                    case "hotel" -> hotels.add(mapHotel(activityNode, preference));
-                    case "attraction" -> attractions.add(mapAttraction(activityNode, preference));
-                    default -> log.debug("Skipping activity with unsupported type '{}' for trip {}", type, preference.getId());
+            if (itinerary.getActivities() != null) {
+                for (ItineraryDTO.ActivityDTO activity : itinerary.getActivities()) {
+                    String type = activity.getType() == null ? "" : activity.getType().toLowerCase();
+                    switch (type) {
+                        case "transportation" -> transportation.add(mapTransportation((ItineraryDTO.TransportationDTO) activity, preference));
+                        case "hotel" -> hotels.add(mapHotel((ItineraryDTO.HotelDTO) activity, preference));
+                        case "attraction" -> attractions.add(mapAttraction((ItineraryDTO.AttractionDTO) activity, preference));
+                        default -> log.debug("Skipping activity with unsupported type '{}' for trip {}", type, preference.getId());
+                    }
                 }
             }
 
@@ -94,95 +84,88 @@ public class TripStorageServiceImpl implements TripStorageService {
             log.info("Stored trip plan for trip {} ({} transportation / {} hotels / {} attractions)",
                     preference.getId(), transportation.size(), hotels.size(), attractions.size());
         } catch (Exception ex) {
-            throw new IllegalStateException("Failed to persist trip plan JSON", ex);
+            throw new IllegalStateException("Failed to persist trip plan DTO", ex);
         }
     }
 
-    // ----- other ------
+    // ----- mapping helpers ------
 
-    private List<TripDailySummary> readDailySummaries(JsonNode node, Trip preference) {
+    private List<TripDailySummary> readDailySummaries(List<ItineraryDTO.DailySummaryDTO> summaries, Trip preference) {
         List<TripDailySummary> result = new ArrayList<>();
-        if (node != null && node.isArray()) {
-            for (JsonNode summaryNode : node) {
-                LocalDate date = parseDate(optionalText(summaryNode, "date"));
-                if (date == null) {
-                    continue;
-                }
-                TripDailySummary summary = new TripDailySummary();
-                summary.setTripId(preference.getId());
-                summary.setDate(date);
-                summary.setSummary(optionalText(summaryNode, "summary").orElse(null));
-                String imageDescription = optionalText(summaryNode, "image_description").orElse(null);
-                summary.setImageDescription(imageDescription);
+        if (summaries == null) return result;
+        for (ItineraryDTO.DailySummaryDTO dto : summaries) {
+            LocalDate date = dto.getDate();
+            if (date == null) continue;
 
+            TripDailySummary summary = new TripDailySummary();
+            summary.setTripId(preference.getId());
+            summary.setDate(date);
+            summary.setSummary(dto.getSummary());
+            summary.setImageDescription(dto.getImageDescription());
+
+            String imageUrl = dto.getImageUrl();
+            if (!StringUtils.hasText(imageUrl)) {
                 try {
-                    final List<String> imgUrls = unsplashImgUtils.getImgUrls(imageDescription, 1, 500, 500);
+                    var imgUrls = unsplashImgUtils.getImgUrls(dto.getImageDescription(), 1, 500, 500);
                     if (imgUrls != null && !imgUrls.isEmpty()) {
-                        summary.setImageUrl(imgUrls.getFirst());
+                        imageUrl = imgUrls.getFirst();
+                    } else {
+                        imageUrl = "";
                     }
                 } catch (Exception e) {
                     log.warn("Failed to load image urls for trip {}", preference.getId(), e);
-                    summary.setImageUrl("");
+                    imageUrl = "";
                 }
-
-                result.add(summary);
             }
+            summary.setImageUrl(imageUrl);
+
+            result.add(summary);
         }
         return result;
     }
 
-    private TripTransportation mapTransportation(JsonNode node, Trip preference) {
+    private TripTransportation mapTransportation(ItineraryDTO.TransportationDTO dto, Trip preference) {
         TripTransportation transport = new TripTransportation();
-        populateCommonActivityFields(transport, node, preference);
-        transport.setFrom(optionalText(node, "from").orElse(null));
-        transport.setTo(optionalText(node, "to").orElse(null));
-        transport.setProvider(optionalText(node, "provider").orElse(null));
-        transport.setTicketType(optionalText(node, "ticket_type").orElse(null));
-        transport.setPrice(asInteger(node.get("price")));
-        transport.setCurrency(optionalText(node, "currency").orElse(defaultCurrency(preference)));
+        populateCommonActivityFields(transport, dto, preference);
+        transport.setFrom(dto.getFrom());
+        transport.setTo(dto.getTo());
+        transport.setProvider(dto.getProvider());
+        transport.setTicketType(dto.getTicketType());
+        transport.setPrice(dto.getPrice());
+        transport.setCurrency(StringUtils.hasText(dto.getCurrency()) ? dto.getCurrency() : defaultCurrency(preference));
         return transport;
     }
 
-    private TripHotel mapHotel(JsonNode node, Trip preference) {
+    private TripHotel mapHotel(ItineraryDTO.HotelDTO dto, Trip preference) {
         TripHotel hotel = new TripHotel();
-        populateCommonActivityFields(hotel, node, preference);
-        hotel.setHotelName(optionalText(node, "hotel_name").orElse(null));
-        hotel.setRoomType(optionalText(node, "room_type").orElse(null));
-        hotel.setPeople(asInteger(node.get("people")));
-        hotel.setNights(asInteger(node.get("nights")));
-        hotel.setPrice(asInteger(node.get("price")));
-        hotel.setCurrency(optionalText(node, "currency").orElse(defaultCurrency(preference)));
+        populateCommonActivityFields(hotel, dto, preference);
+        hotel.setHotelName(dto.getHotelName());
+        hotel.setRoomType(dto.getRoomType());
+        hotel.setPeople(dto.getPeople());
+        hotel.setNights(dto.getNights());
+        hotel.setPrice(dto.getPrice());
+        hotel.setCurrency(StringUtils.hasText(dto.getCurrency()) ? dto.getCurrency() : defaultCurrency(preference));
         return hotel;
     }
 
-    private TripAttraction mapAttraction(JsonNode node, Trip preference) {
+    private TripAttraction mapAttraction(ItineraryDTO.AttractionDTO dto, Trip preference) {
         TripAttraction attraction = new TripAttraction();
-        populateCommonActivityFields(attraction, node, preference);
-        attraction.setLocation(optionalText(node, "location").orElse(null));
-        attraction.setTicketPrice(asInteger(node.get("ticket_price")));
-        attraction.setPeople(asInteger(node.get("people")));
-        attraction.setCurrency(optionalText(node, "currency").orElse(defaultCurrency(preference)));
+        populateCommonActivityFields(attraction, dto, preference);
+        attraction.setLocation(dto.getLocation());
+        attraction.setTicketPrice(dto.getTicketPrice());
+        attraction.setPeople(dto.getPeople());
+        attraction.setCurrency(StringUtils.hasText(dto.getCurrency()) ? dto.getCurrency() : defaultCurrency(preference));
         return attraction;
     }
 
-    private void populateCommonActivityFields(Object target, JsonNode node, Trip preference) {
-        LocalDate date = parseDate(optionalText(node, "date"));
-        String time = optionalText(node, "time").orElse(null);
-        String title = optionalText(node, "title").orElse(null);
-        String status = optionalText(node, "status").orElse(DEFAULT_STATUS);
-        Boolean reservationRequired = node.hasNonNull("reservation_required") ? node.get("reservation_required").asBoolean() : null;
-        String imageDescription = optionalText(node, "image_description").orElse(null);
-        String imageUrl = "";
-
-//        try {
-//            List<String> imgUrls = unsplashImgUtils.getImgUrls(imageDescription, 1, 500, 500);
-//            if (imgUrls != null && !imgUrls.isEmpty()) {
-//                imageUrl = unsplashImgUtils.getImgUrls(imageDescription, 1, 500, 500).getFirst();
-//            }
-//        }  catch (Exception e) {
-//            log.warn("Failed to load image urls for trip {}", preference.getId(), e);
-//            imageUrl = "";
-//        }
+    private void populateCommonActivityFields(Object target, ItineraryDTO.ActivityDTO dto, Trip preference) {
+        LocalDate date = dto.getDate();
+        String time = dto.getTime();
+        String title = dto.getTitle();
+        String status = StringUtils.hasText(dto.getStatus()) ? dto.getStatus() : DEFAULT_STATUS;
+        Boolean reservationRequired = dto.getReservationRequired();
+        String imageDescription = dto.getImageDescription();
+        String imageUrl = StringUtils.hasText(dto.getImageUrl()) ? dto.getImageUrl() : "";
 
         if (target instanceof TripTransportation transport) {
             transport.setTripId(preference.getId());
@@ -211,45 +194,6 @@ public class TripStorageServiceImpl implements TripStorageService {
             attraction.setReservationRequired(reservationRequired);
             attraction.setImageUrl(imageUrl);
             attraction.setImageDescription(imageDescription);
-        }
-    }
-
-    private Optional<String> optionalText(JsonNode node, String field) {
-        if (node == null || !node.has(field) || node.get(field).isNull()) {
-            return Optional.empty();
-        }
-        String value = node.get(field).asText();
-        return StringUtils.hasText(value) ? Optional.of(value) : Optional.empty();
-    }
-
-    private LocalDate parseDate(Optional<String> value) {
-        if (value.isEmpty()) {
-            return null;
-        }
-        try {
-            return LocalDate.parse(value.get());
-        } catch (Exception ex) {
-            log.debug("Unable to parse date value '{}'", value.get(), ex);
-            return null;
-        }
-    }
-
-    private Integer asInteger(JsonNode node) {
-        if (node == null || node.isNull()) {
-            return null;
-        }
-        if (node.isInt() || node.isLong()) {
-            return node.intValue();
-        }
-        if (node.isNumber()) {
-            BigDecimal decimal = node.decimalValue();
-            return decimal.setScale(0, RoundingMode.HALF_UP).intValue();
-        }
-        try {
-            return new BigDecimal(node.asText()).setScale(0, RoundingMode.HALF_UP).intValue();
-        } catch (Exception ex) {
-            log.debug("Unable to convert value '{}' to integer", node, ex);
-            return null;
         }
     }
 
