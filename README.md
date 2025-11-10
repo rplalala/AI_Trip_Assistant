@@ -43,7 +43,7 @@ We integrated 11 advanced technologies to significantly improve system performan
 | 4       | **GitHub Actions CI/CD**                      | Build images and deploy to EC2 on push | Deployment             |
 | 5       | **Nginx Reverse Proxy**                       | Consolidates routing on port 80 and enables secure access to internal containers               | Deployment             |
 | 6       | **AWS EC2 (ap-southeast-1)**                                   | Runs Nginx and backend services; frontend is uploaded as static files and served via volume.                                     | Cloud Services         |
-| 7       | **AWS CloudWatch Logs)**                                   | Aggregate container logs via the awslogs driver for monitoring and troubleshooting                                     | Cloud Services         |
+| 7       | **AWS CloudWatch Logs**                                   | Aggregate container logs via the awslogs driver for monitoring and troubleshooting                                     | Cloud Services         |
 | 8       | **AWS S3 + CloudFront / Aliyun OSS + Aliyun CDN**  | Hosts static resources with CDN acceleration and reduced server load                           | Cloud Services         |
 | 9       | **Neon Serverless PostgreSQL**                | Provides a scalable serverless database service                                                | Cloud Services         |
 | 10       | **Stitch (UI Design with Gemini AI) + Figma** | AI-assisted UI generation refined into production-ready design                                 | New AI Tools           |
