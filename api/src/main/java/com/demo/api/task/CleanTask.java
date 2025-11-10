@@ -37,7 +37,8 @@ public class CleanTask {
     private final TripInsightRepository insightRepository;
     private final TripWeatherRepository tripWeatherRepository;
 
-    @Value("${aws.s3.dir-name}")
+//    @Value("${aws.s3.dir-name}")
+    @Value("${aliyun.oss.dirName}")
     private String dirName;
 
     /**
@@ -84,7 +85,7 @@ public class CleanTask {
     /**
      * Clean expired email tokens every 2 hours
      */
-    @Scheduled(cron = "0 0 */2 * * *")
+    @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanup() {
         List<EmailToken> deleted = emailTokenRepository.deleteAllByExpireTimeBefore(Instant.now());
@@ -94,7 +95,7 @@ public class CleanTask {
     /**
      * Clean redundant data every 2 hours
      */
-    @Scheduled(cron = "0 0 */2 * * *")
+    @Scheduled(cron = "0 0 4 * * *")
     @Transactional
     public void cleanRedundantData(){
         // find all redundant user ids
