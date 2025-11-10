@@ -1,5 +1,7 @@
 # AI Trip Assistant
 
+[中文版本](https://github.com/rplalala/AI_Trip_Assistant/blob/main/docs/README_Chinese.md)
+
 This project is developing an AI Travel Assistant that generates daily itineraries from user constraints and preferences, incorporates weather-aware adjustments and routing, supports booking with a one-click confirm flow, and can quickly regenerate a plan when new constraints are provided.
 
 ## Key Features
