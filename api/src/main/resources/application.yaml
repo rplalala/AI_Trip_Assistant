@@ -57,7 +57,7 @@ aliyun:
 
 sendgrid:
   api-key: "${SENDGRID_API_KEY}"
-  from: "dingzh157@gmail.com"
+  from: "dingzh20@gmail.com"
 
 frontend:
   base-url: "http://localhost:5173"

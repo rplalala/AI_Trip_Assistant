@@ -212,6 +212,14 @@ export default function LoginPage() {
                     Sign in or create an account to continue
                 </Typography.Paragraph>
 
+                <Typography.Paragraph type="secondary" style={{ textAlign: 'center', marginBottom: 0 }}>
+                    Demo Account:
+                </Typography.Paragraph>
+
+                <Typography.Paragraph type="secondary" style={{ textAlign: 'center', marginBottom: 24 }}>
+                    Email: <Typography.Text code>admin@admin.com</Typography.Text> Password: <Typography.Text code>admin@admin.com</Typography.Text>
+                </Typography.Paragraph>
+
                 <Tabs
                     defaultActiveKey="login"
                     className="login-tabs"
